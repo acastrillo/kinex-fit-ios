@@ -7,6 +7,7 @@ import { dynamoDBUsers } from '@/lib/dynamodb';
 import { getQuotaLimit, normalizeSubscriptionTier } from '@/lib/stripe';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { hasRole } from '@/lib/rbac';
+import { isWeeklyResetDue } from '@/lib/quota-reset';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (Textract sync limit)
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -77,7 +78,11 @@ export async function POST(req: Request) {
     const tier = normalizeSubscriptionTier(user.subscriptionTier);
     const weeklyLimit = getQuotaLimit(tier, 'ocrQuotaWeekly');
 
-    const ocrUsed = user.ocrQuotaUsed || 0;
+    let ocrUsed = user.ocrQuotaUsed || 0;
+    if (!isAdmin && weeklyLimit !== null && isWeeklyResetDue(user.ocrQuotaResetDate)) {
+      await dynamoDBUsers.resetOCRQuota(userId);
+      ocrUsed = 0;
+    }
 
     if (!isAdmin && weeklyLimit !== null && weeklyLimit <= 0) {
       return NextResponse.json(

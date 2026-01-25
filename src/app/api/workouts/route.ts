@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserId } from "@/lib/api-auth";
-import { dynamoDBWorkouts } from "@/lib/dynamodb";
+import { dynamoDBUsers, dynamoDBWorkouts } from "@/lib/dynamodb";
 import { createRequestLogger } from "@/lib/logger";
 import { AppMetrics, PerformanceMonitor } from "@/lib/metrics";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getQuotaLimit, normalizeSubscriptionTier } from "@/lib/subscription-tiers";
+import { hasRole } from "@/lib/rbac";
+import { isWeeklyResetDue } from "@/lib/quota-reset";
 
 // GET /api/workouts - List all workouts for the current user
 export async function GET(request: NextRequest) {
@@ -164,6 +167,57 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    const user = await dynamoDBUsers.get(userId);
+    if (!user) {
+      reqLogger.finish(404);
+      AppMetrics.apiRequest("POST", "/api/workouts", 404);
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const isAdmin = hasRole(user, 'admin');
+    const tier = normalizeSubscriptionTier(user.subscriptionTier);
+    const weeklyLimit = getQuotaLimit(tier, 'workoutsWeekly');
+    let weeklyUsed = user.workoutsWeeklyUsed || 0;
+
+    if (!isAdmin && weeklyLimit !== null) {
+      if (isWeeklyResetDue(user.lastWorkoutReset)) {
+        await dynamoDBUsers.resetWorkoutWeeklyQuota(userId);
+        weeklyUsed = 0;
+      }
+
+      if (weeklyLimit <= 0) {
+        reqLogger.finish(429);
+        AppMetrics.apiRequest("POST", "/api/workouts", 429);
+        return NextResponse.json(
+          {
+            error: "Workout limit exceeded",
+            message: "You have reached your weekly workout limit. Upgrade your subscription to save more workouts.",
+            quotaUsed: weeklyUsed,
+            quotaLimit: weeklyLimit,
+            subscriptionTier: user.subscriptionTier,
+          },
+          { status: 429 }
+        );
+      }
+
+      const consumeResult = await dynamoDBUsers.consumeQuota(userId, 'workoutsWeeklyUsed', weeklyLimit);
+      if (!consumeResult.success) {
+        reqLogger.finish(429);
+        AppMetrics.apiRequest("POST", "/api/workouts", 429);
+        return NextResponse.json(
+          {
+            error: "Workout limit exceeded",
+            message: `You have reached your weekly workout limit (${weeklyLimit} per week). Upgrade your subscription to save more workouts.`,
+            quotaUsed: weeklyUsed,
+            quotaLimit: weeklyLimit,
+            subscriptionTier: user.subscriptionTier,
+          },
+          { status: 429 }
+        );
+      }
+      weeklyUsed = consumeResult.newValue ?? weeklyUsed + 1;
+    }
+
     reqLogger.log("Creating workout", { userId, workoutId, title });
 
     const perf = new PerformanceMonitor("api.workouts.post", { userId });
@@ -194,6 +248,7 @@ export async function POST(request: NextRequest) {
     const duration = perf.finish();
 
     reqLogger.log("Workout created successfully", { userId, workoutId, duration });
+    await dynamoDBUsers.incrementCounter(userId, 'workoutsSaved');
 
     reqLogger.finish(201);
     AppMetrics.apiRequest("POST", "/api/workouts", 201);

@@ -38,7 +38,7 @@ export function useFeatureAccess(feature: LimitKey): FeatureGateResult {
 /**
  * Hook to check if user has quota remaining
  */
-export function useQuotaCheck(quotaType: 'ocrQuotaWeekly' | 'workoutsMax' | 'aiRequestsMonthly'): FeatureGateResult {
+export function useQuotaCheck(quotaType: 'ocrQuotaWeekly' | 'workoutsWeekly' | 'workoutsMax' | 'aiRequestsMonthly'): FeatureGateResult {
   const { user } = useAuthStore()
   const tier = normalizeSubscriptionTier(user?.subscriptionTier)
 
@@ -54,6 +54,8 @@ export function useQuotaCheck(quotaType: 'ocrQuotaWeekly' | 'workoutsMax' | 'aiR
     ? user?.ocrQuotaUsed || 0
     : quotaType === 'aiRequestsMonthly'
     ? user?.aiRequestsUsed || 0
+    : quotaType === 'workoutsWeekly'
+    ? user?.workoutsWeeklyUsed || 0
     : user?.workoutsSaved || 0
 
   if (currentUsage >= limit) {

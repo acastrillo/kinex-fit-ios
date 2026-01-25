@@ -5,6 +5,7 @@ import { parseWorkoutContentWithFallback } from '@/lib/workout-parser'
 import { dynamoDBUsers } from '@/lib/dynamodb'
 import { getQuotaLimit, normalizeSubscriptionTier } from '@/lib/subscription-tiers'
 import { hasRole } from '@/lib/rbac'
+import { isMonthlyResetDue, isWeeklyResetDue } from '@/lib/quota-reset'
 
 interface ApifyInstagramResult {
   url?: string
@@ -76,7 +77,18 @@ export async function POST(request: NextRequest) {
 
     // Use whichever limit is defined for this tier
     const limit = monthlyLimit !== null ? monthlyLimit : weeklyLimit;
-    const importsUsed = user.instagramImportsUsed || 0;
+    let importsUsed = user.instagramImportsUsed || 0;
+
+    if (!isAdmin && limit !== null) {
+      const shouldReset = monthlyLimit !== null
+        ? isMonthlyResetDue(user.lastInstagramImportReset)
+        : isWeeklyResetDue(user.lastInstagramImportReset);
+
+      if (shouldReset) {
+        await dynamoDBUsers.resetInstagramQuota(userId);
+        importsUsed = 0;
+      }
+    }
 
     const { url }: InstagramFetchRequest = await request.json()
 

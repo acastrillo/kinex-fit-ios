@@ -14,6 +14,7 @@ interface SessionUser {
   ocrQuotaUsed?: number;
   ocrQuotaLimit?: number;
   workoutsSaved?: number;
+  workoutsWeeklyUsed?: number;
   aiRequestsUsed?: number;
   onboardingCompleted?: boolean;
   onboardingSkipped?: boolean;
@@ -31,6 +32,7 @@ interface User {
   ocrQuotaUsed?: number;
   ocrQuotaLimit?: number;
   workoutsSaved?: number;
+  workoutsWeeklyUsed?: number;
   aiRequestsUsed?: number;
   onboardingCompleted?: boolean;
   onboardingSkipped?: boolean;
@@ -69,6 +71,7 @@ export const useAuthStore = (): AuthState => {
         ocrQuotaUsed: sessionUser.ocrQuotaUsed ?? 0,
         ocrQuotaLimit: sessionUser.ocrQuotaLimit ?? 2,
         workoutsSaved: sessionUser.workoutsSaved ?? 0,
+        workoutsWeeklyUsed: sessionUser.workoutsWeeklyUsed ?? 0,
         aiRequestsUsed: sessionUser.aiRequestsUsed ?? 0,
         onboardingCompleted: sessionUser.onboardingCompleted ?? false,
         onboardingSkipped: sessionUser.onboardingSkipped ?? false,

@@ -66,6 +66,8 @@ export interface DynamoDBUser {
   ocrQuotaLimit: number;
   ocrQuotaResetDate?: string | null;
   workoutsSaved: number;
+  workoutsWeeklyUsed?: number;
+  lastWorkoutReset?: string | null;
 
   // AI Features (Phase 6)
   aiRequestsUsed?: number;
@@ -249,6 +251,8 @@ export const dynamoDBUsers = {
       ocrQuotaLimit: user.ocrQuotaLimit || 2, // Free tier default: 2 per week
       ocrQuotaResetDate: user.ocrQuotaResetDate || now,
       workoutsSaved: user.workoutsSaved || 0,
+      workoutsWeeklyUsed: user.workoutsWeeklyUsed || 0,
+      lastWorkoutReset: user.lastWorkoutReset || now,
 
       // AI quota defaults (Phase 6)
       aiRequestsUsed: user.aiRequestsUsed || 0,
@@ -451,7 +455,7 @@ export const dynamoDBUsers = {
    */
   async consumeQuota(
     userId: string,
-    field: keyof Pick<DynamoDBUser, 'ocrQuotaUsed' | 'aiRequestsUsed' | 'instagramImportsUsed'>,
+    field: keyof Pick<DynamoDBUser, 'ocrQuotaUsed' | 'aiRequestsUsed' | 'instagramImportsUsed' | 'workoutsWeeklyUsed'>,
     limit: number
   ): Promise<{ success: boolean; newValue?: number }> {
     if (limit <= 0) {
@@ -581,6 +585,31 @@ export const dynamoDBUsers = {
       );
     } catch (error) {
       console.error("Error resetting Instagram quota in DynamoDB:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Reset weekly workout quota
+   */
+  async resetWorkoutWeeklyQuota(userId: string): Promise<void> {
+    try {
+      const now = new Date().toISOString();
+      await getDynamoDb().send(
+        new UpdateCommand({
+          TableName: USERS_TABLE,
+          Key: { id: userId },
+          UpdateExpression:
+            "SET workoutsWeeklyUsed = :zero, lastWorkoutReset = :resetDate, updatedAt = :updatedAt",
+          ExpressionAttributeValues: {
+            ":zero": 0,
+            ":resetDate": now,
+            ":updatedAt": now,
+          },
+        })
+      );
+    } catch (error) {
+      console.error("Error resetting workout weekly quota in DynamoDB:", error);
       throw error;
     }
   },

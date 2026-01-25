@@ -617,6 +617,9 @@ export const authOptions: NextAuthOptions = {
             token.subscriptionStatus = dbUser.subscriptionStatus;
             token.ocrQuotaUsed = dbUser.ocrQuotaUsed;
             token.ocrQuotaLimit = dbUser.ocrQuotaLimit;
+            token.aiRequestsUsed = dbUser.aiRequestsUsed ?? 0;
+            token.workoutsSaved = dbUser.workoutsSaved ?? 0;
+            token.workoutsWeeklyUsed = dbUser.workoutsWeeklyUsed ?? 0;
             token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
             token.onboardingSkipped = dbUser.onboardingSkipped ?? false;
             token.isBeta = dbUser.isBeta ?? false;
@@ -672,6 +675,9 @@ export const authOptions: NextAuthOptions = {
           subscriptionStatus: (token.subscriptionStatus as string | undefined) ?? "active",
           ocrQuotaUsed: (token.ocrQuotaUsed as number | undefined) ?? 0,
           ocrQuotaLimit: (token.ocrQuotaLimit as number | undefined) ?? 2,
+          aiRequestsUsed: (token.aiRequestsUsed as number | undefined) ?? 0,
+          workoutsSaved: (token.workoutsSaved as number | undefined) ?? 0,
+          workoutsWeeklyUsed: (token.workoutsWeeklyUsed as number | undefined) ?? 0,
           provider: (token.provider as string | undefined) ?? undefined,
           onboardingCompleted: (token.onboardingCompleted as boolean | undefined) ?? false,
           onboardingSkipped: (token.onboardingSkipped as boolean | undefined) ?? false,

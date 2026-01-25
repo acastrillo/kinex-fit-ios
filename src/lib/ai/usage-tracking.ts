@@ -14,6 +14,7 @@ import {
   GetCommand,
 } from "@aws-sdk/lib-dynamodb";
 import type { BedrockResponse } from "./bedrock-client";
+import { getMonthKey } from "../quota-reset";
 
 // Lazy-initialized DynamoDB client
 let dynamoDbInstance: DynamoDBDocumentClient | null = null;
@@ -219,35 +220,45 @@ async function updateUserCostSummary(
   }
 ): Promise<void> {
   const now = new Date();
-  const currentMonth = now.toISOString().substring(0, 7); // YYYY-MM
+  const currentMonth = getMonthKey(now);
 
   try {
-    await getDynamoDb().send(
-      new UpdateCommand({
-        TableName: USERS_TABLE,
-        Key: { id: userId },
-        UpdateExpression: `
-          SET
-            currentMonthCost = if_not_exists(currentMonthCost, :zero) + :costInc,
-            currentMonthTokens = if_not_exists(currentMonthTokens, :zero) + :tokensInc,
-            currentMonthRequests = if_not_exists(currentMonthRequests, :zero) + :reqInc,
-            totalCost = if_not_exists(totalCost, :zero) + :costInc,
-            totalTokens = if_not_exists(totalTokens, :zero) + :tokensInc,
-            totalRequests = if_not_exists(totalRequests, :zero) + :reqInc,
-            lastCostUpdate = :now,
-            costResetMonth = if_not_exists(costResetMonth, :month),
-            updatedAt = :now
-        `,
-        ExpressionAttributeValues: {
-          ":zero": 0,
-          ":costInc": increments.costIncrement,
-          ":tokensInc": increments.tokensIncrement,
-          ":reqInc": increments.requestsIncrement,
-          ":now": now.toISOString(),
-          ":month": currentMonth,
-        },
-      })
-    );
+    const updateParams = {
+      TableName: USERS_TABLE,
+      Key: { id: userId },
+      UpdateExpression: `
+        SET
+          currentMonthCost = if_not_exists(currentMonthCost, :zero) + :costInc,
+          currentMonthTokens = if_not_exists(currentMonthTokens, :zero) + :tokensInc,
+          currentMonthRequests = if_not_exists(currentMonthRequests, :zero) + :reqInc,
+          totalCost = if_not_exists(totalCost, :zero) + :costInc,
+          totalTokens = if_not_exists(totalTokens, :zero) + :tokensInc,
+          totalRequests = if_not_exists(totalRequests, :zero) + :reqInc,
+          lastCostUpdate = :now,
+          costResetMonth = :month,
+          updatedAt = :now
+      `,
+      ConditionExpression: "costResetMonth = :month",
+      ExpressionAttributeValues: {
+        ":zero": 0,
+        ":costInc": increments.costIncrement,
+        ":tokensInc": increments.tokensIncrement,
+        ":reqInc": increments.requestsIncrement,
+        ":now": now.toISOString(),
+        ":month": currentMonth,
+      },
+    };
+
+    try {
+      await getDynamoDb().send(new UpdateCommand(updateParams));
+    } catch (error: any) {
+      if (error?.name !== "ConditionalCheckFailedException") {
+        throw error;
+      }
+
+      await resetMonthlyCosts(userId);
+      await getDynamoDb().send(new UpdateCommand(updateParams));
+    }
   } catch (error) {
     console.error("Error updating user cost summary:", error);
     throw error;
@@ -271,6 +282,23 @@ export async function getUserCostSummary(userId: string): Promise<UserCostSummar
 
     if (!result.Item) {
       return null;
+    }
+
+    const now = new Date();
+    const currentMonth = getMonthKey(now);
+    const storedMonth = result.Item.costResetMonth;
+
+    if (!storedMonth || storedMonth !== currentMonth) {
+      await resetMonthlyCosts(userId);
+      return {
+        currentMonthCost: 0,
+        currentMonthTokens: 0,
+        currentMonthRequests: 0,
+        totalCost: result.Item.totalCost || 0,
+        totalTokens: result.Item.totalTokens || 0,
+        totalRequests: result.Item.totalRequests || 0,
+        lastCostReset: now.toISOString(),
+      };
     }
 
     return {
@@ -368,33 +396,50 @@ export async function checkUsageCap(
 /**
  * Reset monthly cost counters for a user
  */
-export async function resetMonthlyCosts(userId: string): Promise<void> {
+export async function resetMonthlyCosts(
+  userId: string,
+  options: { force?: boolean } = {}
+): Promise<void> {
   const now = new Date();
-  const currentMonth = now.toISOString().substring(0, 7);
+  const currentMonth = getMonthKey(now);
 
   try {
-    await getDynamoDb().send(
-      new UpdateCommand({
-        TableName: USERS_TABLE,
-        Key: { id: userId },
-        UpdateExpression: `
-          SET
-            currentMonthCost = :zero,
-            currentMonthTokens = :zero,
-            currentMonthRequests = :zero,
-            lastCostReset = :now,
-            costResetMonth = :month,
-            updatedAt = :now
-        `,
-        ExpressionAttributeValues: {
-          ":zero": 0,
-          ":now": now.toISOString(),
-          ":month": currentMonth,
-        },
-      })
-    );
+    const updateParams: {
+      TableName: string;
+      Key: { id: string };
+      UpdateExpression: string;
+      ExpressionAttributeValues: Record<string, unknown>;
+      ConditionExpression?: string;
+    } = {
+      TableName: USERS_TABLE,
+      Key: { id: userId },
+      UpdateExpression: `
+        SET
+          currentMonthCost = :zero,
+          currentMonthTokens = :zero,
+          currentMonthRequests = :zero,
+          lastCostReset = :now,
+          costResetMonth = :month,
+          updatedAt = :now
+      `,
+      ExpressionAttributeValues: {
+        ":zero": 0,
+        ":now": now.toISOString(),
+        ":month": currentMonth,
+      },
+    };
+
+    if (!options.force) {
+      updateParams.ConditionExpression =
+        "attribute_not_exists(costResetMonth) OR costResetMonth <> :month";
+    }
+
+    await getDynamoDb().send(new UpdateCommand(updateParams));
     console.log(`Reset monthly costs for user ${userId}`);
   } catch (error) {
+    if (!options.force && (error as any)?.name === "ConditionalCheckFailedException") {
+      return;
+    }
     console.error("Error resetting monthly costs:", error);
     throw error;
   }

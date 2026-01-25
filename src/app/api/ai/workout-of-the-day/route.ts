@@ -16,6 +16,7 @@ import { generateWorkout, validateGeneratedWorkout } from '@/lib/ai/workout-gene
 import { getAIRequestLimit, normalizeSubscriptionTier } from '@/lib/subscription-tiers';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { hasRole } from '@/lib/rbac';
+import { isMonthlyResetDue } from '@/lib/quota-reset';
 
 interface WorkoutOfTheDayResponse {
   success: boolean;
@@ -145,10 +146,15 @@ export async function GET(req: NextRequest): Promise<NextResponse<WorkoutOfTheDa
     // Check AI quota
     const tier = normalizeSubscriptionTier(user.subscriptionTier);
     const aiLimit = getAIRequestLimit(tier);
-    const aiUsed = user.aiRequestsUsed || 0;
 
     // ADMIN BYPASS: Admins have unlimited AI quotas
     const isAdmin = hasRole(user, 'admin');
+
+    let aiUsed = user.aiRequestsUsed || 0;
+    if (!isAdmin && isMonthlyResetDue(user.lastAiRequestReset)) {
+      await dynamoDBUsers.resetAIQuota(userId);
+      aiUsed = 0;
+    }
 
     if (!isAdmin && aiLimit <= 0) {
       const upgradeMessage = aiLimit === 0

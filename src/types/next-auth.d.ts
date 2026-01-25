@@ -12,6 +12,7 @@ declare module "next-auth" {
       ocrQuotaUsed?: number;
       ocrQuotaLimit?: number;
       workoutsSaved?: number;
+      workoutsWeeklyUsed?: number;
       aiRequestsUsed?: number;
       onboardingCompleted?: boolean;
       onboardingSkipped?: boolean;
@@ -32,6 +33,7 @@ declare module "next-auth/jwt" {
     ocrQuotaUsed?: number;
     ocrQuotaLimit?: number;
     workoutsSaved?: number;
+    workoutsWeeklyUsed?: number;
     aiRequestsUsed?: number;
     onboardingCompleted?: boolean;
     onboardingSkipped?: boolean;
