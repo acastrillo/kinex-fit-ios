@@ -250,10 +250,7 @@ export default function LandingPage() {
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <Link
                                     href="/beta-signup"
-                                    className={cn(
-                                        buttonVariants({ size: "lg" }),
-                                        "bg-white text-[#FF6B35] hover:bg-white/90 hover:text-[#E55A2B] rounded-full px-10 h-14 text-lg font-bold shadow-lg"
-                                    )}
+                                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-lg font-bold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-white text-[#FF6B35] hover:bg-white/90 hover:text-[#E55A2B] px-10 h-14 shadow-lg"
                                 >
                                     Get Started for Free
                                 </Link>
