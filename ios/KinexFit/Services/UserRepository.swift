@@ -43,6 +43,27 @@ final class UserRepository {
         logger.debug("Scan quota incremented")
     }
 
+    /// Update user subscription information
+    func updateSubscription(
+        tier: SubscriptionTier,
+        status: SubscriptionStatus,
+        expiresAt: Date?
+    ) async throws {
+        try await database.dbQueue.write { db in
+            try db.execute(
+                sql: """
+                UPDATE users
+                SET subscriptionTier = ?,
+                    subscriptionStatus = ?,
+                    subscriptionExpiresAt = ?,
+                    updatedAt = ?
+                """,
+                arguments: [tier.rawValue, status.rawValue, expiresAt, Date()]
+            )
+        }
+        logger.info("Subscription updated: tier=\(tier.rawValue), status=\(status.rawValue)")
+    }
+
     /// Clear all user data (for sign out)
     func clear() async throws {
         try await database.dbQueue.write { db in

@@ -68,6 +68,7 @@ struct MainTabView: View {
         }
         .tint(AppTheme.accent)
         .preferredColorScheme(.dark)
+        .environmentObject(appState.environment.storeManager)
     }
 }
 

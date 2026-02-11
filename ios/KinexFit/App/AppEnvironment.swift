@@ -10,6 +10,8 @@ struct AppEnvironment {
     let authService: AuthService
     let workoutRepository: WorkoutRepository
     let userRepository: UserRepository
+    let purchaseValidator: PurchaseValidator
+    let storeManager: StoreManager
 
     static var live: AppEnvironment {
         let tokenStore = KeychainTokenStore()
@@ -23,6 +25,8 @@ struct AppEnvironment {
             let authService = AuthService(apiClient: apiClient, tokenStore: tokenStore, database: database)
             let workoutRepository = WorkoutRepository(database: database, syncEngine: syncEngine)
             let userRepository = UserRepository(database: database)
+            let purchaseValidator = PurchaseValidator(apiClient: apiClient, userRepository: userRepository)
+            let storeManager = StoreManager(purchaseValidator: purchaseValidator)
 
             return AppEnvironment(
                 apiClient: apiClient,
@@ -31,7 +35,9 @@ struct AppEnvironment {
                 syncEngine: syncEngine,
                 authService: authService,
                 workoutRepository: workoutRepository,
-                userRepository: userRepository
+                userRepository: userRepository,
+                purchaseValidator: purchaseValidator,
+                storeManager: storeManager
             )
         } catch {
             fatalError("Failed to initialize database: \(error)")
@@ -50,6 +56,8 @@ struct AppEnvironment {
             let authService = AuthService(apiClient: apiClient, tokenStore: tokenStore, database: database)
             let workoutRepository = WorkoutRepository(database: database, syncEngine: syncEngine)
             let userRepository = UserRepository(database: database)
+            let purchaseValidator = PurchaseValidator(apiClient: apiClient, userRepository: userRepository)
+            let storeManager = StoreManager(purchaseValidator: purchaseValidator)
 
             return AppEnvironment(
                 apiClient: apiClient,
@@ -58,7 +66,9 @@ struct AppEnvironment {
                 syncEngine: syncEngine,
                 authService: authService,
                 workoutRepository: workoutRepository,
-                userRepository: userRepository
+                userRepository: userRepository,
+                purchaseValidator: purchaseValidator,
+                storeManager: storeManager
             )
         } catch {
             fatalError("Failed to initialize preview database: \(error)")

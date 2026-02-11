@@ -4,6 +4,7 @@ struct ProfileTab: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var authViewModel: AuthViewModel
     @State private var showingSignOutConfirmation = false
+    @State private var showPaywall = false
 
     private var user: User? {
         authViewModel.authState.user
@@ -33,32 +34,10 @@ struct ProfileTab: View {
                     }
 
                     // Subscription Section
-                    Section("Subscription") {
-                        HStack {
-                            Label("Plan", systemImage: "crown")
-                            Spacer()
-                            Text(user.subscriptionTier.displayName)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        HStack {
-                            Label("Scans Used", systemImage: "doc.text.viewfinder")
-                            Spacer()
-                            Text("\(user.scanQuotaUsed) / \(user.subscriptionTier.scanLimit == .max ? "∞" : String(user.subscriptionTier.scanLimit))")
-                                .foregroundStyle(.secondary)
-                        }
-
-                        if user.subscriptionTier == .free {
-                            Button {
-                                // TODO: Show paywall
-                            } label: {
-                                HStack {
-                                    Text("Upgrade to Pro")
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                }
-                            }
-                        }
+                    Section {
+                        SubscriptionStatusView()
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
                     }
                 }
 
@@ -114,6 +93,9 @@ struct ProfileTab: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Are you sure you want to sign out?")
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
             }
         }
     }
