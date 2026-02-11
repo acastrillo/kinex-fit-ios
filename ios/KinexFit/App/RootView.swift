@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var authViewModel: AuthViewModel
+    @State private var showOnboarding = false
 
     init(environment: AppEnvironment) {
         _authViewModel = StateObject(wrappedValue: AuthViewModel(
@@ -20,13 +21,25 @@ struct RootView: View {
             case .signedOut:
                 SignInView(viewModel: authViewModel)
 
-            case .signedIn:
-                MainTabView(authViewModel: authViewModel)
+            case .signedIn(let user):
+                if showOnboarding {
+                    OnboardingCoordinator(onComplete: {
+                        showOnboarding = false
+                    })
+                } else {
+                    MainTabView(authViewModel: authViewModel)
+                }
             }
         }
         .animation(.easeInOut(duration: 0.3), value: authViewModel.authState)
         .task {
             await authViewModel.checkExistingSession()
+        }
+        .onChange(of: authViewModel.authState) { _, newState in
+            // Check if onboarding is needed when user signs in
+            if case .signedIn(let user) = newState {
+                showOnboarding = !user.onboardingCompleted
+            }
         }
     }
 }
