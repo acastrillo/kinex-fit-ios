@@ -24,7 +24,7 @@ struct AppEnvironment {
             // Initialize services
             let authService = AuthService(apiClient: apiClient, tokenStore: tokenStore, database: database)
             let workoutRepository = WorkoutRepository(database: database, syncEngine: syncEngine)
-            let userRepository = UserRepository(database: database)
+            let userRepository = UserRepository(database: database, apiClient: apiClient, tokenStore: tokenStore)
             let purchaseValidator = PurchaseValidator(apiClient: apiClient, userRepository: userRepository)
             let storeManager = StoreManager(purchaseValidator: purchaseValidator)
 
@@ -55,7 +55,7 @@ struct AppEnvironment {
             // Initialize services
             let authService = AuthService(apiClient: apiClient, tokenStore: tokenStore, database: database)
             let workoutRepository = WorkoutRepository(database: database, syncEngine: syncEngine)
-            let userRepository = UserRepository(database: database)
+            let userRepository = UserRepository(database: database, apiClient: apiClient, tokenStore: tokenStore)
             let purchaseValidator = PurchaseValidator(apiClient: apiClient, userRepository: userRepository)
             let storeManager = StoreManager(purchaseValidator: purchaseValidator)
 

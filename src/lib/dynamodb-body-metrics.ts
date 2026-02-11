@@ -242,3 +242,39 @@ export const dynamoDBBodyComposition = {
     );
   },
 };
+
+/**
+ * Delete all body metrics for a user (used during account deletion)
+ */
+export async function deleteAllUserMetrics(userId: string): Promise<void> {
+  // Query all metrics for the user
+  const result = await dynamoDb.send(
+    new QueryCommand({
+      TableName: BODY_METRICS_TABLE,
+      KeyConditionExpression: "userId = :userId",
+      ExpressionAttributeValues: {
+        ":userId": userId,
+      },
+      Limit: 1000, // Get up to 1000 metrics
+    })
+  );
+
+  const items = result.Items || [];
+
+  // Delete all metrics
+  await Promise.all(
+    items.map(item =>
+      dynamoDb.send(
+        new DeleteCommand({
+          TableName: BODY_METRICS_TABLE,
+          Key: {
+            userId: item.userId,
+            metricKey: item.metricKey,
+          },
+        })
+      )
+    )
+  );
+
+  console.log(`Deleted ${items.length} body metrics for user ${userId}`);
+}

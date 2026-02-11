@@ -8,9 +8,13 @@ private let logger = Logger(subsystem: "com.kinex.fit", category: "UserRepositor
 /// Handles local caching of user profile data
 final class UserRepository {
     private let database: AppDatabase
+    private let apiClient: APIClient
+    private let tokenStore: TokenStore
 
-    init(database: AppDatabase) {
+    init(database: AppDatabase, apiClient: APIClient, tokenStore: TokenStore) {
         self.database = database
+        self.apiClient = apiClient
+        self.tokenStore = tokenStore
     }
 
     // MARK: - Read Operations
@@ -70,6 +74,48 @@ final class UserRepository {
             try User.deleteAll(db)
         }
         logger.debug("User data cleared")
+    }
+
+    /// Delete user account permanently
+    /// This will:
+    /// 1. Call backend API to delete user data from DynamoDB
+    /// 2. Clear all local data (workouts, metrics, user info)
+    /// 3. Clear authentication tokens (signs user out)
+    func deleteAccount() async throws {
+        logger.warning("Initiating account deletion")
+
+        // Call backend to delete user data
+        let request = APIRequest(path: "/api/mobile/user/delete", method: .delete)
+
+        struct EmptyResponse: Decodable {}
+        let _: EmptyResponse = try await apiClient.send(request)
+
+        logger.info("Backend account deletion successful")
+
+        // Clear all local data
+        try await database.dbQueue.write { db in
+            // Delete all workouts
+            try db.execute(sql: "DELETE FROM workouts")
+
+            // Delete all body metrics
+            try db.execute(sql: "DELETE FROM body_metrics")
+
+            // Delete all sync queue items
+            try db.execute(sql: "DELETE FROM sync_queue")
+
+            // Delete user data
+            try db.execute(sql: "DELETE FROM users")
+
+            // Delete settings
+            try db.execute(sql: "DELETE FROM settings")
+
+            logger.info("Local database cleared")
+        }
+
+        // Clear authentication tokens (signs user out)
+        try await tokenStore.clearTokens()
+
+        logger.warning("Account deletion complete")
     }
 
     // MARK: - Observation

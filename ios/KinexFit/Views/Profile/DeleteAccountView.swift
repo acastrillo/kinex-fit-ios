@@ -112,21 +112,17 @@ struct DeleteAccountView: View {
 
         Task {
             do {
-                // TODO: Implement actual account deletion in Phase 5
-                // For now, this is a placeholder that will be completed later
-                // The full implementation will:
+                // Call UserRepository to delete account
+                // This will:
                 // 1. Call backend API to delete user data
-                // 2. Cancel active subscriptions
-                // 3. Clear local database
-                // 4. Clear tokens and sign out
+                // 2. Clear local database (workouts, metrics, user data)
+                // 3. Clear auth tokens
+                try await appState.environment.userRepository.deleteAccount()
 
-                try await Task.sleep(for: .seconds(2)) // Simulate API call
-
-                // Placeholder error for now
+                // Account deleted successfully - user is now signed out
+                // The auth state will automatically update and show sign-in screen
                 await MainActor.run {
-                    errorMessage = "Account deletion will be available in the next update. For immediate assistance, please contact support@kinexfit.com"
-                    showError = true
-                    isDeleting = false
+                    dismiss()
                 }
             } catch {
                 await MainActor.run {

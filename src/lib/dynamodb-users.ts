@@ -89,3 +89,19 @@ export async function incrementUserQuota(
     throw error;
   }
 }
+
+/**
+ * Delete user permanently
+ */
+export async function deleteUser(userId: string): Promise<void> {
+  try {
+    await dynamoDBUsers.delete({
+      Key: { userId },
+    });
+
+    console.log(`Deleted user: ${userId}`);
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
+}

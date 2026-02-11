@@ -162,3 +162,18 @@ export async function updateWorkout(
 export async function deleteWorkout(userId: string, workoutId: string): Promise<void> {
   return await dynamoDBWorkouts.delete(userId, workoutId);
 }
+
+/**
+ * Delete all workouts for a user (used during account deletion)
+ */
+export async function deleteAllUserWorkouts(userId: string): Promise<void> {
+  // Get all workouts for the user
+  const workouts = await dynamoDBWorkouts.list(userId, 1000); // Get up to 1000 workouts
+
+  // Delete each workout
+  await Promise.all(
+    workouts.map(workout => dynamoDBWorkouts.delete(userId, workout.workoutId))
+  );
+
+  console.log(`Deleted ${workouts.length} workouts for user ${userId}`);
+}
