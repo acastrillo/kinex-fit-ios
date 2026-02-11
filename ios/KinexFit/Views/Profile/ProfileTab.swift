@@ -65,37 +65,15 @@ struct ProfileTab: View {
                 // App Section
                 Section("App") {
                     NavigationLink {
-                        Text("Settings coming soon")
-                            .navigationTitle("Settings")
+                        SettingsView()
                     } label: {
                         Label("Settings", systemImage: "gear")
                     }
 
                     NavigationLink {
-                        Text("Help & Support coming soon")
-                            .navigationTitle("Help & Support")
+                        HelpView()
                     } label: {
                         Label("Help & Support", systemImage: "questionmark.circle")
-                    }
-
-                    Link(destination: URL(string: "https://kinex.fit/privacy")!) {
-                        HStack {
-                            Label("Privacy Policy", systemImage: "hand.raised")
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Link(destination: URL(string: "https://kinex.fit/terms")!) {
-                        HStack {
-                            Label("Terms of Service", systemImage: "doc.text")
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
                     }
                 }
 
