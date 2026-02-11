@@ -105,3 +105,37 @@ export async function deleteUser(userId: string): Promise<void> {
     throw error;
   }
 }
+
+/**
+ * Register device token for push notifications
+ */
+export async function registerDeviceToken(
+  userId: string,
+  deviceToken: string,
+  platform: 'ios' | 'android'
+): Promise<void> {
+  try {
+    const now = new Date().toISOString();
+
+    await dynamoDBUsers.update({
+      Key: { userId },
+      UpdateExpression: `
+        SET pushNotificationToken = :token,
+            pushNotificationPlatform = :platform,
+            pushNotificationRegisteredAt = :registeredAt,
+            updatedAt = :updatedAt
+      `,
+      ExpressionAttributeValues: {
+        ':token': deviceToken,
+        ':platform': platform,
+        ':registeredAt': now,
+        ':updatedAt': now,
+      },
+    });
+
+    console.log(`Registered device token for user ${userId}`);
+  } catch (error) {
+    console.error('Error registering device token:', error);
+    throw error;
+  }
+}

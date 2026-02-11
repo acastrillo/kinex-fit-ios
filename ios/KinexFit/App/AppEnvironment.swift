@@ -12,6 +12,7 @@ struct AppEnvironment {
     let userRepository: UserRepository
     let purchaseValidator: PurchaseValidator
     let storeManager: StoreManager
+    let notificationManager: NotificationManager
 
     static var live: AppEnvironment {
         let tokenStore = KeychainTokenStore()
@@ -27,6 +28,7 @@ struct AppEnvironment {
             let userRepository = UserRepository(database: database, apiClient: apiClient, tokenStore: tokenStore)
             let purchaseValidator = PurchaseValidator(apiClient: apiClient, userRepository: userRepository)
             let storeManager = StoreManager(purchaseValidator: purchaseValidator)
+            let notificationManager = NotificationManager(apiClient: apiClient)
 
             return AppEnvironment(
                 apiClient: apiClient,
@@ -37,7 +39,8 @@ struct AppEnvironment {
                 workoutRepository: workoutRepository,
                 userRepository: userRepository,
                 purchaseValidator: purchaseValidator,
-                storeManager: storeManager
+                storeManager: storeManager,
+                notificationManager: notificationManager
             )
         } catch {
             fatalError("Failed to initialize database: \(error)")
@@ -58,6 +61,7 @@ struct AppEnvironment {
             let userRepository = UserRepository(database: database, apiClient: apiClient, tokenStore: tokenStore)
             let purchaseValidator = PurchaseValidator(apiClient: apiClient, userRepository: userRepository)
             let storeManager = StoreManager(purchaseValidator: purchaseValidator)
+            let notificationManager = NotificationManager(apiClient: apiClient)
 
             return AppEnvironment(
                 apiClient: apiClient,
@@ -68,7 +72,8 @@ struct AppEnvironment {
                 workoutRepository: workoutRepository,
                 userRepository: userRepository,
                 purchaseValidator: purchaseValidator,
-                storeManager: storeManager
+                storeManager: storeManager,
+                notificationManager: notificationManager
             )
         } catch {
             fatalError("Failed to initialize preview database: \(error)")
