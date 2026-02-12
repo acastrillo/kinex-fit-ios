@@ -8,7 +8,10 @@ struct RootView: View {
     init(environment: AppEnvironment) {
         _authViewModel = StateObject(wrappedValue: AuthViewModel(
             authService: environment.authService,
-            userRepository: environment.userRepository
+            userRepository: environment.userRepository,
+            googleSignInManager: environment.googleSignInManager,
+            facebookSignInManager: environment.facebookSignInManager,
+            emailPasswordAuthService: environment.emailPasswordAuthService
         ))
     }
 

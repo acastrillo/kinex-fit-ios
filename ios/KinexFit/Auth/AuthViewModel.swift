@@ -14,15 +14,21 @@ final class AuthViewModel: ObservableObject {
 
     private let authService: AuthService
     private let userRepository: UserRepository
+    private let googleSignInManager: GoogleSignInManager
+    private let facebookSignInManager: FacebookSignInManager
+    private let emailPasswordAuthService: EmailPasswordAuthService
 
     #if DEBUG
     /// Enable dev mode to bypass authentication (DEBUG builds only)
     @Published var devModeEnabled: Bool = false
     #endif
 
-    init(authService: AuthService, userRepository: UserRepository) {
+    init(authService: AuthService, userRepository: UserRepository, googleSignInManager: GoogleSignInManager, facebookSignInManager: FacebookSignInManager, emailPasswordAuthService: EmailPasswordAuthService) {
         self.authService = authService
         self.userRepository = userRepository
+        self.googleSignInManager = googleSignInManager
+        self.facebookSignInManager = facebookSignInManager
+        self.emailPasswordAuthService = emailPasswordAuthService
     }
 
     // MARK: - Initialization
@@ -137,11 +143,165 @@ final class AuthViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Sign In with Google
+
+    /// Handle Google Sign In
+    func handleGoogleSignIn() async {
+        isLoading = true
+        error = nil
+
+        defer { isLoading = false }
+
+        do {
+            logger.info("Starting Google Sign In")
+            let googleResult = try await googleSignInManager.signIn()
+
+            logger.info("Google Sign In successful, authenticating with backend")
+
+            let user = try await authService.signIn(
+                provider: .google,
+                identityToken: googleResult.idToken,
+                firstName: googleResult.firstName,
+                lastName: googleResult.lastName
+            )
+
+            authState = .signedIn(user)
+            logger.info("Google authentication successful")
+        } catch let googleError as GoogleSignInError {
+            // Don't show error for user cancellation
+            if case .userCancelled = googleError {
+                logger.info("User cancelled Google Sign In")
+                return
+            }
+
+            error = .providerError(googleError.localizedDescription ?? "Google Sign In failed")
+            logger.error("Google Sign In failed: \(googleError.localizedDescription ?? "unknown")")
+        } catch let authError as AuthError {
+            error = authError
+            logger.error("Backend authentication failed: \(authError.localizedDescription)")
+        } catch {
+            self.error = .networkError(error)
+            logger.error("Google Sign In failed: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Sign In with Facebook
+
+    /// Handle Facebook Sign In
+    func handleFacebookSignIn() async {
+        isLoading = true
+        error = nil
+
+        defer { isLoading = false }
+
+        do {
+            logger.info("Starting Facebook Sign In")
+            let facebookResult = try await facebookSignInManager.signIn()
+
+            logger.info("Facebook Sign In successful, authenticating with backend")
+
+            let user = try await authService.signIn(
+                provider: .facebook,
+                identityToken: facebookResult.accessToken,
+                firstName: facebookResult.firstName,
+                lastName: facebookResult.lastName
+            )
+
+            authState = .signedIn(user)
+            logger.info("Facebook authentication successful")
+        } catch let facebookError as FacebookSignInError {
+            // Don't show error for user cancellation
+            if case .userCancelled = facebookError {
+                logger.info("User cancelled Facebook Sign In")
+                return
+            }
+
+            error = .providerError(facebookError.localizedDescription ?? "Facebook Sign In failed")
+            logger.error("Facebook Sign In failed: \(facebookError.localizedDescription ?? "unknown")")
+        } catch let authError as AuthError {
+            error = authError
+            logger.error("Backend authentication failed: \(authError.localizedDescription)")
+        } catch {
+            self.error = .networkError(error)
+            logger.error("Facebook Sign In failed: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Email/Password Sign In
+
+    /// Handle email/password sign in
+    func handleEmailPasswordSignIn(email: String, password: String) async {
+        isLoading = true
+        error = nil
+
+        defer { isLoading = false }
+
+        do {
+            logger.info("Starting email/password sign in")
+            let user = try await emailPasswordAuthService.signIn(email: email, password: password)
+
+            authState = .signedIn(user)
+            logger.info("Email/password sign in successful")
+        } catch let authError as AuthError {
+            error = authError
+            logger.error("Email/password sign in failed: \(authError.localizedDescription)")
+        } catch {
+            self.error = .networkError(error)
+            logger.error("Email/password sign in failed: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Email/Password Sign Up
+
+    /// Handle email/password sign up
+    func handleEmailPasswordSignUp(
+        email: String,
+        password: String,
+        passwordConfirmation: String,
+        firstName: String?,
+        lastName: String?
+    ) async {
+        isLoading = true
+        error = nil
+
+        defer { isLoading = false }
+
+        // Validate passwords match
+        guard password == passwordConfirmation else {
+            error = .passwordsDoNotMatch
+            logger.warning("Passwords do not match")
+            return
+        }
+
+        do {
+            logger.info("Starting email/password sign up")
+            let user = try await emailPasswordAuthService.signUp(
+                email: email,
+                password: password,
+                firstName: firstName,
+                lastName: lastName
+            )
+
+            authState = .signedIn(user)
+            logger.info("Email/password sign up successful")
+        } catch let authError as AuthError {
+            error = authError
+            logger.error("Email/password sign up failed: \(authError.localizedDescription)")
+        } catch {
+            self.error = .networkError(error)
+            logger.error("Email/password sign up failed: \(error.localizedDescription)")
+        }
+    }
+
     // MARK: - Sign Out
 
     func signOut() async {
         isLoading = true
         defer { isLoading = false }
+
+        // Sign out from OAuth providers
+        googleSignInManager.signOut()
+        facebookSignInManager.signOut()
 
         await authService.signOut()
         authState = .signedOut
@@ -161,7 +321,10 @@ extension AuthViewModel {
     static var preview: AuthViewModel {
         AuthViewModel(
             authService: AppEnvironment.preview.authService,
-            userRepository: AppEnvironment.preview.userRepository
+            userRepository: AppEnvironment.preview.userRepository,
+            googleSignInManager: GoogleSignInManager(),
+            facebookSignInManager: FacebookSignInManager(),
+            emailPasswordAuthService: AppEnvironment.preview.emailPasswordAuthService
         )
     }
 

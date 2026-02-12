@@ -13,6 +13,9 @@ struct AppEnvironment {
     let purchaseValidator: PurchaseValidator
     let storeManager: StoreManager
     let notificationManager: NotificationManager
+    let googleSignInManager: GoogleSignInManager
+    let facebookSignInManager: FacebookSignInManager
+    let emailPasswordAuthService: EmailPasswordAuthService
 
     static var live: AppEnvironment {
         let tokenStore = KeychainTokenStore()
@@ -62,6 +65,13 @@ struct AppEnvironment {
             let purchaseValidator = PurchaseValidator(apiClient: apiClient, userRepository: userRepository)
             let storeManager = StoreManager(purchaseValidator: purchaseValidator)
             let notificationManager = NotificationManager(apiClient: apiClient)
+            let googleSignInManager = GoogleSignInManager()
+            let facebookSignInManager = FacebookSignInManager()
+            let emailPasswordAuthService = EmailPasswordAuthService(
+                apiClient: apiClient,
+                tokenStore: tokenStore,
+                database: database
+            )
 
             return AppEnvironment(
                 apiClient: apiClient,
@@ -73,7 +83,10 @@ struct AppEnvironment {
                 userRepository: userRepository,
                 purchaseValidator: purchaseValidator,
                 storeManager: storeManager,
-                notificationManager: notificationManager
+                notificationManager: notificationManager,
+                googleSignInManager: googleSignInManager,
+                facebookSignInManager: facebookSignInManager,
+                emailPasswordAuthService: emailPasswordAuthService
             )
         } catch {
             fatalError("Failed to initialize preview database: \(error)")

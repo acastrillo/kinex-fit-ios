@@ -4,6 +4,7 @@ import SwiftUI
 struct SignInView: View {
     @ObservedObject var viewModel: AuthViewModel
     @Environment(\.colorScheme) private var colorScheme
+    @State private var showEmailSignIn = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -69,6 +70,77 @@ struct SignInView: View {
                 .frame(height: 50)
                 .cornerRadius(8)
 
+                // Google Sign In
+                Button {
+                    Task {
+                        await viewModel.handleGoogleSignIn()
+                    }
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "globe")
+                            .font(.system(size: 20))
+                        Text("Continue with Google")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.white)
+                    .foregroundStyle(Color.black)
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                // Facebook Sign In
+                Button {
+                    Task {
+                        await viewModel.handleFacebookSignIn()
+                    }
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "f.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(Color(red: 24/255, green: 119/255, blue: 242/255))
+                        Text("Continue with Facebook")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.white)
+                    .foregroundStyle(Color.black)
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                // Email/Password Sign In
+                Button {
+                    showEmailSignIn = true
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "envelope.fill")
+                            .font(.system(size: 20))
+                        Text("Continue with Email")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.white)
+                    .foregroundStyle(Color.black)
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
                 #if DEBUG
                 // Development bypass button (DEBUG builds only)
                 Button {
@@ -114,6 +186,9 @@ struct SignInView: View {
             }
         } message: { error in
             Text(error.localizedDescription)
+        }
+        .sheet(isPresented: $showEmailSignIn) {
+            EmailSignInSheet(viewModel: viewModel)
         }
     }
 }

@@ -119,6 +119,15 @@ enum AuthError: Error, LocalizedError {
     case serverError(String)
     case unknown
 
+    // Email/Password specific errors
+    case invalidPassword([PasswordValidationError])
+    case passwordsDoNotMatch
+    case emailAlreadyExists
+    case weakPassword
+    case emailNotVerified
+    case accountDisabled
+    case userCancelled
+
     var errorDescription: String? {
         switch self {
         case .invalidIdentityToken:
@@ -137,6 +146,20 @@ enum AuthError: Error, LocalizedError {
             return message
         case .unknown:
             return "An unexpected error occurred"
+        case .invalidPassword(let errors):
+            return "Password requirements not met: \(errors.map { $0.rawValue }.joined(separator: ", "))"
+        case .passwordsDoNotMatch:
+            return "Passwords do not match"
+        case .emailAlreadyExists:
+            return "An account with this email already exists. Please sign in."
+        case .weakPassword:
+            return "Password is too weak. Please use a stronger password."
+        case .emailNotVerified:
+            return "Please verify your email before signing in"
+        case .accountDisabled:
+            return "Your account has been disabled. Please contact support."
+        case .userCancelled:
+            return nil // Don't show error for user cancellation
         }
     }
 }
