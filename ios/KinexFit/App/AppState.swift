@@ -8,6 +8,14 @@ final class AppState: ObservableObject {
     /// Service for managing Instagram imports from Share Extension
     let instagramImportService = InstagramImportService()
 
+    // MARK: - Instagram Fetch State
+
+    /// Pending Instagram workout from URL fetch (for edit sheet)
+    @Published var pendingInstagramWorkout: FetchedWorkout?
+
+    /// Controls visibility of Instagram workout edit sheet
+    @Published var showInstagramEditSheet = false
+
     init(environment: AppEnvironment = .live) {
         self.environment = environment
 
@@ -18,5 +26,13 @@ final class AppState: ObservableObject {
     /// Check for pending imports (call on app activation)
     func checkForPendingImports() {
         instagramImportService.refreshPendingImports()
+    }
+
+    // MARK: - Navigation Helpers
+
+    /// Navigate to Instagram workout edit view
+    func navigateToInstagramEdit(_ workout: FetchedWorkout) {
+        pendingInstagramWorkout = workout
+        showInstagramEditSheet = true
     }
 }

@@ -48,7 +48,7 @@ struct MainTabView: View {
                 }
                 .tag(Tab.library)
 
-            AddWorkoutTab()
+            CreateWorkoutView()
                 .tabItem {
                     Label(Tab.add.title, systemImage: Tab.add.icon)
                 }
