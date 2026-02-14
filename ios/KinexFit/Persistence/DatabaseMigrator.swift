@@ -53,6 +53,12 @@ struct DatabaseMigratorFactory {
             }
         }
 
+        migrator.registerMigration("add-subscriptionExpiresAt") { db in
+            try db.alter(table: "users") { table in
+                table.add(column: "subscriptionExpiresAt", .datetime)
+            }
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

@@ -10,6 +10,7 @@ struct User: Codable, Equatable, Identifiable {
     var lastName: String?
     var subscriptionTier: SubscriptionTier
     var subscriptionStatus: SubscriptionStatus?
+    var subscriptionExpiresAt: Date?
     var scanQuotaUsed: Int
     var aiQuotaUsed: Int
     var onboardingCompleted: Bool
@@ -84,6 +85,7 @@ extension User: FetchableRecord, PersistableRecord {
         case id, email, firstName, lastName
         case subscriptionTier = "tier"
         case subscriptionStatus
+        case subscriptionExpiresAt
         case scanQuotaUsed, aiQuotaUsed
         case onboardingCompleted
         case updatedAt
@@ -96,6 +98,7 @@ extension User: FetchableRecord, PersistableRecord {
         lastName = row[Columns.lastName]
         subscriptionTier = SubscriptionTier(rawValue: row[Columns.subscriptionTier] ?? "free") ?? .free
         subscriptionStatus = (row[Columns.subscriptionStatus] as String?).flatMap { SubscriptionStatus(rawValue: $0) }
+        subscriptionExpiresAt = row[Columns.subscriptionExpiresAt]
         scanQuotaUsed = row[Columns.scanQuotaUsed]
         aiQuotaUsed = row[Columns.aiQuotaUsed]
         onboardingCompleted = row[Columns.onboardingCompleted] ?? false
@@ -109,6 +112,7 @@ extension User: FetchableRecord, PersistableRecord {
         container[Columns.lastName] = lastName
         container[Columns.subscriptionTier] = subscriptionTier.rawValue
         container[Columns.subscriptionStatus] = subscriptionStatus?.rawValue
+        container[Columns.subscriptionExpiresAt] = subscriptionExpiresAt
         container[Columns.scanQuotaUsed] = scanQuotaUsed
         container[Columns.aiQuotaUsed] = aiQuotaUsed
         container[Columns.onboardingCompleted] = onboardingCompleted
