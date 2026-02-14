@@ -30,22 +30,25 @@ struct User: Codable, Equatable, Identifiable {
 
 enum SubscriptionTier: String, Codable, CaseIterable {
     case free
+    case core
     case pro
-    case unlimited
+    case elite
 
     var displayName: String {
         switch self {
         case .free: return "Free"
+        case .core: return "Core"
         case .pro: return "Pro"
-        case .unlimited: return "Unlimited"
+        case .elite: return "Elite"
         }
     }
 
     var scanLimit: Int {
         switch self {
-        case .free: return 2
-        case .pro: return 50
-        case .unlimited: return .max
+        case .free: return 8
+        case .core: return 12
+        case .pro: return 60
+        case .elite: return .max
         }
     }
 }

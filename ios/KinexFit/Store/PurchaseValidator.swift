@@ -82,17 +82,17 @@ struct ValidateReceiptResponse: Codable {
 
 extension PurchaseValidator {
     static var preview: PurchaseValidator {
-        PurchaseValidator(
-            apiClient: APIClient(
-                baseURL: URL(string: "https://kinexfit.com")!,
-                tokenStore: InMemoryTokenStore()
-            ),
+        let tokenStore = InMemoryTokenStore()
+        let apiClient = APIClient(
+            baseURL: URL(string: "https://kinexfit.com")!,
+            tokenStore: tokenStore
+        )
+        return PurchaseValidator(
+            apiClient: apiClient,
             userRepository: UserRepository(
-                apiClient: APIClient(
-                    baseURL: URL(string: "https://kinexfit.com")!,
-                    tokenStore: InMemoryTokenStore()
-                ),
-                database: AppDatabase.inMemory()
+                database: AppDatabase.inMemory(),
+                apiClient: apiClient,
+                tokenStore: tokenStore
             )
         )
     }

@@ -128,35 +128,22 @@ actor InstagramFetchService {
     /// Map APIError to InstagramFetchError
     private func mapAPIError(_ apiError: APIError) -> InstagramFetchError {
         switch apiError {
-        case .unauthorized:
-            return .unauthorized
-
-        case .httpError(let statusCode, let data):
-            // Try to decode error response for specific error types
-            if let data = data,
-               let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
-                return mapErrorResponse(errorResponse, statusCode: statusCode)
-            }
-
-            // Map common HTTP status codes
+        case .httpStatus(let statusCode):
             switch statusCode {
+            case 401:
+                return .unauthorized
             case 404:
                 return .postNotFound
             case 429:
                 return .rateLimited
-            case 500...599:
-                return .serverError(statusCode: statusCode)
             default:
                 return .serverError(statusCode: statusCode)
             }
 
-        case .decodingError(let error):
+        case .decoding(let error):
             return .decodingError(error)
 
-        case .networkError(let error):
-            return .networkError(error)
-
-        case .invalidResponse:
+        case .invalidURL, .invalidResponse:
             return .serverError(statusCode: 0)
         }
     }
