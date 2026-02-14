@@ -4,122 +4,112 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Kinex Fit is an AI-powered fitness application built with Next.js 15, TypeScript, and AWS infrastructure. It provides workout tracking, AI-assisted workout generation via AWS Bedrock (Claude models), progress analytics, and Stripe-based subscriptions.
+Kinex Fit is an AI-powered fitness iOS application built with Swift and SwiftUI. It connects to a Next.js backend API hosted at `https://kinexfit.com` for workout tracking, AI-assisted workout generation, progress analytics, and subscription management via StoreKit 2.
 
-## Common Commands
+## Building & Running
 
-```bash
-npm run dev          # Start dev server with Turbopack (port 3000)
-npm run build        # Build for production
-npm run lint         # Run ESLint
-npm run db:push      # Push Prisma schema to SQLite (local dev)
-npm run db:generate  # Generate Prisma client
-```
-
-Testing with Playwright:
-```bash
-npx playwright test                    # Run all E2E tests
-npx playwright test tests/auth-flow.spec.ts  # Run specific test file
-```
+Open `ios/Kinex Fit.xcodeproj` in Xcode 15+ and build for iOS 17+. Swift Package Manager handles dependencies (Google Sign-In, Facebook SDK) — resolved automatically on first open.
 
 ## Architecture
 
 ### Tech Stack
-- **Frontend**: Next.js 15 App Router, React 19, Tailwind CSS, shadcn/ui (Radix primitives)
-- **Backend**: Next.js API Routes, TypeScript strict mode
-- **Database**: SQLite + Prisma (local dev), DynamoDB (production)
-- **Auth**: NextAuth.js with Google, Facebook, and credentials providers
-- **AI**: AWS Bedrock (Claude Opus 4.5, Sonnet 4.5, Haiku 4.5)
-- **Payments**: Stripe subscriptions with webhook handling
-- **State**: Zustand for client state (`useAuthStore`)
+- **Language**: Swift (async/await concurrency)
+- **UI Framework**: SwiftUI
+- **Auth**: Google Sign-In, Facebook Login, Email/Password (token-based via backend)
+- **Networking**: URLSession with async/await (`APIClient`)
+- **Local Storage**: SQLite via `AppDatabase` / `DatabaseMigrator`
+- **In-App Purchases**: StoreKit 2 (`StoreManager`, `PurchaseValidator`)
+- **Background Sync**: BackgroundTasks framework (`SyncEngine`)
+- **Image/OCR**: Vision framework (`OCRService`, `TextExtractionService`)
 
 ### Directory Structure
 ```
-src/
-├── app/                    # Next.js App Router
-│   ├── api/               # API routes (REST endpoints)
-│   │   ├── ai/           # AI generation endpoints
-│   │   ├── auth/         # NextAuth handlers
-│   │   ├── stripe/       # Payment endpoints
-│   │   ├── workouts/     # Workout CRUD
-│   │   └── admin/        # Admin endpoints
-│   └── [routes]/         # Page components
-├── components/
-│   ├── ui/               # shadcn UI components
-│   └── [feature]/        # Feature-specific components
-├── lib/                   # Server utilities
-│   ├── ai/               # Bedrock client, generators
-│   ├── dynamodb.ts       # DynamoDB operations
-│   ├── auth-options.ts   # NextAuth configuration
-│   ├── api-auth.ts       # API auth middleware
-│   ├── subscription-tiers.ts  # Tier definitions
-│   └── smartWorkoutParser.ts  # Workout text parsing
-└── types/                 # TypeScript definitions
+ios/
+├── Kinex Fit.xcodeproj/        # Xcode project
+├── Kinex Fit.entitlements       # App capabilities
+├── KinexFit/
+│   ├── App/                     # App lifecycle & configuration
+│   │   ├── KinexFitApp.swift    # @main SwiftUI app entry
+│   │   ├── AppDelegate.swift    # UIKit delegate bridge
+│   │   ├── AppState.swift       # Global observable state
+│   │   ├── AppConfig.swift      # API base URL config
+│   │   ├── AppEnvironment.swift # Dependency container
+│   │   ├── RootView.swift       # Root navigation view
+│   │   └── Theme.swift          # Design tokens
+│   ├── Auth/                    # Authentication
+│   │   ├── AuthViewModel.swift  # Auth state management
+│   │   └── TokenStore.swift     # Secure token storage
+│   ├── Models/                  # Data models
+│   │   ├── User.swift, Workout.swift, BodyMetric.swift, etc.
+│   │   └── AI/AIModels.swift    # AI request/response models
+│   ├── Networking/              # API communication
+│   │   ├── APIClient.swift      # Centralized HTTP client
+│   │   └── APIRequest.swift     # Request builders
+│   ├── Services/                # Business logic
+│   │   ├── AuthService.swift, AIService.swift
+│   │   ├── GoogleSignInManager.swift, FacebookSignInManager.swift
+│   │   ├── InstagramFetchService.swift, InstagramImportService.swift
+│   │   ├── WorkoutRepository.swift, UserRepository.swift
+│   │   ├── OCRService.swift, TextExtractionService.swift
+│   │   └── NotificationManager.swift
+│   ├── Persistence/             # Local database
+│   │   ├── AppDatabase.swift
+│   │   └── DatabaseMigrator.swift
+│   ├── Store/                   # In-app purchases
+│   │   ├── StoreManager.swift
+│   │   ├── PurchaseValidator.swift
+│   │   └── ProductIDs.swift
+│   ├── Sync/                    # Background sync
+│   │   ├── SyncEngine.swift
+│   │   ├── BackgroundSyncTask.swift
+│   │   └── NetworkMonitor.swift
+│   ├── Views/                   # SwiftUI views (tab-based)
+│   │   ├── Main/MainTabView.swift
+│   │   ├── Home/                # Dashboard
+│   │   ├── Create/              # Workout creation (with import tabs)
+│   │   ├── Add/                 # Add workout manually
+│   │   ├── Metrics/             # Progress analytics
+│   │   ├── Profile/             # User settings
+│   │   ├── Auth/                # Sign in/up flows
+│   │   ├── AI/                  # AI enhancement UI
+│   │   ├── Store/               # Subscription UI
+│   │   ├── Scan/                # OCR scanning
+│   │   ├── Onboarding/          # First-run onboarding
+│   │   ├── Import/              # Workout import
+│   │   ├── Workouts/            # Workout list/detail
+│   │   ├── Notifications/       # Notification views
+│   │   └── Components/          # Reusable UI components
+│   └── Resources/
+│       ├── Assets.xcassets/     # App icons, colors
+│       ├── Info.plist           # App metadata
+│       └── PrivacyInfo.xcprivacy
+└── KinexFitShareExtension/      # iOS Share Extension
 ```
 
 ### Key Patterns
 
-**API Route Authentication**:
-```typescript
-import { getAuthenticatedUserId } from "@/lib/api-auth";
+**API Communication**: All network calls go through `APIClient` which handles auth tokens, base URL, and error mapping.
 
-export async function GET(request: NextRequest) {
-  const auth = await getAuthenticatedUserId();
-  if ('error' in auth) return auth.error;
-  const { userId } = auth;
-  // ... rest of handler
-}
-```
+**Dependency Injection**: `AppEnvironment` acts as a service container, injected via SwiftUI environment.
 
-**Database Access** (production uses DynamoDB wrappers):
-```typescript
-import { dynamoDBUsers, dynamoDBWorkouts } from "@/lib/dynamodb";
+**Auth Flow**: `AuthViewModel` manages sign-in state. Tokens stored securely via `TokenStore`. OAuth handled through Google/Facebook SDKs with URL callback in `KinexFitApp.onOpenURL`.
 
-await dynamoDBWorkouts.list(userId, limit);
-await dynamoDBUsers.get(userId);
-```
-
-**Rate Limiting**:
-```typescript
-import { checkRateLimit } from "@/lib/rate-limit";
-
-const rateLimit = await checkRateLimit(userId, 'api:read');
-if (!rateLimit.success) { /* return 429 */ }
-```
-
-### Subscription Tiers
-- **Free**: 3 workouts/week, 1 AI request/month, 90-day history
-- **Core** ($8.99/mo): Unlimited workouts, 10 AI requests/month
-- **Pro** ($13.99/mo): 30 AI requests/month, unlimited imports
-- **Elite** ($19.99/mo): 50 AI requests/month, priority support
-
-### Path Alias
-Use `@/*` which maps to `./src/*` (configured in tsconfig.json).
+**Backend API**: The iOS app connects to the Kinex Fit web API at `https://kinexfit.com` (configured in `AppConfig.swift`).
 
 ## Key Files
 
-- `src/lib/auth-options.ts` - NextAuth providers and callbacks
-- `src/lib/dynamodb.ts` - All DynamoDB table operations
-- `src/lib/ai/bedrock-client.ts` - Claude model invocation
-- `src/lib/smartWorkoutParser.ts` - Heuristic workout text parser
-- `src/middleware.ts` - Security headers (CSP, HSTS, etc.)
-- `src/lib/subscription-tiers.ts` - Tier definitions and limits
+- `ios/KinexFit/App/KinexFitApp.swift` - App entry point
+- `ios/KinexFit/App/AppEnvironment.swift` - Dependency container
+- `ios/KinexFit/App/AppConfig.swift` - API base URL
+- `ios/KinexFit/Networking/APIClient.swift` - HTTP client
+- `ios/KinexFit/Auth/AuthViewModel.swift` - Auth state
+- `ios/KinexFit/Services/WorkoutRepository.swift` - Workout data access
+- `ios/KinexFit/Store/StoreManager.swift` - StoreKit 2 purchases
 
 ## Documentation
 
-Detailed documentation is in `docs/`:
-- `docs/COMPREHENSIVE-GUIDE.md` - Full project overview
-- `docs/ARCHITECTURE.md` - System design with diagrams
-- `docs/DATABASE.md` - DynamoDB schema and patterns
-- `docs/AI-INTEGRATION.md` - Bedrock setup and usage
-- `docs/AUTHENTICATION.md` - NextAuth deep dive
-
-## Environment Variables
-
-Key variables needed (see `.env.example`):
-- `AUTH_SECRET` - NextAuth signing secret
-- `GOOGLE_CLIENT_ID/SECRET` - OAuth
-- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` - Payments
-- `AWS_REGION`, `AWS_BEDROCK_REGION` - AWS services
-- `DYNAMODB_*_TABLE` - Table names
-- `UPSTASH_REDIS_*` - Rate limiting
+iOS-specific documentation in `docs/`:
+- `docs/APP-ICON-AI-GENERATION.md` - App icon generation prompts
+- `docs/LAUNCH-SCREEN-SETUP.md` - Launch screen configuration
+- `docs/TESTING-CHECKLIST.md` - QA testing checklist
+- `docs/LAUNCH-READINESS.md` - Launch readiness tracker

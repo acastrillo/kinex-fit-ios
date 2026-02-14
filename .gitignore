@@ -1,61 +1,33 @@
-﻿# Node
-node_modules/
-.next/
-.nextignore
-.vscode/
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+
+# CocoaPods (if used later)
+Pods/
+
+# macOS
 .DS_Store
+*.swp
+*~
+
+# IDE
+.vscode/
+.claude/
+
+# Environment / secrets
 .env
 .env.local
 .env.*.local
-.env*.backup
-package-lock.json
-.claude/
 .mcp.json
 
-# AWS Task Definitions (temporary/generated)
-task-def*.json
-aws-task-definition.json
-aws-task-definition-updated.json
-
-.env.production
-
-# Build/test artifacts to reduce watcher churn
-infrastructure_backup/
-**/cdk.out/
-playwright-report/
-test-results/
-
-# Temporary files and logs
-.session-cookie
-tmp-*.json
-tmp-*.txt
-tmp-*.log
+# Temporary files
 *.log
-build-log*.txt
-build.log
-build-output.txt
-deployment.log
-task-logs*.json
-task-logs*.txt
-nul
-
-# Temporary config/policy files
-cert-validation.json
-key.json
-ssm-policy.json
-updated-iam-policy.json
-tmp-iam-policy.json
-
-# TypeScript build artifacts
-tsconfig.temp.json
-tsconfig.tsbuildinfo
-
-# Local database artifacts
-prisma/**/*.db
-
-# Stripe configuration scripts with live keys (but not templates)
-scripts/update-stripe-to-live.ps1
-
-# Documentation directories
-docs/
-data/docs/
+tmp-*
