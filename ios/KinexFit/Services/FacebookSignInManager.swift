@@ -37,6 +37,7 @@ enum FacebookSignInError: Error, LocalizedError {
 }
 
 /// Manager for Facebook Sign In operations
+@MainActor
 final class FacebookSignInManager {
     private let loginManager = LoginManager()
 
@@ -46,8 +47,8 @@ final class FacebookSignInManager {
     func signIn() async throws -> FacebookSignInResult {
         logger.info("Starting Facebook Sign In")
 
-        // Get the root view controller
-        guard let rootViewController = await getRootViewController() else {
+        // Get the root view controller (must be on main thread)
+        guard let rootViewController = getRootViewController() else {
             logger.error("No root view controller found")
             throw FacebookSignInError.noRootViewController
         }
@@ -108,7 +109,6 @@ final class FacebookSignInManager {
 
     // MARK: - Private Helpers
 
-    @MainActor
     private func getRootViewController() -> UIViewController? {
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
             return nil
@@ -117,7 +117,7 @@ final class FacebookSignInManager {
         return windowScene.windows.first?.rootViewController
     }
 
-    private func fetchUserProfile(accessToken: String) async throws -> FacebookSignInResult {
+    nonisolated private func fetchUserProfile(accessToken: String) async throws -> FacebookSignInResult {
         logger.info("Fetching Facebook user profile")
 
         let urlString = "https://graph.facebook.com/me?fields=id,email,first_name,last_name&access_token=\(accessToken)"

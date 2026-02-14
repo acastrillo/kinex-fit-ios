@@ -34,6 +34,7 @@ enum GoogleSignInError: Error, LocalizedError {
 }
 
 /// Manager for Google Sign In operations
+@MainActor
 final class GoogleSignInManager {
 
     /// Sign in with Google
@@ -43,13 +44,13 @@ final class GoogleSignInManager {
         logger.info("Starting Google Sign In")
 
         // Get the root view controller
-        guard let rootViewController = await getRootViewController() else {
+        guard let rootViewController = getRootViewController() else {
             logger.error("No root view controller found")
             throw GoogleSignInError.noRootViewController
         }
 
         do {
-            // Initiate Google Sign In
+            // Initiate Google Sign In (must be on main thread)
             let result = try await GIDSignIn.sharedInstance.signIn(
                 withPresenting: rootViewController
             )
@@ -122,7 +123,6 @@ final class GoogleSignInManager {
 
     // MARK: - Private Helpers
 
-    @MainActor
     private func getRootViewController() -> UIViewController? {
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
             return nil
