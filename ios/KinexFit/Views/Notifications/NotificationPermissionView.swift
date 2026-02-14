@@ -119,7 +119,7 @@ struct NotificationPermissionView: View {
     }
 }
 
-struct BenefitRow: View {
+private struct BenefitRow: View {
     let icon: String
     let text: String
 

@@ -113,7 +113,7 @@ final class UserRepository {
         }
 
         // Clear authentication tokens (signs user out)
-        try await tokenStore.clearTokens()
+        try tokenStore.clearAll()
 
         logger.warning("Account deletion complete")
     }

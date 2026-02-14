@@ -272,7 +272,7 @@ struct TierCard: View {
 
 // MARK: - Feature Matrix
 
-struct FeatureMatrix: View {
+private struct FeatureMatrix: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("All Plans Include")
@@ -294,7 +294,7 @@ struct FeatureMatrix: View {
     }
 }
 
-struct FeatureRow: View {
+private struct FeatureRow: View {
     let text: String
 
     var body: some View {

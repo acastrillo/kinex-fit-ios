@@ -154,7 +154,7 @@ struct EnhancedWorkoutData: Codable {
     let difficulty: String?
     let totalDuration: Int?
     let workoutType: String?
-    let structure: WorkoutStructure?
+    let structure: AIWorkoutStructure?
     let aiEnhanced: Bool?
     let aiNotes: [String]?
 
@@ -163,7 +163,7 @@ struct EnhancedWorkoutData: Codable {
     }
 }
 
-struct WorkoutStructure: Codable {
+struct AIWorkoutStructure: Codable {
     let rounds: Int?
     let timePerRound: Int?
     let timeLimit: Int?
