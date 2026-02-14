@@ -1,5 +1,6 @@
 import UIKit
 import UserNotifications
+import FacebookCore
 import OSLog
 
 private let logger = Logger(subsystem: "com.kinex.fit", category: "AppDelegate")
@@ -10,6 +11,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         logger.info("App launched")
+
+        // Initialize Facebook SDK
+        ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
 
         // Register notification categories
         if let notificationManager = AppState.shared?.environment.notificationManager {
