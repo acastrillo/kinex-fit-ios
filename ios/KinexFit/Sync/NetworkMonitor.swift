@@ -18,7 +18,7 @@ final class NetworkMonitor: ObservableObject {
     }
 
     deinit {
-        stopMonitoring()
+        monitor.cancel()
     }
 
     func startMonitoring() {

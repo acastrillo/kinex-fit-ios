@@ -53,7 +53,7 @@ final class BackgroundSyncTask {
 
     /// Cancel all pending background sync tasks
     static func cancelBackgroundSync() {
-        BGTaskScheduler.shared.cancel(taskWithIdentifier: taskIdentifier)
+        BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: taskIdentifier)
         logger.info("Background sync cancelled")
     }
 
@@ -74,7 +74,7 @@ final class BackgroundSyncTask {
         // Perform sync
         Task {
             do {
-                guard let syncEngine = AppState.shared?.environment.syncEngine else {
+                guard let syncEngine = await AppState.shared?.environment.syncEngine else {
                     logger.error("SyncEngine not available")
                     task.setTaskCompleted(success: false)
                     return
