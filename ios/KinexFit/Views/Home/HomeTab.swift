@@ -6,13 +6,10 @@ struct HomeTab: View {
     @State private var stats: HomeStats = .empty
     @State private var isLoading = true
     @State private var showingWorkoutGenerator = false
+    @State private var user: User?
 
     private var workoutRepository: WorkoutRepository {
         appState.environment.workoutRepository
-    }
-
-    private var user: User? {
-        appState.currentUser
     }
 
     var body: some View {
@@ -51,6 +48,7 @@ struct HomeTab: View {
             }
         }
         .task {
+            user = try? await appState.environment.userRepository.getCurrentUser()
             await loadStats()
         }
     }
