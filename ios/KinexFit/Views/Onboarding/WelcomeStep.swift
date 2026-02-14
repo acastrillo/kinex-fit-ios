@@ -87,7 +87,7 @@ struct WelcomeStep: View {
     }
 }
 
-struct BenefitRow: View {
+private struct BenefitRow: View {
     let icon: String
     let title: String
     let description: String
