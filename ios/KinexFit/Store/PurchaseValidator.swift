@@ -90,7 +90,7 @@ extension PurchaseValidator {
         return PurchaseValidator(
             apiClient: apiClient,
             userRepository: UserRepository(
-                database: AppDatabase.inMemory(),
+                database: try! AppDatabase.inMemory(),
                 apiClient: apiClient,
                 tokenStore: tokenStore
             )
