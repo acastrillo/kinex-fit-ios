@@ -137,12 +137,7 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     private func markOnboardingComplete() async throws {
-        try await userRepository.database.dbQueue.write { db in
-            try db.execute(
-                sql: "UPDATE users SET onboardingCompleted = ?, updatedAt = ?",
-                arguments: [true, Date()]
-            )
-        }
+        try await userRepository.markOnboardingComplete()
     }
 }
 

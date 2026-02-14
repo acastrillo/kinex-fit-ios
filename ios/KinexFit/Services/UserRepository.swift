@@ -68,6 +68,17 @@ final class UserRepository {
         logger.info("Subscription updated: tier=\(tier.rawValue), status=\(status.rawValue)")
     }
 
+    /// Mark onboarding as complete for the current user
+    func markOnboardingComplete() async throws {
+        try await database.dbQueue.write { db in
+            try db.execute(
+                sql: "UPDATE users SET onboardingCompleted = ?, updatedAt = ?",
+                arguments: [true, Date()]
+            )
+        }
+        logger.debug("Onboarding marked complete")
+    }
+
     /// Clear all user data (for sign out)
     func clear() async throws {
         try await database.dbQueue.write { db in

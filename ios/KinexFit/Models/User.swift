@@ -15,6 +15,21 @@ struct User: Codable, Equatable, Identifiable {
     var onboardingCompleted: Bool
     var updatedAt: Date
 
+    /// Scan quota limit derived from subscription tier
+    var scanQuotaLimit: Int {
+        subscriptionTier.scanLimit
+    }
+
+    /// AI quota limit derived from subscription tier
+    var aiQuotaLimit: Int {
+        switch subscriptionTier {
+        case .free: return 5
+        case .core: return 20
+        case .pro: return 100
+        case .elite: return .max
+        }
+    }
+
     var displayName: String {
         if let firstName, !firstName.isEmpty {
             if let lastName, !lastName.isEmpty {
