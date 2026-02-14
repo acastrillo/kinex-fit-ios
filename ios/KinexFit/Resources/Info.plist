@@ -57,7 +57,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.YOUR_GOOGLE_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.1014250892908-gh79k6nqh55hh18f8uot3jqd3blm1l8e</string>
 			</array>
 		</dict>
 		<dict>
@@ -70,7 +70,7 @@
 		</dict>
 	</array>
 	<key>GIDClientID</key>
-	<string>YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com</string>
+	<string>1014250892908-gh79k6nqh55hh18f8uot3jqd3blm1l8e.apps.googleusercontent.com</string>
 	<key>FacebookAppID</key>
 	<string>3758257434481536</string>
 	<key>FacebookClientToken</key>
