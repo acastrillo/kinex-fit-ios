@@ -211,5 +211,5 @@ struct PasswordRequirementsView: View {
 
 #Preview {
     EmailSignUpView(viewModel: .preview)
-        .environmentObject(AppState())
+        .environmentObject(AppState(environment: .preview))
 }
