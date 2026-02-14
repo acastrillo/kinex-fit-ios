@@ -17,6 +17,7 @@ struct AppEnvironment {
     let facebookSignInManager: FacebookSignInManager
     let emailPasswordAuthService: EmailPasswordAuthService
 
+    @MainActor
     static var live: AppEnvironment {
         let tokenStore = KeychainTokenStore()
         let apiClient = APIClient(baseURL: AppConfig.apiBaseURL, tokenStore: tokenStore)
@@ -32,6 +33,13 @@ struct AppEnvironment {
             let purchaseValidator = PurchaseValidator(apiClient: apiClient, userRepository: userRepository)
             let storeManager = StoreManager(purchaseValidator: purchaseValidator)
             let notificationManager = NotificationManager(apiClient: apiClient)
+            let googleSignInManager = GoogleSignInManager()
+            let facebookSignInManager = FacebookSignInManager()
+            let emailPasswordAuthService = EmailPasswordAuthService(
+                apiClient: apiClient,
+                tokenStore: tokenStore,
+                database: database
+            )
 
             return AppEnvironment(
                 apiClient: apiClient,
@@ -43,13 +51,17 @@ struct AppEnvironment {
                 userRepository: userRepository,
                 purchaseValidator: purchaseValidator,
                 storeManager: storeManager,
-                notificationManager: notificationManager
+                notificationManager: notificationManager,
+                googleSignInManager: googleSignInManager,
+                facebookSignInManager: facebookSignInManager,
+                emailPasswordAuthService: emailPasswordAuthService
             )
         } catch {
             fatalError("Failed to initialize database: \(error)")
         }
     }
 
+    @MainActor
     static var preview: AppEnvironment {
         let tokenStore = InMemoryTokenStore()
         let apiClient = APIClient(baseURL: AppConfig.apiBaseURL, tokenStore: tokenStore)
