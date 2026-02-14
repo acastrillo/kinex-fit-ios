@@ -3,6 +3,8 @@ import SwiftUI
 
 @MainActor
 final class AppState: ObservableObject {
+    static weak var shared: AppState?
+
     let environment: AppEnvironment
 
     /// Service for managing Instagram imports from Share Extension
@@ -18,6 +20,7 @@ final class AppState: ObservableObject {
 
     init(environment: AppEnvironment = .live) {
         self.environment = environment
+        AppState.shared = self
 
         // Ensure App Group directories exist
         AppGroup.ensureDirectoriesExist()
