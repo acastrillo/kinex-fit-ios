@@ -18,7 +18,7 @@ final class AppState: ObservableObject {
     /// Controls visibility of Instagram workout edit sheet
     @Published var showInstagramEditSheet = false
 
-    init(environment: AppEnvironment = .live) {
+    init(environment: AppEnvironment) {
         self.environment = environment
         AppState.shared = self
 

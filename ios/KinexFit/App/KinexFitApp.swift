@@ -5,7 +5,7 @@ import FacebookCore
 @main
 struct KinexFitApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var appState = AppState()
+    @StateObject private var appState = AppState(environment: .live)
 
     var body: some Scene {
         WindowGroup {
