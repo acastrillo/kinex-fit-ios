@@ -132,8 +132,22 @@ final class WorkoutRepository {
 
     /// Delete multiple workouts
     func delete(ids: [String]) async throws {
-        for id in ids {
-            try await delete(id: id)
+        guard !ids.isEmpty else { return }
+
+        let deletedCount = try await database.dbQueue.write { db in
+            // Use a single transaction to delete all provided IDs
+            try ids.reduce(0) { count, id in
+                let deleted = try Workout.deleteOne(db, key: id) ? 1 : 0
+                return count + deleted
+            }
+        }
+
+        if deletedCount > 0 {
+            // Queue sync operations for deleted IDs
+            for id in ids {
+                try queueSync(workoutId: id, operation: .delete)
+                logger.info("Deleted workout: \(id)")
+            }
         }
     }
 
@@ -148,12 +162,19 @@ final class WorkoutRepository {
     private func queueSync(workout: Workout, operation: SyncOperation) throws {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        let payload = try String(data: encoder.encode(workout), encoding: .utf8)
+        let data = try encoder.encode(workout)
+        guard let payload = String(data: data, encoding: .utf8) else {
+            throw NSError(domain: "com.kinex.fit.sync", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to encode workout payload as UTF-8 string"]) 
+        }
         try syncEngine.enqueueChange(entity: "workout", operation: operation.rawValue, payload: payload)
     }
 
     private func queueSync(workoutId: String, operation: SyncOperation) throws {
-        let payload = "{\"id\":\"\(workoutId)\"}"
+        let object: [String: String] = ["id": workoutId]
+        let data = try JSONSerialization.data(withJSONObject: object, options: [])
+        guard let payload = String(data: data, encoding: .utf8) else {
+            throw NSError(domain: "com.kinex.fit.sync", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to encode id payload as UTF-8 string"]) 
+        }
         try syncEngine.enqueueChange(entity: "workout", operation: operation.rawValue, payload: payload)
     }
 }

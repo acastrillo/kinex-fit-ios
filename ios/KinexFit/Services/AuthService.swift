@@ -146,7 +146,7 @@ final class AuthService {
 
     /// Check if the user has a valid session
     var hasValidSession: Bool {
-        tokenStore.accessToken != nil
+        return isAccessTokenUsable()
     }
 
     /// Get the current user from local storage
@@ -158,6 +158,11 @@ final class AuthService {
 
     // MARK: - Private Helpers
 
+    /// Determines if the current access token is usable.
+    /// Currently checks presence only; provides a seam to add expiry/validation later.
+    private func isAccessTokenUsable() -> Bool {
+        return tokenStore.accessToken != nil
+    }
     private func saveUser(_ user: User) async throws {
         try await database.dbQueue.write { db in
             try user.save(db)

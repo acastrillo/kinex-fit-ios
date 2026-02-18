@@ -56,9 +56,16 @@ final class KeychainTokenStore: TokenStore {
             return nil
         }
         guard status == errSecSuccess else {
+            // Log unexpected keychain status for visibility; keep return nil to avoid crashing
+            if let message = SecCopyErrorMessageString(status, nil) as String? {
+                NSLog("[KeychainTokenStore] Unexpected keychain status: \(status) - \(message)")
+            } else {
+                NSLog("[KeychainTokenStore] Unexpected keychain status: \(status)")
+            }
             return nil
         }
         guard let data = item as? Data else {
+            NSLog("[KeychainTokenStore] SecItemCopyMatching returned non-Data item for account: \(account)")
             return nil
         }
         return String(data: data, encoding: .utf8)
