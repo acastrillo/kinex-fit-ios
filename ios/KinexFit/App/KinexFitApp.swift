@@ -1,6 +1,4 @@
 import SwiftUI
-import GoogleSignIn
-import FacebookCore
 
 @main
 struct KinexFitApp: App {
@@ -13,20 +11,7 @@ struct KinexFitApp: App {
                 .environmentObject(appState)
                 .environmentObject(appState.environment.notificationManager)
                 .onOpenURL { url in
-                    // Handle OAuth URL callbacks
-
-                    // Try Google Sign In first
-                    if GIDSignIn.sharedInstance.handle(url) {
-                        return
-                    }
-
-                    // Try Facebook
-                    ApplicationDelegate.shared.application(
-                        UIApplication.shared,
-                        open: url,
-                        sourceApplication: nil,
-                        annotation: [UIApplication.OpenURLOptionsKey.annotation]
-                    )
+                    _ = appDelegate.handleOAuthCallback(url: url)
                 }
         }
     }

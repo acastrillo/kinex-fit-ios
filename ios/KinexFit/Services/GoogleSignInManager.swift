@@ -1,6 +1,7 @@
 import Foundation
 import GoogleSignIn
 import OSLog
+import UIKit
 
 private let logger = Logger(subsystem: "com.kinex.fit", category: "GoogleSignInManager")
 
@@ -14,6 +15,8 @@ struct GoogleSignInResult {
 
 /// Errors that can occur during Google Sign In
 enum GoogleSignInError: Error, LocalizedError {
+    case missingClientID
+    case missingURLScheme
     case noRootViewController
     case noIDToken
     case userCancelled
@@ -21,6 +24,10 @@ enum GoogleSignInError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
+        case .missingClientID:
+            return "Google Sign In is not configured correctly"
+        case .missingURLScheme:
+            return "Google Sign In callback URL scheme is missing"
         case .noRootViewController:
             return "Unable to present Google Sign In"
         case .noIDToken:
@@ -42,6 +49,21 @@ final class GoogleSignInManager {
     /// - Throws: GoogleSignInError if sign in fails
     func signIn() async throws -> GoogleSignInResult {
         logger.info("Starting Google Sign In")
+
+        guard let clientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String,
+              !clientID.isEmpty else {
+            logger.error("Missing GIDClientID in Info.plist")
+            throw GoogleSignInError.missingClientID
+        }
+
+        guard hasGoogleURLScheme(clientID: clientID) else {
+            logger.error("Missing Google URL scheme for client ID")
+            throw GoogleSignInError.missingURLScheme
+        }
+
+        if GIDSignIn.sharedInstance.configuration == nil {
+            GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+        }
 
         // Get the root view controller
         guard let rootViewController = getRootViewController() else {
@@ -79,7 +101,7 @@ final class GoogleSignInManager {
                 logger.info("User cancelled Google Sign In")
                 throw GoogleSignInError.userCancelled
             }
-            logger.error("Google Sign In error: \(error.localizedDescription)")
+            logger.error("Google Sign In error (\(error.code.rawValue)): \(error.localizedDescription)")
             throw GoogleSignInError.unknown(error)
         } catch {
             logger.error("Unexpected Google Sign In error: \(error.localizedDescription)")
@@ -124,10 +146,56 @@ final class GoogleSignInManager {
     // MARK: - Private Helpers
 
     private func getRootViewController() -> UIViewController? {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
-            return nil
+        let windowScenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let rootViewController = windowScenes
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow)?
+            .rootViewController
+            ?? windowScenes.first?.windows.first?.rootViewController
+
+        return topMostViewController(from: rootViewController)
+    }
+
+    private func topMostViewController(from viewController: UIViewController?) -> UIViewController? {
+        guard let viewController else { return nil }
+
+        if let navigationController = viewController as? UINavigationController {
+            return topMostViewController(from: navigationController.visibleViewController ?? navigationController.topViewController)
         }
 
-        return windowScene.windows.first?.rootViewController
+        if let tabBarController = viewController as? UITabBarController {
+            return topMostViewController(from: tabBarController.selectedViewController)
+        }
+
+        if let presentedViewController = viewController.presentedViewController {
+            return topMostViewController(from: presentedViewController)
+        }
+
+        return viewController
+    }
+
+    private func hasGoogleURLScheme(clientID: String) -> Bool {
+        let clientIDSuffix = ".apps.googleusercontent.com"
+        guard clientID.hasSuffix(clientIDSuffix) else {
+            return false
+        }
+
+        let clientIDPrefix = String(clientID.dropLast(clientIDSuffix.count))
+        let expectedScheme = "com.googleusercontent.apps.\(clientIDPrefix)".lowercased()
+
+        guard let urlTypes = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] else {
+            return false
+        }
+
+        for urlType in urlTypes {
+            guard let schemes = urlType["CFBundleURLSchemes"] as? [String] else {
+                continue
+            }
+            if schemes.contains(where: { $0.lowercased() == expectedScheme }) {
+                return true
+            }
+        }
+
+        return false
     }
 }

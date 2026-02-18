@@ -147,6 +147,11 @@ final class AuthViewModel: ObservableObject {
 
     /// Handle Google Sign In
     func handleGoogleSignIn() async {
+        guard !isLoading else {
+            logger.debug("Ignoring Google Sign In request while another auth operation is active")
+            return
+        }
+
         isLoading = true
         error = nil
 
@@ -189,6 +194,11 @@ final class AuthViewModel: ObservableObject {
 
     /// Handle Facebook Sign In
     func handleFacebookSignIn() async {
+        guard !isLoading else {
+            logger.debug("Ignoring Facebook Sign In request while another auth operation is active")
+            return
+        }
+
         isLoading = true
         error = nil
 
