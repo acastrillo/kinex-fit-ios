@@ -76,7 +76,7 @@ final class EmailPasswordAuthService {
 
         do {
             let apiRequest = try APIRequest.json(
-                path: "/api/auth/signup",
+                path: "/api/mobile/auth/signup",
                 method: .post,
                 body: request
             )
@@ -89,6 +89,9 @@ final class EmailPasswordAuthService {
             return try await signIn(email: email, password: password)
         } catch let error as APIError {
             throw mapAPIError(error)
+        } catch let error as AuthError {
+            // Preserve domain-specific auth errors from automatic sign-in
+            throw error
         } catch {
             logger.error("Signup failed: \(error.localizedDescription)")
             throw AuthError.networkError(error)
@@ -234,10 +237,18 @@ final class EmailPasswordAuthService {
 
     private func mapAPIError(_ error: APIError) -> AuthError {
         switch error {
+        case .httpStatus(400):
+            return .serverError("Invalid request. Please check your information and try again.")
         case .httpStatus(401):
             return .invalidIdentityToken
+        case .httpStatus(403):
+            return .emailNotVerified
+        case .httpStatus(404):
+            return .serverError("Authentication endpoint not found. Please update the app and try again.")
         case .httpStatus(429):
             return .rateLimited(retryAfter: 60)
+        case .httpStatus(409):
+            return .emailAlreadyExists
         case .httpStatus(let code) where code >= 500:
             return .serverError("Server error (\(code))")
         case .decoding:

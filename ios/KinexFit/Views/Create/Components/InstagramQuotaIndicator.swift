@@ -12,11 +12,15 @@ struct InstagramQuotaIndicator: View {
         self.onUpgrade = onUpgrade
     }
 
+    private var usagePercentage: Double {
+        guard limit > 0 else { return 0 }
+        return min(max(Double(used) / Double(limit), 0), 1)
+    }
+
     private var quotaColor: Color {
-        let percentage = Double(used) / Double(limit)
-        if percentage >= 1.0 {
+        if usagePercentage >= 1.0 {
             return .red
-        } else if percentage >= 0.8 {
+        } else if usagePercentage >= 0.8 {
             return .orange
         } else {
             return .green
@@ -24,10 +28,9 @@ struct InstagramQuotaIndicator: View {
     }
 
     private var quotaIcon: String {
-        let percentage = Double(used) / Double(limit)
-        if percentage >= 1.0 {
+        if usagePercentage >= 1.0 {
             return "exclamationmark.triangle.fill"
-        } else if percentage >= 0.8 {
+        } else if usagePercentage >= 0.8 {
             return "exclamationmark.circle.fill"
         } else {
             return "checkmark.circle.fill"
