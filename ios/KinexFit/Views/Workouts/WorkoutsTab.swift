@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct WorkoutsTab: View {
+    @ObservedObject var authViewModel: AuthViewModel
     @EnvironmentObject private var appState: AppState
     @State private var workouts: [Workout] = []
     @State private var isLoading = true
@@ -20,6 +21,7 @@ struct WorkoutsTab: View {
     @State private var failedCount = 0
     @State private var showSyncBanner = false
     @State private var hasPerformedInitialSync = false
+    @State private var showingProfileSheet = false
 
     private var workoutRepository: WorkoutRepository {
         appState.environment.workoutRepository
@@ -68,6 +70,9 @@ struct WorkoutsTab: View {
             }
             .sheet(isPresented: $showingAddWorkout) {
                 WorkoutFormView(mode: .create, onSave: createWorkout)
+            }
+            .sheet(isPresented: $showingProfileSheet) {
+                ProfileTab(authViewModel: authViewModel)
             }
             .sheet(isPresented: $showingImportReview) {
                 if let importItem = selectedImport {
@@ -155,6 +160,21 @@ struct WorkoutsTab: View {
                 Spacer(minLength: 12)
 
                 VStack(spacing: 10) {
+                    Button {
+                        showingProfileSheet = true
+                    } label: {
+                        Image(systemName: "line.3.horizontal")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(AppTheme.primaryText)
+                            .frame(width: 44, height: 44)
+                            .background(AppTheme.cardBackground)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                            }
+                    }
+
                     Button {
                         showingAddWorkout = true
                     } label: {
@@ -463,13 +483,13 @@ private struct SearchEmptyState: View {
         ))
     }
 
-    return WorkoutsTab()
+    return WorkoutsTab(authViewModel: .previewSignedIn)
         .environmentObject(appState)
         .appDarkTheme()
 }
 
 #Preview("Empty State") {
-    WorkoutsTab()
+    WorkoutsTab(authViewModel: .previewSignedIn)
         .environmentObject(AppState(environment: .preview))
         .appDarkTheme()
 }

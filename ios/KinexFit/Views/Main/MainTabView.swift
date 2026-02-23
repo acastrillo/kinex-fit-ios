@@ -12,7 +12,7 @@ struct MainTabView: View {
                 }
                 .tag(AppState.MainTab.home)
 
-            WorkoutsTab()
+            WorkoutsTab(authViewModel: authViewModel)
                 .tabItem {
                     Label(AppState.MainTab.library.title, systemImage: AppState.MainTab.library.icon)
                 }
