@@ -100,7 +100,7 @@ struct AddWorkoutTab: View {
             content: content,
             source: .manual
         )
-        try? await workoutRepository.create(workout)
+        _ = try? await workoutRepository.create(workout)
     }
 }
 

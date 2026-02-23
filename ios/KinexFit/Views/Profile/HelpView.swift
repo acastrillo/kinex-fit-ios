@@ -89,7 +89,7 @@ struct HelpView: View {
 
             // Contact Support Section
             Section("Need More Help?") {
-                Link(destination: URL(string: "mailto:support@kinexfit.com")!) {
+                Link(destination: AppLinks.supportEmail) {
                     HStack {
                         Label("Email Support", systemImage: "envelope.fill")
                         Spacer()
@@ -99,7 +99,7 @@ struct HelpView: View {
                     }
                 }
 
-                Link(destination: URL(string: "https://kinexfit.com/support")!) {
+                Link(destination: AppLinks.supportCenter) {
                     HStack {
                         Label("Visit Support Center", systemImage: "lifepreserver.fill")
                         Spacer()

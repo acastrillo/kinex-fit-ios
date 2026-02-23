@@ -40,6 +40,14 @@
 		<key>UIImageRespectsSafeAreaInsets</key>
 		<true/>
 	</dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.kinex.fit.sync</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>processing</string>
+	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
@@ -57,7 +65,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.1014250892908-gh79k6nqh55hh18f8uot3jqd3blm1l8e</string>
+				<string>com.googleusercontent.apps.1066753979653-f8fhpmm03v0f14l8atl7eug7nomonea4</string>
 			</array>
 		</dict>
 		<dict>
@@ -70,7 +78,9 @@
 		</dict>
 	</array>
 	<key>GIDClientID</key>
-	<string>1014250892908-gh79k6nqh55hh18f8uot3jqd3blm1l8e.apps.googleusercontent.com</string>
+	<string>1066753979653-f8fhpmm03v0f14l8atl7eug7nomonea4.apps.googleusercontent.com</string>
+	<key>GIDServerClientID</key>
+	<string>1066753979653-srdnvnn7lvrdl3vnufsc5lsrsquf6dkv.apps.googleusercontent.com</string>
 	<key>FacebookAppID</key>
 	<string>3758257434481536</string>
 	<key>FacebookClientToken</key>

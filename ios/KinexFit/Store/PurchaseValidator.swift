@@ -16,11 +16,11 @@ final class PurchaseValidator {
 
     /// Validate a transaction with the backend
     func validate(_ transaction: Transaction) async throws {
-        logger.info("Validating transaction: \\(transaction.id)")
+        logger.info("Validating transaction: \(transaction.id)")
 
         // Get the receipt data
         guard let receiptData = try? await getReceiptData(for: transaction) else {
-            logger.error("Failed to get receipt data for transaction: \\(transaction.id)")
+            logger.error("Failed to get receipt data for transaction: \(transaction.id)")
             throw StoreError.failedVerification
         }
 
@@ -38,7 +38,7 @@ final class PurchaseValidator {
         // Send to backend
         let response: ValidateReceiptResponse = try await apiClient.send(request)
 
-        logger.info("Receipt validated successfully. New tier: \\(response.subscriptionTier)")
+        logger.info("Receipt validated successfully. New tier: \(response.subscriptionTier.rawValue, privacy: .public)")
 
         // Update local user with new subscription info
         try await userRepository.updateSubscription(
@@ -84,7 +84,7 @@ extension PurchaseValidator {
     static var preview: PurchaseValidator {
         let tokenStore = InMemoryTokenStore()
         let apiClient = APIClient(
-            baseURL: URL(string: "https://kinexfit.com")!,
+            baseURL: AppConfig.previewAPIBaseURL,
             tokenStore: tokenStore
         )
         return PurchaseValidator(

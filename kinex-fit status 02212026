@@ -1,0 +1,196 @@
+Kinex Fit — Project Status Overview
+
+Below is a clear snapshot of what the app is, what it does, where development stands, what’s left, and the issues we’ve been hitting. I’ve linked each point back to concrete parts of the codebase so you can see exactly where things live.
+
+What this app is and what it does
+
+Kinex Fit is a fitness app that:
+• Authenticates users via multiple providers:
+   • Apple, Google, Facebook, and email/password (see AuthViewModel, AuthService, GoogleSignInManager, FacebookSignInManager, EmailPasswordAuthService).
+• Stores and manages workouts locally with offline-first behavior:
+   • Local persistence via GRDB (AppDatabase, Workout, DatabaseMigratorFactory).
+   • A repository layer for CRUD and live observation (WorkoutRepository).
+   • A background sync queue to push local changes to the backend (SyncEngine).
+• Maintains a local user profile and subscription state:
+   • Local user caching and updates (UserRepository).
+   • Subscription and purchase scaffolding (PurchaseValidator, StoreManager) — integrated into the environment but implementations not shown here.
+• Provides an onboarding flow gated by the user’s profile flag:
+   • RootView toggles OnboardingCoordinator based on user.onboardingCompleted.
+• Prepares for notifications and provider callback handling:
+   • NotificationManager is injected as an environment object.
+   • OAuth callback handling via AppDelegate and .onOpenURL in KinexFitApp.
+
+Key infrastructure:
+• A central dependency container (AppEnvironment) wires together services and provides .live and .preview configurations.
+• A clean separation of concerns between API, storage, repositories, and view models.
+• Swift Concurrency throughout (async/await), plus OSLog for diagnostics.
+
+Architecture at a glance
+
+• App entry:
+   • KinexFitApp composes the app with AppState(environment: .live), injects RootView, and forwards OAuth callbacks via .onOpenURL.
+• Environment and services:
+   • AppEnvironment sets up APIClient, TokenStore (Keychain or in-memory), AppDatabase, SyncEngine, and service layer types (AuthService, WorkoutRepository, UserRepository, PurchaseValidator, StoreManager, NotificationManager, GoogleSignInManager, FacebookSignInManager, EmailPasswordAuthService).
+   • .preview uses in-memory storage to support SwiftUI previews.
+• Data layer:
+   • AppDatabase + DatabaseMigratorFactory define schema for users, workouts, body_metrics, sync_queue, and settings.
+   • WorkoutRepository provides CRUD and observation with ValueObservation.
+   • UserRepository manages the local user, subscription updates, onboarding flag, and account deletion (including clearing local state).
+• Networking:
+   • APIClient builds requests (APIRequest) and handles auth headers via TokenStore.
+   • AuthService implements sign-in, token refresh, and sign-out using endpoints under /api/mobile/auth/....
+   • SyncEngine reads from sync_queue, sends changes to /api/mobile/workouts, and tracks retries/exponential backoff.
+
+Where we’re at with development
+
+What’s implemented and functional now:
+• Authentication flows:
+   • Apple, Google, Facebook, and email/password flows are wired in AuthViewModel and AuthService, including error handling and provider-specific cancellation cases.
+   • Session bootstrapping: AuthViewModel.checkExistingSession() restores a session from tokens and local user where possible.
+   • Sign-out clears tokens and local state, including best-effort server notification.
+• Offline-first storage for workouts:
+   • Full CRUD and observation streams in WorkoutRepository.
+   • SyncEngine infrastructure to enqueue local changes and push to backend with retries.
+• User profile caching and subscription scaffolding:
+   • Local user read/write (UserRepository), subscription update methods, onboarding flag.
+   • Account deletion orchestrates backend delete then clears local data and tokens.
+• App shell & navigation:
+   • Splash → Sign-in → Onboarding → Main tabs via RootView.
+   • Dependency injection via AppEnvironment is clean and preview-friendly.
+
+What phases are left
+
+Based on the current code, here are the main remaining phases and polish items:
+
+• Sync Engine hardening:
+   • Fix payload decoding and DELETE handling (details in “Issues” below).
+   • Consistent date encoding/decoding between queue payloads and API requests.
+   • Background scheduling for sync (e.g., background tasks or app lifecycle hooks) so queue processing isn’t only manual.
+   • Add conflict resolution strategy (server-wins, client-wins, or merge).
+• Authentication robustness:
+   • Automatic token refresh on 401s at the APIClient layer (middleware/retry) rather than only during boot.
+   • Token expiry awareness (track and preemptively refresh).
+• Subscription & Store integration:
+   • Finalize StoreManager and PurchaseValidator flow with StoreKit (UI, purchase states, error handling, restore purchases).
+   • Persist purchase state in the local DB and sync with backend.
+• Notifications:
+   • Implement NotificationManager registration, permissions, token sync with backend, and in-app handling.
+• Onboarding lifecycle:
+   • Ensure the UI reflects onboarding completion when it’s toggled post-sign-in.
+• Observability and diagnostics:
+   • Standardize logging categories and levels; surface important failures to the UI thoughtfully.
+   • Consider analytics hooks for key flows if desired.
+• Security & environments:
+   • Split base URLs for dev/staging/production and ensure previews don’t hit prod endpoints.
+• Testing:
+   • Add unit tests for repositories/services and integration tests for auth and sync paths.
+   • SwiftUI previews are in good shape; consider snapshot tests for core flows.
+
+Issues we’ve been running into
+
+These come straight from the code and are likely the root cause of current pain points:
+
+1. Sync queue payloads can’t be decoded (date strategy mismatch)
+• Where:
+   • WorkoutRepository.queueSync(workout:operation:) encodes with JSONEncoder().dateEncodingStrategy = .iso8601.
+   • SyncEngine.syncItem(_:) uses JSONDecoder() with default date decoding.
+• Problem:
+   • Default JSONDecoder expects Date encoded via .deferredToDate (a numeric timestamp), but the queue payload uses ISO8601 strings — decoding fails.
+• Symptom:
+   • try? JSONDecoder().decode(Workout.self, ...) returns nil and SyncError.unsupportedOperation is thrown, so items never sync and eventually get marked failed.
+• Fix direction:
+   • Use a single, shared JSON encoder/decoder config (ISO8601) for both queue serialization and API requests, or move queue payload to an ID-only or minimal schema and re-fetch as needed.
+
+2. Delete operations in sync will fail to parse
+• Where:
+   • WorkoutRepository.queueSync(workoutId:operation:) encodes payload as {"id": "<id>"}.
+   • SyncEngine.syncItem(_:) tries to decode a full Workout from payload for all operations.
+• Problem:
+   • For delete, payload only has an ID; decoding to Workout fails, causing unsupportedOperation.
+• Fix direction:
+   • Branch delete handling to decode an ID-only payload, or make payload schema explicit per operation. For DELETE, you typically don’t need a body; just the ID in the path.
+
+3. Inconsistent date encoding for API requests
+• Where:
+   • SyncEngine calls APIRequest.json(path:method:body:) with a default JSONEncoder (no ISO8601).
+• Problem:
+   • Even if we fix queue decoding, API requests will still send dates in the default format (double since reference date) unless the server also expects that — which is unlikely.
+• Fix direction:
+   • Standardize a single JSONEncoder/JSONDecoder with .iso8601 for all network traffic and queue payloads. Consider centralizing in APIClient or APIRequest.
+
+4. Database schema vs. code mismatch for user subscription tier
+• Where:
+   • DatabaseMigratorFactory creates a users table with a column named "tier" in migration "create-v1".
+   • Code references "subscriptionTier" in AuthModels.SignInResponse.UserResponse.toUser() and in UserRepository.updateSubscription(tier:status:expiresAt:) (SQL updates subscriptionTier).
+• Problem:
+   • Writes to subscriptionTier will fail if the column doesn’t exist; reads/writes will be inconsistent.
+• Fix direction:
+   • Align schema and code. Either rename column to subscriptionTier via a migration or update code to use tier. Verify the User GRDB mapping matches the final column names.
+
+5. Signing in with expired tokens at launch
+• Where:
+   • AuthViewModel.checkExistingSession() treats “has any access token” as valid and signs in if a local user exists, without refreshing.
+• Problem:
+   • If the token is expired, subsequent API calls will 401. Users think they’re signed in but actions fail.
+• Fix direction:
+   • Track token expiry (from expiresIn) and refresh at app start if close to or past expiry. Alternatively, implement API-layer 401 interception and refresh.
+
+6. Sync running on the main actor
+• Where:
+   • SyncEngine.processSyncQueue() is marked @MainActor.
+• Problem:
+   • Network and disk I/O on the main actor risks stuttering the UI and blocking input.
+• Fix direction:
+   • Remove @MainActor from sync processing and isolate mutable state (e.g., guard isSyncing with an actor or serial queue).
+
+7. DELETE requests include a body
+• Where:
+   • SyncEngine.syncItem(_:) sets method = .delete and body = workout for delete.
+• Problem:
+   • Many servers ignore DELETE bodies; it’s atypical and can cause backend issues. Given the path includes the ID, no body is needed.
+• Fix direction:
+   • Don’t send a body for DELETE. If the backend expects a body, standardize the schema and document it.
+
+8. Error mapping doesn’t parse backend error payloads
+• Where:
+   • AuthService.mapAPIError(_:) maps only HTTP status codes. APIErrorResponse exists but is unused.
+• Problem:
+   • We lose actionable info like retryAfter or error codes. Users get generic errors.
+• Fix direction:
+   • On non-2xx, parse the response body into APIErrorResponse and map to richer AuthError cases.
+
+9. Onboarding state may not update post-sign-in
+• Where:
+   • RootView sets showOnboarding only when authViewModel.authState changes to .signedIn(let user).
+   • UserRepository.markOnboardingComplete() updates the DB, but authState.user isn’t automatically updated.
+• Problem:
+   • If onboarding completion is toggled later, UI may not reflect it until the next auth state change or app restart.
+• Fix direction:
+   • Observe user changes via UserRepository.observeCurrentUser() and derive onboarding state from that, or update authState when onboarding completes.
+
+10. Previews hitting production base URL
+• Where:
+   • AppEnvironment.preview uses AppConfig.apiBaseURL which is currently production (https://kinexfit.com).
+• Problem:
+   • Even with in-memory DB, previews shouldn’t hit prod services accidentally.
+• Fix direction:
+   • Use a stubbed APIClient or a staging URL for previews/testing.
+
+Immediate recommendations
+
+• Unify JSON encoding/decoding:
+   • Create a shared JSONCoder (encoder and decoder) with .iso8601 dates and use it in both APIClient and SyncEngine queue payloads.
+• Fix sync delete handling:
+   • For delete queue items, decode just the ID and send DELETE without a body.
+• Align DB schema with code:
+   • Add a migration to rename users.tier → subscriptionTier (or vice versa) and confirm User mapping matches.
+• Remove @MainActor from sync processing:
+   • Move shared state into an actor if needed; keep UI updates off the sync path.
+• Add API-level token refresh:
+   • On 401, attempt a refresh and retry once. If refresh fails, sign out.
+• Improve onboarding state propagation:
+   • Observe the user model for changes and drive showOnboarding from that, not just the initial sign-in snapshot.
+• Introduce staging config:
+   • Add AppConfig.apiBaseURL variants and wire per build configuration. Ensure previews never call prod.
+
+If you’d like, I can dive into any one of these areas (for example, standardizing the JSON coders or fixing the sync delete path) and put together concrete patches next.

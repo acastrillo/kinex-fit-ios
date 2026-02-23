@@ -10,6 +10,7 @@ struct KinexFitApp: App {
             RootView(environment: appState.environment)
                 .environmentObject(appState)
                 .environmentObject(appState.environment.notificationManager)
+                .appDarkTheme()
                 .onOpenURL { url in
                     _ = appDelegate.handleOAuthCallback(url: url)
                 }

@@ -57,7 +57,7 @@ final class UserRepository {
             try db.execute(
                 sql: """
                 UPDATE users
-                SET subscriptionTier = ?,
+                SET tier = ?,
                     subscriptionStatus = ?,
                     subscriptionExpiresAt = ?,
                     updatedAt = ?
@@ -81,7 +81,7 @@ final class UserRepository {
 
     /// Clear all user data (for sign out)
     func clear() async throws {
-        try await database.dbQueue.write { db in
+        _ = try await database.dbQueue.write { db in
             try User.deleteAll(db)
         }
         logger.debug("User data cleared")
@@ -98,8 +98,7 @@ final class UserRepository {
         // Call backend to delete user data
         let request = APIRequest(path: "/api/mobile/user/delete", method: .delete)
 
-        struct EmptyResponse: Decodable {}
-        let _: EmptyResponse = try await apiClient.send(request)
+        _ = try await apiClient.send(request)
 
         logger.info("Backend account deletion successful")
 

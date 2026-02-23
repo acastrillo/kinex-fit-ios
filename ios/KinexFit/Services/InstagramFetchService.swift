@@ -26,7 +26,7 @@ actor InstagramFetchService {
             throw InstagramFetchError.invalidURL
         }
 
-        logger.info("Fetching Instagram post: \(url)")
+        logger.info("Fetching Instagram post")
 
         do {
             let request = try APIRequest.fetchInstagram(url: url)
@@ -70,7 +70,7 @@ actor InstagramFetchService {
     /// - Returns: Combined FetchedWorkout model ready for UI
     /// - Throws: InstagramFetchError if either fetch or parse fails
     func fetchAndParse(url: String) async throws -> FetchedWorkout {
-        logger.info("Starting fetch and parse for URL: \(url)")
+        logger.info("Starting fetch and parse")
 
         // Step 1: Fetch Instagram content
         let fetchResponse = try await fetchInstagramPost(url: url)
@@ -114,7 +114,7 @@ actor InstagramFetchService {
     /// Validate Instagram URL format
     /// - Parameter url: URL string to validate
     /// - Returns: true if URL matches Instagram pattern
-    func isValidInstagramURL(_ url: String) -> Bool {
+    nonisolated func isValidInstagramURL(_ url: String) -> Bool {
         guard let regex = try? NSRegularExpression(pattern: Self.instagramURLPattern, options: .caseInsensitive) else {
             return false
         }
@@ -128,7 +128,7 @@ actor InstagramFetchService {
     /// Map APIError to InstagramFetchError
     private func mapAPIError(_ apiError: APIError) -> InstagramFetchError {
         switch apiError {
-        case .httpStatus(let statusCode):
+        case .httpStatus(let statusCode, _):
             switch statusCode {
             case 401:
                 return .unauthorized

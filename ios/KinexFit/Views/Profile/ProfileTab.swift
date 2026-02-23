@@ -1,10 +1,8 @@
 import SwiftUI
 
 struct ProfileTab: View {
-    @EnvironmentObject private var appState: AppState
     @ObservedObject var authViewModel: AuthViewModel
     @State private var showingSignOutConfirmation = false
-    @State private var showPaywall = false
 
     private var user: User? {
         authViewModel.authState.user
@@ -44,7 +42,9 @@ struct ProfileTab: View {
                 // App Section
                 Section("App") {
                     NavigationLink {
-                        SettingsView()
+                        SettingsView {
+                            await authViewModel.signOut()
+                        }
                     } label: {
                         Label("Settings", systemImage: "gear")
                     }
@@ -93,9 +93,6 @@ struct ProfileTab: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Are you sure you want to sign out?")
-            }
-            .sheet(isPresented: $showPaywall) {
-                PaywallView()
             }
         }
     }

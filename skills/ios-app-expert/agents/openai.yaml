@@ -1,0 +1,4 @@
+interface:
+  display_name: "iOS App Expert"
+  short_description: "Expert iOS engineering with strict verification"
+  default_prompt: "Use $ios-app-expert to implement or review an iOS app change with evidence-backed validation."

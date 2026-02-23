@@ -102,16 +102,15 @@ final class OCRService {
         )
 
         do {
-            let decoder = JSONDecoder()
-            let response: OCRResponse = try await apiClient.send(request, decoder: decoder)
-            logger.info("OCR completed: \(response.text.prefix(100))...")
+            let response: OCRResponse = try await apiClient.send(request)
+            logger.info("OCR completed (text length: \(response.text.count))")
             return response
         } catch let error as APIError {
             switch error {
-            case .httpStatus(429):
+            case .httpStatus(429, _):
                 // Could be quota or rate limit - try to parse response
                 throw OCRError.rateLimited(retryAfter: nil)
-            case .httpStatus(let code):
+            case .httpStatus(let code, _):
                 throw OCRError.serverError("Server error (code \(code))")
             default:
                 throw OCRError.networkError(error)

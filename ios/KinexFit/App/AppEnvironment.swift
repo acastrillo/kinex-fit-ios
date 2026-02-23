@@ -13,6 +13,7 @@ struct AppEnvironment {
     let purchaseValidator: PurchaseValidator
     let storeManager: StoreManager
     let notificationManager: NotificationManager
+    let featureFlagService: FeatureFlagService
     let googleSignInManager: GoogleSignInManager
     let facebookSignInManager: FacebookSignInManager
     let emailPasswordAuthService: EmailPasswordAuthService
@@ -28,11 +29,12 @@ struct AppEnvironment {
 
             // Initialize services
             let authService = AuthService(apiClient: apiClient, tokenStore: tokenStore, database: database)
-            let workoutRepository = WorkoutRepository(database: database, syncEngine: syncEngine)
+            let workoutRepository = WorkoutRepository(database: database, apiClient: apiClient, syncEngine: syncEngine)
             let userRepository = UserRepository(database: database, apiClient: apiClient, tokenStore: tokenStore)
             let purchaseValidator = PurchaseValidator(apiClient: apiClient, userRepository: userRepository)
             let storeManager = StoreManager(purchaseValidator: purchaseValidator)
             let notificationManager = NotificationManager(apiClient: apiClient)
+            let featureFlagService = FeatureFlagService(apiClient: apiClient)
             let googleSignInManager = GoogleSignInManager()
             let facebookSignInManager = FacebookSignInManager()
             let emailPasswordAuthService = EmailPasswordAuthService(
@@ -52,6 +54,7 @@ struct AppEnvironment {
                 purchaseValidator: purchaseValidator,
                 storeManager: storeManager,
                 notificationManager: notificationManager,
+                featureFlagService: featureFlagService,
                 googleSignInManager: googleSignInManager,
                 facebookSignInManager: facebookSignInManager,
                 emailPasswordAuthService: emailPasswordAuthService
@@ -64,7 +67,7 @@ struct AppEnvironment {
     @MainActor
     static var preview: AppEnvironment {
         let tokenStore = InMemoryTokenStore()
-        let apiClient = APIClient(baseURL: AppConfig.apiBaseURL, tokenStore: tokenStore)
+        let apiClient = APIClient(baseURL: AppConfig.previewAPIBaseURL, tokenStore: tokenStore)
 
         do {
             let database = try AppDatabase.inMemory()
@@ -72,11 +75,12 @@ struct AppEnvironment {
 
             // Initialize services
             let authService = AuthService(apiClient: apiClient, tokenStore: tokenStore, database: database)
-            let workoutRepository = WorkoutRepository(database: database, syncEngine: syncEngine)
+            let workoutRepository = WorkoutRepository(database: database, apiClient: apiClient, syncEngine: syncEngine)
             let userRepository = UserRepository(database: database, apiClient: apiClient, tokenStore: tokenStore)
             let purchaseValidator = PurchaseValidator(apiClient: apiClient, userRepository: userRepository)
             let storeManager = StoreManager(purchaseValidator: purchaseValidator)
             let notificationManager = NotificationManager(apiClient: apiClient)
+            let featureFlagService = FeatureFlagService(apiClient: apiClient)
             let googleSignInManager = GoogleSignInManager()
             let facebookSignInManager = FacebookSignInManager()
             let emailPasswordAuthService = EmailPasswordAuthService(
@@ -96,6 +100,7 @@ struct AppEnvironment {
                 purchaseValidator: purchaseValidator,
                 storeManager: storeManager,
                 notificationManager: notificationManager,
+                featureFlagService: featureFlagService,
                 googleSignInManager: googleSignInManager,
                 facebookSignInManager: facebookSignInManager,
                 emailPasswordAuthService: emailPasswordAuthService

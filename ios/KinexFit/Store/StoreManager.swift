@@ -49,19 +49,19 @@ final class StoreManager: ObservableObject {
         do {
             let productIDs = ProductID.allCases.map(\.rawValue)
             products = try await Product.products(for: productIDs)
-            logger.info("Loaded \\(self.products.count) products from App Store")
+            logger.info("Loaded \(self.products.count) products from App Store")
 
             // Load current subscriptions
             await updatePurchasedProducts()
         } catch {
-            logger.error("Failed to load products: \\(error.localizedDescription)")
+            logger.error("Failed to load products: \(error.localizedDescription)")
         }
     }
 
     // MARK: - Purchase
 
     func purchase(_ product: Product) async throws -> Transaction? {
-        logger.info("Initiating purchase for product: \\(product.id)")
+        logger.info("Initiating purchase for product: \(product.id)")
 
         let result = try await product.purchase()
 
@@ -79,7 +79,7 @@ final class StoreManager: ObservableObject {
             // Finish the transaction
             await transaction.finish()
 
-            logger.info("Purchase successful for product: \\(product.id)")
+            logger.info("Purchase successful for product: \(product.id)")
             return transaction
 
         case .userCancelled:
@@ -130,9 +130,9 @@ final class StoreManager: ObservableObject {
                     // Finish the transaction
                     await transaction.finish()
 
-                    logger.info("Transaction update processed: \\(transaction.id)")
+                    logger.info("Transaction update processed: \(transaction.id)")
                 } catch {
-                    logger.error("Failed to process transaction update: \\(error.localizedDescription)")
+                    logger.error("Failed to process transaction update: \(error.localizedDescription)")
                 }
             }
         }
@@ -153,12 +153,13 @@ final class StoreManager: ObservableObject {
                     purchasedIDs.insert(transaction.productID)
                 }
             } catch {
-                logger.error("Failed to verify entitlement: \\(error.localizedDescription)")
+                logger.error("Failed to verify entitlement: \(error.localizedDescription)")
             }
         }
 
         purchasedProductIDs = purchasedIDs
-        logger.info("Updated purchased products: \\(purchasedIDs)")
+        let purchasedList = purchasedIDs.sorted().joined(separator: ",")
+        logger.info("Updated purchased products: \(purchasedList, privacy: .public)")
     }
 
     // MARK: - Verification

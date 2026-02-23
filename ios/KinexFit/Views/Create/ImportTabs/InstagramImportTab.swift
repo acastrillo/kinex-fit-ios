@@ -7,6 +7,7 @@ struct InstagramImportTab: View {
     @State private var fetchState: FetchStateView.FetchState = .idle
     @State private var showingError = false
     @State private var errorMessage: String = ""
+    @State private var showPaywall = false
 
     private var instagramFetchService: InstagramFetchService {
         InstagramFetchService(apiClient: appState.environment.apiClient)
@@ -56,7 +57,8 @@ struct InstagramImportTab: View {
             FetchStateView(
                 state: fetchState,
                 onProcessAndEdit: processAndEdit,
-                onRetry: fetchWorkout
+                onRetry: fetchWorkout,
+                onShowPaywall: { showPaywall = true }
             )
 
             Spacer()
@@ -67,8 +69,7 @@ struct InstagramImportTab: View {
                let used = workout.quotaUsed,
                let limit = workout.quotaLimit {
                 InstagramQuotaIndicator(used: used, limit: limit) {
-                    // TODO: Show subscription/upgrade screen
-                    print("Show upgrade screen")
+                    showPaywall = true
                 }
             }
         }
@@ -77,6 +78,9 @@ struct InstagramImportTab: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
         }
     }
 

@@ -33,7 +33,7 @@ struct APIRequest {
         path: String,
         method: HTTPMethod,
         body: T,
-        encoder: JSONEncoder = JSONEncoder()
+        encoder: JSONEncoder = JSONCoding.apiEncoder()
     ) throws -> APIRequest {
         let data = try encoder.encode(body)
         return APIRequest(path: path, method: method, headers: ["Content-Type": "application/json"], body: data)

@@ -26,6 +26,13 @@ struct CreateWorkoutView: View {
         appState.environment.workoutRepository
     }
 
+    private var availableTabs: [ImportTab] {
+        if appState.featureFlags.shareExtensionImportEnabled {
+            return ImportTab.allCases
+        }
+        return [.photo, .manual]
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -67,6 +74,11 @@ struct CreateWorkoutView: View {
                     )
                 }
             }
+            .onChange(of: appState.featureFlags.shareExtensionImportEnabled) { _, enabled in
+                if !enabled && selectedTab == .instagram {
+                    selectedTab = .photo
+                }
+            }
         }
     }
 
@@ -91,7 +103,7 @@ struct CreateWorkoutView: View {
 
             // Tab picker
             Picker("Import Method", selection: $selectedTab) {
-                ForEach(ImportTab.allCases) { tab in
+                ForEach(availableTabs) { tab in
                     Label(tab.rawValue, systemImage: tab.icon)
                         .tag(tab)
                 }
@@ -122,16 +134,20 @@ struct CreateWorkoutView: View {
             content: content,
             source: .manual  // Generated workouts are saved as manual
         )
-        try? await workoutRepository.create(workout)
+        _ = try? await workoutRepository.create(workout)
     }
 
     private func saveInstagramWorkout(title: String, content: String?) async throws {
-        guard let fetchedWorkout = appState.pendingInstagramWorkout else { return }
+        guard let pendingWorkout = appState.pendingInstagramWorkout else { return }
 
         let workout = Workout(
             title: title,
             content: content,
-            source: .instagram
+            source: .instagram,
+            durationMinutes: pendingWorkout.parsedData.workoutV1?.totalDuration,
+            exerciseCount: pendingWorkout.exerciseCount,
+            difficulty: pendingWorkout.parsedData.workoutV1?.difficulty?.lowercased(),
+            imageURL: pendingWorkout.imageURL
         )
         try await workoutRepository.create(workout)
 

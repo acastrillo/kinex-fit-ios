@@ -74,7 +74,7 @@ final class InstagramImportService: ObservableObject {
                 }
 
                 processed.extractedText = extractedText
-                logger.info("Extracted text from media: \(extractedText.prefix(100))...")
+                logger.info("Extracted text from media (length: \(extractedText.count))")
             }
 
             processed.processingStatus = .completed

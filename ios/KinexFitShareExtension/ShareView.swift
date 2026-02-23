@@ -1,6 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import OSLog
+import AVFoundation
 
 private let logger = Logger(subsystem: "com.kinex.fit.share-extension", category: "ShareView")
 
@@ -16,6 +17,7 @@ struct ShareView: View {
     @State private var captionText: String?
     @State private var postURL: String?
     @State private var mediaType: String = "unknown"
+    @State private var videoSourceURL: URL?
 
     var body: some View {
         NavigationStack {
@@ -177,7 +179,7 @@ struct ShareView: View {
                 if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
                     if let url = try? await provider.loadItem(forTypeIdentifier: UTType.url.identifier) as? URL {
                         postURL = url.absoluteString
-                        logger.info("Found URL: \(url.absoluteString)")
+                        logger.info("Found shared URL")
                     }
                 }
 
@@ -185,7 +187,7 @@ struct ShareView: View {
                 if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
                     if let text = try? await provider.loadItem(forTypeIdentifier: UTType.plainText.identifier) as? String {
                         captionText = text
-                        logger.info("Found text: \(text.prefix(100))...")
+                        logger.info("Found shared text")
                     }
                 }
 
@@ -201,13 +203,16 @@ struct ShareView: View {
                 // Try to get video
                 if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
                     mediaType = "video"
-                    logger.info("Found video attachment")
-                    // For video, we'll save the URL and process later
+                    if let loadedVideoURL = try? await loadVideoURL(from: provider) {
+                        videoSourceURL = loadedVideoURL
+                        previewImage = generateVideoThumbnail(from: loadedVideoURL)
+                        logger.info("Found video attachment")
+                    }
                 }
             }
         }
 
-        if postURL == nil && captionText == nil && previewImage == nil {
+        if postURL == nil && captionText == nil && previewImage == nil && videoSourceURL == nil {
             error = "No supported content found. Try sharing an image or post."
         }
 
@@ -237,6 +242,46 @@ struct ShareView: View {
         }
     }
 
+    private func loadVideoURL(from provider: NSItemProvider) async throws -> URL? {
+        try await withCheckedThrowingContinuation { continuation in
+            provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                guard let sourceURL = url else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let fileExtension = sourceURL.pathExtension.isEmpty ? "mp4" : sourceURL.pathExtension
+                let destinationURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("kinex-share-\(UUID().uuidString)")
+                    .appendingPathExtension(fileExtension)
+
+                do {
+                    try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+                    continuation.resume(returning: destinationURL)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func generateVideoThumbnail(from videoURL: URL) -> UIImage? {
+        let asset = AVAsset(url: videoURL)
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        imageGenerator.appliesPreferredTrackTransform = true
+        do {
+            let cgImage = try imageGenerator.copyCGImage(at: .zero, actualTime: nil)
+            return UIImage(cgImage: cgImage)
+        } catch {
+            return nil
+        }
+    }
+
     // MARK: - Save Import
 
     private func saveImport() async {
@@ -245,20 +290,31 @@ struct ShareView: View {
         let importId = UUID().uuidString
         var mediaPath = ""
 
-        // Save image if available
-        if let image = previewImage,
-           let imageData = image.jpegData(compressionQuality: 0.85),
-           let mediaDir = AppGroupShared.mediaDirectory {
+        if let mediaDir = AppGroupShared.mediaDirectory {
+            if mediaType == "video", let sourceURL = videoSourceURL {
+                let ext = sourceURL.pathExtension.isEmpty ? "mp4" : sourceURL.pathExtension
+                let fileName = "\(importId).\(ext)"
+                let fileURL = mediaDir.appendingPathComponent(fileName)
 
-            let fileName = "\(importId).jpg"
-            let fileURL = mediaDir.appendingPathComponent(fileName)
+                do {
+                    try FileManager.default.copyItem(at: sourceURL, to: fileURL)
+                    mediaPath = fileName
+                    logger.info("Saved video import")
+                } catch {
+                    logger.error("Failed to save video: \(error.localizedDescription)")
+                }
+            } else if let image = previewImage,
+                      let imageData = image.jpegData(compressionQuality: 0.85) {
+                let fileName = "\(importId).jpg"
+                let fileURL = mediaDir.appendingPathComponent(fileName)
 
-            do {
-                try imageData.write(to: fileURL)
-                mediaPath = fileName
-                logger.info("Saved image to: \(fileURL.path)")
-            } catch {
-                logger.error("Failed to save image: \(error.localizedDescription)")
+                do {
+                    try imageData.write(to: fileURL)
+                    mediaPath = fileName
+                    logger.info("Saved image import")
+                } catch {
+                    logger.error("Failed to save image: \(error.localizedDescription)")
+                }
             }
         }
 

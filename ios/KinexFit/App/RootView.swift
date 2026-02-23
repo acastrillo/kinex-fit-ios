@@ -9,6 +9,7 @@ struct RootView: View {
         _authViewModel = StateObject(wrappedValue: AuthViewModel(
             authService: environment.authService,
             userRepository: environment.userRepository,
+            workoutRepository: environment.workoutRepository,
             googleSignInManager: environment.googleSignInManager,
             facebookSignInManager: environment.facebookSignInManager,
             emailPasswordAuthService: environment.emailPasswordAuthService
@@ -24,7 +25,7 @@ struct RootView: View {
             case .signedOut:
                 SignInView(viewModel: authViewModel)
 
-            case .signedIn(let user):
+            case .signedIn:
                 if showOnboarding {
                     OnboardingCoordinator(onComplete: {
                         showOnboarding = false

@@ -96,10 +96,10 @@ struct PaywallView: View {
 
                     // Legal Links
                     HStack(spacing: 16) {
-                        Link("Terms of Service", destination: URL(string: "https://kinexfit.com/terms")!)
+                        Link("Terms of Service", destination: AppLinks.termsOfService)
                         Text("•")
                             .foregroundStyle(.secondary)
-                        Link("Privacy Policy", destination: URL(string: "https://kinexfit.com/privacy")!)
+                        Link("Privacy Policy", destination: AppLinks.privacyPolicy)
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)

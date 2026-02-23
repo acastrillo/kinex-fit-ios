@@ -2,6 +2,7 @@ import AuthenticationServices
 import SwiftUI
 
 struct SignInView: View {
+    @EnvironmentObject private var appState: AppState
     @ObservedObject var viewModel: AuthViewModel
     @Environment(\.colorScheme) private var colorScheme
     @State private var showEmailSignIn = false
@@ -94,30 +95,32 @@ struct SignInView: View {
                 }
                 .buttonStyle(.plain)
 
-                // Facebook Sign In
-                Button {
-                    Task {
-                        await viewModel.handleFacebookSignIn()
+                if appState.featureFlags.facebookAuthEnabled {
+                    // Facebook Sign In
+                    Button {
+                        Task {
+                            await viewModel.handleFacebookSignIn()
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "f.circle.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(Color(red: 24/255, green: 119/255, blue: 242/255))
+                            Text("Continue with Facebook")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color.white)
+                        .foregroundStyle(Color.black)
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
                     }
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "f.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(Color(red: 24/255, green: 119/255, blue: 242/255))
-                        Text("Continue with Facebook")
-                            .font(.system(size: 16, weight: .semibold))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.white)
-                    .foregroundStyle(Color.black)
-                    .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 // Email/Password Sign In
                 Button {
@@ -246,4 +249,5 @@ private struct LoadingOverlay: View {
 
 #Preview {
     SignInView(viewModel: .preview)
+        .environmentObject(AppState(environment: .preview))
 }

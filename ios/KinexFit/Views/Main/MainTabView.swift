@@ -4,71 +4,62 @@ struct MainTabView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var authViewModel: AuthViewModel
 
-    @State private var selectedTab: Tab = .home
-
-    enum Tab: String, CaseIterable {
-        case home
-        case library
-        case add
-        case stats
-        case profile
-
-        var title: String {
-            switch self {
-            case .home: return "Home"
-            case .library: return "Library"
-            case .add: return "Add"
-            case .stats: return "Stats"
-            case .profile: return "Profile"
-            }
-        }
-
-        var icon: String {
-            switch self {
-            case .home: return "house.fill"
-            case .library: return "books.vertical.fill"
-            case .add: return "plus.circle.fill"
-            case .stats: return "chart.bar.fill"
-            case .profile: return "person.circle"
-            }
-        }
-    }
-
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $appState.selectedMainTab) {
             HomeTab()
                 .tabItem {
-                    Label(Tab.home.title, systemImage: Tab.home.icon)
+                    Label(AppState.MainTab.home.title, systemImage: AppState.MainTab.home.icon)
                 }
-                .tag(Tab.home)
+                .tag(AppState.MainTab.home)
 
             WorkoutsTab()
                 .tabItem {
-                    Label(Tab.library.title, systemImage: Tab.library.icon)
+                    Label(AppState.MainTab.library.title, systemImage: AppState.MainTab.library.icon)
                 }
-                .tag(Tab.library)
+                .tag(AppState.MainTab.library)
 
             CreateWorkoutView()
                 .tabItem {
-                    Label(Tab.add.title, systemImage: Tab.add.icon)
+                    Label(AppState.MainTab.add.title, systemImage: AppState.MainTab.add.icon)
                 }
-                .tag(Tab.add)
+                .tag(AppState.MainTab.add)
 
             MetricsTab()
                 .tabItem {
-                    Label(Tab.stats.title, systemImage: Tab.stats.icon)
+                    Label(AppState.MainTab.stats.title, systemImage: AppState.MainTab.stats.icon)
                 }
-                .tag(Tab.stats)
+                .tag(AppState.MainTab.stats)
 
-            ProfileTab(authViewModel: authViewModel)
+            CalendarTab()
                 .tabItem {
-                    Label(Tab.profile.title, systemImage: Tab.profile.icon)
+                    Label(AppState.MainTab.calendar.title, systemImage: AppState.MainTab.calendar.icon)
                 }
-                .tag(Tab.profile)
+                .tag(AppState.MainTab.calendar)
         }
         .tint(AppTheme.accent)
-        .preferredColorScheme(.dark)
         .environmentObject(appState.environment.storeManager)
+    }
+}
+
+private extension AppState.MainTab {
+    var title: String {
+        switch self {
+        case .home: return "Home"
+        case .library: return "Library"
+        case .add: return "Add"
+        case .stats: return "Stats"
+        case .calendar: return "Calendar"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .home: return "house.fill"
+        case .library: return "books.vertical.fill"
+        case .add: return "plus.circle.fill"
+        case .stats: return "chart.bar.fill"
+        case .calendar: return "calendar"
+        }
     }
 }
 

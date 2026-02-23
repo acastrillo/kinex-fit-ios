@@ -1,0 +1,115 @@
+name: Kinex Fit
+options:
+  minimumXcodeGenVersion: 2.44.0
+  deploymentTarget:
+    iOS: "17.6"
+configs:
+  Debug: debug
+  Release: release
+settings:
+  base:
+    SWIFT_VERSION: 5.0
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 1.0
+    TARGETED_DEVICE_FAMILY: 1
+packages:
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: 7.0.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS.git
+    from: 8.0.0
+  FacebookIOSSDK:
+    url: https://github.com/facebook/facebook-ios-sdk.git
+    from: 17.0.0
+targets:
+  KinexFitShareExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.6"
+    sources:
+      - path: KinexFitShareExtension
+        excludes:
+          - Info.plist
+          - KinexFitShareExtension.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kinex.fit.shareextension
+        CODE_SIGN_ENTITLEMENTS: KinexFitShareExtension/KinexFitShareExtension.entitlements
+        DEVELOPMENT_TEAM: J6G8H8EZWS
+        INFOPLIST_FILE: KinexFitShareExtension/Info.plist
+        SWIFT_VERSION: 5.0
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 1.0
+        TARGETED_DEVICE_FAMILY: 1
+      configs:
+        Debug:
+          CODE_SIGN_ENTITLEMENTS: KinexFitShareExtension/KinexFitShareExtension.Debug.entitlements
+
+  Kinex Fit:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.6"
+    sources:
+      - path: KinexFit
+    dependencies:
+      - target: KinexFitShareExtension
+        embed: true
+      - package: GRDB
+        product: GRDB
+      - package: GoogleSignIn
+        product: GoogleSignIn
+      - package: FacebookIOSSDK
+        product: FacebookCore
+      - package: FacebookIOSSDK
+        product: FacebookLogin
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kinex.fit
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: Kinex Fit.entitlements
+        DEVELOPMENT_TEAM: J6G8H8EZWS
+        INFOPLIST_FILE: KinexFit/Resources/Info.plist
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+        SWIFT_VERSION: 5.0
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 1.0
+        TARGETED_DEVICE_FAMILY: 1
+      configs:
+        Debug:
+          CODE_SIGN_ENTITLEMENTS: Kinex Fit.Debug.entitlements
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+
+  Kinex FitTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.6"
+    sources:
+      - path: KinexFitTests
+    dependencies:
+      - target: Kinex Fit
+    settings:
+      base:
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Kinex Fit.app/Kinex Fit"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+        SWIFT_VERSION: 5.0
+        TARGETED_DEVICE_FAMILY: 1
+
+schemes:
+  Kinex Fit:
+    build:
+      targets:
+        Kinex Fit: all
+        KinexFitShareExtension: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - Kinex FitTests
+    archive:
+      config: Release

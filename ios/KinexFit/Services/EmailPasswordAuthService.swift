@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import OSLog
 
 private let logger = Logger(subsystem: "com.kinex.fit", category: "EmailPasswordAuthService")
@@ -161,6 +162,11 @@ final class EmailPasswordAuthService {
                 updatedAt: Date()
             )
 
+            if try await shouldResetLocalData(for: user.id) {
+                try await clearUserScopedData()
+                logger.info("Cleared local user-scoped data due to account switch")
+            }
+
             // Save user to local database
             try await saveUser(user)
 
@@ -230,26 +236,43 @@ final class EmailPasswordAuthService {
 
     private func saveUser(_ user: User) async throws {
         try await database.dbQueue.write { db in
+            _ = try User.deleteAll(db)
             try user.save(db)
         }
         logger.debug("User saved to local database")
     }
 
+    private func shouldResetLocalData(for incomingUserID: String) async throws -> Bool {
+        try await database.dbQueue.read { db in
+            let existingUserID = try String.fetchOne(db, sql: "SELECT id FROM users LIMIT 1")
+            guard let existingUserID else { return false }
+            return existingUserID != incomingUserID
+        }
+    }
+
+    private func clearUserScopedData() async throws {
+        try await database.dbQueue.write { db in
+            _ = try Workout.deleteAll(db)
+            try db.execute(sql: "DELETE FROM body_metrics")
+            try db.execute(sql: "DELETE FROM sync_queue")
+        }
+    }
+
     private func mapAPIError(_ error: APIError) -> AuthError {
         switch error {
-        case .httpStatus(400):
+        case .httpStatus(400, _):
             return .serverError("Invalid request. Please check your information and try again.")
-        case .httpStatus(401):
+        case .httpStatus(401, _):
             return .invalidIdentityToken
-        case .httpStatus(403):
+        case .httpStatus(403, _):
             return .emailNotVerified
-        case .httpStatus(404):
+        case .httpStatus(404, _):
             return .serverError("Authentication endpoint not found. Please update the app and try again.")
-        case .httpStatus(429):
+        case .httpStatus(429, _):
             return .rateLimited(retryAfter: 60)
-        case .httpStatus(409):
+        case .httpStatus(409, _):
             return .emailAlreadyExists
-        case .httpStatus(let code) where code >= 500:
+        case .httpStatus(let code, _) where code >= 500:
             return .serverError("Server error (\(code))")
         case .decoding:
             return .serverError("Invalid response from server")

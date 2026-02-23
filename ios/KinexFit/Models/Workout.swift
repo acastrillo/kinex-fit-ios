@@ -8,6 +8,10 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
     var title: String
     var content: String?
     var source: WorkoutSource
+    var durationMinutes: Int?
+    var exerciseCount: Int?
+    var difficulty: String?
+    var imageURL: String?
     var createdAt: Date
     var updatedAt: Date
 
@@ -16,6 +20,10 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
         title: String,
         content: String? = nil,
         source: WorkoutSource = .manual,
+        durationMinutes: Int? = nil,
+        exerciseCount: Int? = nil,
+        difficulty: String? = nil,
+        imageURL: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -23,6 +31,10 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
         self.title = title
         self.content = content
         self.source = source
+        self.durationMinutes = durationMinutes
+        self.exerciseCount = exerciseCount
+        self.difficulty = difficulty
+        self.imageURL = imageURL
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -61,7 +73,7 @@ extension Workout: FetchableRecord, PersistableRecord {
     static let databaseTableName = "workouts"
 
     enum Columns: String, ColumnExpression {
-        case id, title, content, source, createdAt, updatedAt
+        case id, title, content, source, durationMinutes, exerciseCount, difficulty, imageURL, createdAt, updatedAt
     }
 
     init(row: Row) {
@@ -69,6 +81,10 @@ extension Workout: FetchableRecord, PersistableRecord {
         title = row[Columns.title]
         content = row[Columns.content]
         source = WorkoutSource(rawValue: row[Columns.source] ?? "manual") ?? .manual
+        durationMinutes = row[Columns.durationMinutes]
+        exerciseCount = row[Columns.exerciseCount]
+        difficulty = row[Columns.difficulty]
+        imageURL = row[Columns.imageURL]
         createdAt = row[Columns.createdAt]
         updatedAt = row[Columns.updatedAt]
     }
@@ -78,6 +94,10 @@ extension Workout: FetchableRecord, PersistableRecord {
         container[Columns.title] = title
         container[Columns.content] = content
         container[Columns.source] = source.rawValue
+        container[Columns.durationMinutes] = durationMinutes
+        container[Columns.exerciseCount] = exerciseCount
+        container[Columns.difficulty] = difficulty
+        container[Columns.imageURL] = imageURL
         container[Columns.createdAt] = createdAt
         container[Columns.updatedAt] = updatedAt
     }

@@ -7,6 +7,11 @@ struct DeleteAccountView: View {
     @State private var isDeleting = false
     @State private var showError = false
     @State private var errorMessage = ""
+    let onAccountDeleted: () async -> Void
+
+    init(onAccountDeleted: @escaping () async -> Void = {}) {
+        self.onAccountDeleted = onAccountDeleted
+    }
 
     private var canDelete: Bool {
         confirmationText.uppercased() == "DELETE"
@@ -120,7 +125,7 @@ struct DeleteAccountView: View {
                 try await appState.environment.userRepository.deleteAccount()
 
                 // Account deleted successfully - user is now signed out
-                // The auth state will automatically update and show sign-in screen
+                await onAccountDeleted()
                 await MainActor.run {
                     dismiss()
                 }

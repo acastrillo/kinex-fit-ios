@@ -3,493 +3,1106 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		11EF2F132F29476F00AF6E67 /* BodyMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F0F2F29476F00AF6E67 /* BodyMetric.swift */; };
-		11EF2F142F29476F00AF6E67 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F102F29476F00AF6E67 /* User.swift */; };
-		11EF2F152F29476F00AF6E67 /* Workout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F112F29476F00AF6E67 /* Workout.swift */; };
-		11EF2F162F29476F00AF6E67 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F0E2F29476F00AF6E67 /* AuthModels.swift */; };
-		11EF2F1B2F29478200AF6E67 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F172F29478200AF6E67 /* AuthService.swift */; };
-		11EF2F1C2F29478200AF6E67 /* WorkoutRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F192F29478200AF6E67 /* WorkoutRepository.swift */; };
-		11EF2F1D2F29478200AF6E67 /* UserRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F182F29478200AF6E67 /* UserRepository.swift */; };
-		11EF2F212F29478B00AF6E67 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F1E2F29478B00AF6E67 /* AuthViewModel.swift */; };
-		11EF2F222F29478B00AF6E67 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F1F2F29478B00AF6E67 /* TokenStore.swift */; };
-		11EF2F302F29479400AF6E67 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F252F29479400AF6E67 /* MainTabView.swift */; };
-		11EF2F312F29479400AF6E67 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F232F29479400AF6E67 /* SignInView.swift */; };
-		11EF2F322F29479400AF6E67 /* MetricsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F272F29479400AF6E67 /* MetricsTab.swift */; };
-		11EF2F332F29479400AF6E67 /* WorkoutsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F2D2F29479400AF6E67 /* WorkoutsTab.swift */; };
-		11EF2F342F29479400AF6E67 /* ScanTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F2B2F29479400AF6E67 /* ScanTab.swift */; };
-		11EF2F352F29479400AF6E67 /* ProfileTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EF2F292F29479400AF6E67 /* ProfileTab.swift */; };
-		1A2B3C4D5E6F000000000020 /* KinexFitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000010 /* KinexFitApp.swift */; };
-		1A2B3C4D5E6F000000000021 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000011 /* AppState.swift */; };
-		1A2B3C4D5E6F000000000022 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000012 /* RootView.swift */; };
-		1A2B3C4D5E6F000000000023 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000013 /* AppEnvironment.swift */; };
-		1A2B3C4D5E6F000000000024 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000014 /* AppConfig.swift */; };
-		1A2B3C4D5E6F000000000026 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000016 /* APIClient.swift */; };
-		1A2B3C4D5E6F000000000027 /* APIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000017 /* APIRequest.swift */; };
-		1A2B3C4D5E6F000000000028 /* AppDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000018 /* AppDatabase.swift */; };
-		1A2B3C4D5E6F000000000029 /* DatabaseMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000019 /* DatabaseMigrator.swift */; };
-		1A2B3C4D5E6F00000000002A /* SyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F00000000001A /* SyncEngine.swift */; };
-		1A2B3C4D5E6F00000000002B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F00000000001B /* Assets.xcassets */; };
+		00E858ED0B635DF7E12967EE /* EmailPasswordAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3301AB014CB54626DAE3275 /* EmailPasswordAuthService.swift */; };
+		025966618AE39C994C785DAE /* UserRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D57580B62864E158CB32E3FC /* UserRepository.swift */; };
+		09BF637EBC03DE8E9CA1347F /* ProfileTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AD876559D9F2136388B37FF /* ProfileTab.swift */; };
+		0A74F0F12F28BBBB8A432D84 /* CalendarTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3572F554EA702F4F8C6B715 /* CalendarTab.swift */; };
+		0E24B79154ACC72F93D2D62E /* WorkoutDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B74EB8DBCD5F332533B341D4 /* WorkoutDivider.swift */; };
+		13DECE3E661DFE7286C712BF /* AddWorkoutTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D38E8B33BD997AD4B12F9B9 /* AddWorkoutTab.swift */; };
+		155D538F0753B74BC2A9FDB9 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58DD7FD8F8122D3500FCA2E7 /* APIClient.swift */; };
+		15F6E3582C94F72DC9627D69 /* JSONCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74861895E759A15ECC647EA5 /* JSONCoding.swift */; };
+		166253E1C029BF71DFFC0C24 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0EF7B80A9ECCD4A5E9A6BF /* MainTabView.swift */; };
+		19209DA66BC8B9D3A71470C1 /* MetricsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7FE8582F4174BABCBE2E20 /* MetricsTab.swift */; };
+		1F300C392F2383DD0F97879F /* BodyMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4321971ED635AECEC974AD81 /* BodyMetric.swift */; };
+		20C1E86B60962A17786862EA /* PurchaseValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B684CB5C65893670C5687DD3 /* PurchaseValidator.swift */; };
+		23065E977C328D7B92DE337A /* SubscriptionStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B0DE5BDD43E7C71EA17DA2 /* SubscriptionStatusView.swift */; };
+		232827D435953630F2808BE8 /* CreateWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AD56FEE5B4C3361F696FDB4 /* CreateWorkoutView.swift */; };
+		2337FBA148A30C7874DFA5ED /* EmailSignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B36F6F2A259E9ED40867B1E /* EmailSignUpView.swift */; };
+		25CED3E0875FC21B8E140C2A /* EnhancementResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD742703F77A788904A06A5F /* EnhancementResultView.swift */; };
+		26E395664292735CD6DDEE7E /* KinexFitShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A41D4084856AA0A62DCE9663 /* KinexFitShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		287664179876E59E837BCC4B /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F402A3F3DE6BDF3FCD59480 /* PaywallView.swift */; };
+		2E05F525A0643870A093232E /* AuthSessionEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1E49E06BC7F95EFA01F1B4 /* AuthSessionEvents.swift */; };
+		30C2DE10CD6E328B67599FAF /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E709444D0AC40ADA209D9CD /* RootView.swift */; };
+		3307AE96623C917EFAA1A64E /* GoalsStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79B76C6F65A467AA43413079 /* GoalsStep.swift */; };
+		3711488B4A32BB904B139CBF /* InstagramImportTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDCF82EF1BF5C7505375EA3F /* InstagramImportTab.swift */; };
+		38F8976C6AD953C18BE4758B /* FeatureFlagService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2AD3E020C9A72E6FB14A083 /* FeatureFlagService.swift */; };
+		3AD197A45D6DB4B6A213932E /* AIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70ABEEED580A4286BD546CD2 /* AIModels.swift */; };
+		3C07EA85317E159E624EC4D3 /* APIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2EAFB44BCE60B9DDA8F41D2 /* APIRequest.swift */; };
+		3D366807F9469173DFA3C2DE /* WorkoutRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6391591B6604353BBDF2EA34 /* WorkoutRepository.swift */; };
+		3F4C74AD310F7F647878DB3A /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 917FA021EEB3292AB35945B4 /* GoogleSignIn */; };
+		492BE5FA7C60CBA61558A806 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B1F42262E12F7924C4E82A /* NotificationManager.swift */; };
+		507258834C91D31553383E7A /* CompleteStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 479A4A2D835B9A041507FD64 /* CompleteStep.swift */; };
+		525DC6C36AC7F4DA9700BE8D /* ScheduleStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67C2A0E101BCD694B5C661C /* ScheduleStep.swift */; };
+		5489CB92230289420246E89A /* AuthSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50E11B9223C0E7A0A8ACD92 /* AuthSmokeTests.swift */; };
+		54BF1FD514704B26BDA3530E /* StatCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EEFF07B285A8E85D0F3D5FF /* StatCard.swift */; };
+		58227D0F98C426A2F8A04706 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0934E344F05738B7ED931F63 /* HelpView.swift */; };
+		5D0193B2023E9975DBFFA42F /* WorkoutRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD63365294142619EA613B2A /* WorkoutRowView.swift */; };
+		66073701149A5485DDF897CB /* APIRequest+InstagramImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48B0B9D0A31BB4C2A29A288C /* APIRequest+InstagramImport.swift */; };
+		66216D0063BFABD68FDD75FE /* WelcomeStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 073756617261BC671E989161 /* WelcomeStep.swift */; };
+		68C69C70239017378AC2A5ED /* InstagramImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C9A223E816F231463E51A8 /* InstagramImport.swift */; };
+		6D8819C5BBB3E7BCE544A9A8 /* AIGeneratorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BB65F99FCAF2F3406FD8CA0 /* AIGeneratorCard.swift */; };
+		71A6698DF6EF0DB7944174F5 /* SyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52211B3F0A951675FC69E087 /* SyncEngine.swift */; };
+		734A7B378A0C3339C4D0990C /* AppLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82A1736672A56EF8E1C5C34 /* AppLinks.swift */; };
+		77B7FCCB49712235F0CA6E87 /* AIQuotaIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948984025EFE2F1765915861 /* AIQuotaIndicator.swift */; };
+		78B6185CA0DB8536DAE154C4 /* BackgroundSyncTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6BC7E58A505B8B208C96A7 /* BackgroundSyncTask.swift */; };
+		78DBBF5860D578D0007BDCC4 /* InstagramFetchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB5869D9A823BD46BE4FB619 /* InstagramFetchModels.swift */; };
+		7AEC531D38224C078529EE8E /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AACF2EE09167A0E03B08E17 /* AppState.swift */; };
+		7C17B8902507B3F6FEBBCB09 /* WorkoutFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9598CFF27DE251970B63899E /* WorkoutFormView.swift */; };
+		8609320B7CF72BC1909178DE /* InstagramImportReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB1E1EF855F1B4253BF0A76 /* InstagramImportReviewView.swift */; };
+		8858D470E6035723B5120AFB /* NotificationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A825E2DF7800911492375643 /* NotificationPermissionView.swift */; };
+		8B94A72C3A14A2058879A2C6 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52FA56000EC75AE17763243 /* AIService.swift */; };
+		8DE533AE0302CE90C3DB5D9C /* Workout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20508A2BD41BA405C201B120 /* Workout.swift */; };
+		9498561B93A2B103965010D3 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59BBCF9A923ADEE93F8A608E /* NetworkMonitor.swift */; };
+		9820E0739B7417CD0DB3B6BD /* HomeStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391F5DB9958843CE2390431E /* HomeStats.swift */; };
+		99A7555F6D727FA93E115238 /* HomeTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CDE058A8B8512123A40228 /* HomeTab.swift */; };
+		9AC617055E83790A07587064 /* FetchStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19AF704046B0E8A7553DBFDE /* FetchStateView.swift */; };
+		A1CCF999F330B5E445843E22 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5D6F6DFA9632A3288589095E /* Assets.xcassets */; };
+		A1D84016BB58AAFD5556E224 /* OCRResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03E5FF6477F2DC34E498DC0 /* OCRResultView.swift */; };
+		A32ED93C4AB20B2A21ADB044 /* WorkoutDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEEBDE6FB2DD1FEC2D49AE8C /* WorkoutDetailView.swift */; };
+		A4EC2B9298DEBB1A9EF15628 /* AppDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDA5C5511907C88F247FD7E /* AppDatabase.swift */; };
+		A615F3385D47DCAC700638CA /* InstagramImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6309D0F9546A93B71022DF8 /* InstagramImportService.swift */; };
+		A626C350078136567059981D /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96ED4DEB6136F9EBDE5150F4 /* AppEnvironment.swift */; };
+		A77004360813FE9DEC4B5BB9 /* InstagramWorkoutEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6512F8474C90D275230D4E6E /* InstagramWorkoutEditView.swift */; };
+		A7B5CEC239BA21AE33D56748 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC636647966DA52FCF82ED84 /* ShareViewController.swift */; };
+		A83B0C4032B6538FA8C8A14C /* InstagramFetchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9CF6699899DE56AFE43804 /* InstagramFetchService.swift */; };
+		A9B382E17839AD6AC63F26B8 /* ScanTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A37B3945336EA8DEE48F9D /* ScanTab.swift */; };
+		A9DD38613231F8F4CB8F9D0B /* ExperienceStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E35F674294F24184C7E00F0 /* ExperienceStep.swift */; };
+		AE4CE5A3A6AA7F6DA0A39E5A /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B912A4D56DF3B08E913590D1 /* OCRService.swift */; };
+		B3DE00692C0A682ECEFA1DF1 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 33DFF65D44F59BDD0476CBE5 /* GRDB */; };
+		B49DAC8654002D336AAB2CB5 /* WorkoutGeneratorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C725768200434559440000 /* WorkoutGeneratorView.swift */; };
+		B5B8D2297E5B7165427F5CAD /* WorkoutsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = E19836D1296E7191534405C9 /* WorkoutsTab.swift */; };
+		B6556C8E1B6D5DDDDBB79327 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4208F10BD92B4361F00491C0 /* AppDelegate.swift */; };
+		B88AB658B60E74C7C7EB1CD1 /* TrainingProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9161EAFD48A6507DA998918 /* TrainingProfile.swift */; };
+		B8AF0DF4A0C0DCBB2781D846 /* SyncStatusIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 587B4225A4B723E865D5DDFF /* SyncStatusIndicator.swift */; };
+		BD24C04428C21DF0EAAF3A10 /* ManualImportTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2782169B28FF23B49C2BB830 /* ManualImportTab.swift */; };
+		C03EE1E3F623FD5BFF0D9847 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 48A19A0396A6C300C35C317A /* PrivacyInfo.xcprivacy */; };
+		C49E40F8FA67CC98E0EDC5B3 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 949BC3BCC78B7C64E0CBE8BC /* AuthModels.swift */; };
+		CA95F1404EF7261F2B97D024 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABD5A1A9EF3AE915BF5FD8B9 /* Theme.swift */; };
+		CC9D3A4B5676B00AE055CED7 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8B725E1DC09C714547A141B4 /* FacebookCore */; };
+		CF5548C9EEBDF114B2030F80 /* EnhanceWithAIButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97685FB362222DC6B667DA6B /* EnhanceWithAIButton.swift */; };
+		CF7134F8872794C03FAFE010 /* PhotoImportTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 099D2E55B3C39E5A43436EAB /* PhotoImportTab.swift */; };
+		D0A5ED88D1ABD1F330D2CA1B /* GoogleSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7B3BB42CA334B028B5839B /* GoogleSignInManager.swift */; };
+		D30F172D1D8DE2C53D4D78C7 /* ProductIDs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F2F08FBF2F3C573DD16F9A4 /* ProductIDs.swift */; };
+		D71CBDF59D5E08FC6997FD2E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C562C8E59B642958EE17EE7A /* SettingsView.swift */; };
+		DAA2A3EB1AF6B42D5B3F7DFE /* BasicProfileStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9191381754023702D26D90DF /* BasicProfileStep.swift */; };
+		DBF56914B34CE526614710A9 /* DeleteAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E37D2E9D80708139C6D0B53 /* DeleteAccountView.swift */; };
+		DCC0B696F64B1BF213A814EF /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0994D14EC4D128B33720A18F /* Settings.swift */; };
+		E1B6406AD18F68E7154BA057 /* EquipmentStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8022168EAE27B8511CAA1FB0 /* EquipmentStep.swift */; };
+		E25C34CAA0895BD42D061D98 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6CB60AD751B804BE2A2C48B /* StoreManager.swift */; };
+		E4AFE44BC09F07D3353549E4 /* DatabaseMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61AD105F2F5AC40D8A5E712D /* DatabaseMigrator.swift */; };
+		E5D51B20867CC09DD6F32695 /* OnboardingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF893620505BAE35C7256D90 /* OnboardingCoordinator.swift */; };
+		E6A87C9974A854EA56A2F9B5 /* PersonalRecordsStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76F3DB38DFE5B706FBD45B71 /* PersonalRecordsStep.swift */; };
+		EA6484DD566023A8F81B71E1 /* TextExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADAEDB9542E072D7E9D8AD46 /* TextExtractionService.swift */; };
+		EC6EAB0C234A8B2183AD2369 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153F7BD667E56BD45AF726B3 /* TokenStore.swift */; };
+		EDC43890ED7D0ABD8919F6CB /* EmailSignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A31F92DC98E3C9C46AA29B5 /* EmailSignInSheet.swift */; };
+		EE56C7325CA24C545F424F39 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98B3609FC75E9F43F3736D3 /* AuthService.swift */; };
+		F0A268DA39C89019FE803BBB /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B5A0949B764DCC771FEE474 /* AppConfig.swift */; };
+		F0C2A9ACA85A5EE95974D3E2 /* AppFeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 944E35914EAEB44A4434C182 /* AppFeatureFlags.swift */; };
+		F0C43446F53DB86803508139 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46E17EE4780932F90F49D90D /* SignInView.swift */; };
+		F1F9499858CDD5F51368923E /* InstagramFetchError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76D2854A7D8B38302EAF9F0 /* InstagramFetchError.swift */; };
+		F230668C89DDDFC6CBCB23C4 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5DBD379AEF6C7237F57BC21 /* User.swift */; };
+		F54E36A4E67605BD0538C7E2 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = B6198D933A6CCD5035ABF8B7 /* FacebookLogin */; };
+		F848CF90121E12CFB7099FC0 /* FacebookSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00F875A4D885F9BCEB75857 /* FacebookSignInManager.swift */; };
+		F9608657256FEF8E6F913B08 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C69E5A94A914A78C005ABBE0 /* ShareView.swift */; };
+		FB469F435BC04C5C0488F7CF /* SyncPayloadV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E39E3B709D493110C391694 /* SyncPayloadV1.swift */; };
+		FC10EEFA6FA4E9E5BB24B8B1 /* AIFeatureCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB2B6FE827306A1927D6844 /* AIFeatureCard.swift */; };
+		FC54A67A79C8A6505A4E6172 /* PendingImportsBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80750E8D8DEEE625DB511E13 /* PendingImportsBanner.swift */; };
+		FDABF9FB4C9CAEC195FFA40C /* InstagramQuotaIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1F121FAD676820FB4F6509 /* InstagramQuotaIndicator.swift */; };
+		FEF523ED2E2D84FDD012856C /* KinexFitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E093A91C14DA12D002584FEF /* KinexFitApp.swift */; };
+		FF7DA8E3243524C8D4C1AE41 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4164C468BDAFD9E24B726F89 /* AuthViewModel.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		256A3450C531F625A89C6DF2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ADB714D78300FC31ACA6E446 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9AB114BC923DCAD31D4FF8D5;
+			remoteInfo = "Kinex Fit";
+		};
+		A5C4F6046BFB33E72113F8B5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ADB714D78300FC31ACA6E446 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3B3D53A186D9A415B6DF12C1;
+			remoteInfo = KinexFitShareExtension;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXCopyFilesBuildPhase section */
-		11EF2F392F29666500AF6E67 /* Embed Frameworks */ = {
+		F5FE4D067934F16FB68F4AEF /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolderSpec = 10;
+			dstSubfolderSpec = 13;
 			files = (
+				26E395664292735CD6DDEE7E /* KinexFitShareExtension.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed Frameworks";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		11EF2F0E2F29476F00AF6E67 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
-		11EF2F0F2F29476F00AF6E67 /* BodyMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetric.swift; sourceTree = "<group>"; };
-		11EF2F102F29476F00AF6E67 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
-		11EF2F112F29476F00AF6E67 /* Workout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workout.swift; sourceTree = "<group>"; };
-		11EF2F172F29478200AF6E67 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
-		11EF2F182F29478200AF6E67 /* UserRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRepository.swift; sourceTree = "<group>"; };
-		11EF2F192F29478200AF6E67 /* WorkoutRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRepository.swift; sourceTree = "<group>"; };
-		11EF2F1E2F29478B00AF6E67 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
-		11EF2F1F2F29478B00AF6E67 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
-		11EF2F232F29479400AF6E67 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
-		11EF2F252F29479400AF6E67 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
-		11EF2F272F29479400AF6E67 /* MetricsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricsTab.swift; sourceTree = "<group>"; };
-		11EF2F292F29479400AF6E67 /* ProfileTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileTab.swift; sourceTree = "<group>"; };
-		11EF2F2B2F29479400AF6E67 /* ScanTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanTab.swift; sourceTree = "<group>"; };
-		11EF2F2D2F29479400AF6E67 /* WorkoutsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutsTab.swift; sourceTree = "<group>"; };
-		1A2B3C4D5E6F000000000008 /* Kinex Fit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = "Kinex Fit.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		1A2B3C4D5E6F000000000010 /* KinexFitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KinexFitApp.swift; sourceTree = "<group>"; };
-		1A2B3C4D5E6F000000000011 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
-		1A2B3C4D5E6F000000000012 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		1A2B3C4D5E6F000000000013 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
-		1A2B3C4D5E6F000000000014 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
-		1A2B3C4D5E6F000000000016 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
-		1A2B3C4D5E6F000000000017 /* APIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRequest.swift; sourceTree = "<group>"; };
-		1A2B3C4D5E6F000000000018 /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
-		1A2B3C4D5E6F000000000019 /* DatabaseMigrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseMigrator.swift; sourceTree = "<group>"; };
-		1A2B3C4D5E6F00000000001A /* SyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncEngine.swift; sourceTree = "<group>"; };
-		1A2B3C4D5E6F00000000001B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		1A2B3C4D5E6F00000000001C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		073756617261BC671E989161 /* WelcomeStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeStep.swift; sourceTree = "<group>"; };
+		0934E344F05738B7ED931F63 /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
+		0994D14EC4D128B33720A18F /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		099D2E55B3C39E5A43436EAB /* PhotoImportTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoImportTab.swift; sourceTree = "<group>"; };
+		0BB65F99FCAF2F3406FD8CA0 /* AIGeneratorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGeneratorCard.swift; sourceTree = "<group>"; };
+		0D38E8B33BD997AD4B12F9B9 /* AddWorkoutTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWorkoutTab.swift; sourceTree = "<group>"; };
+		0E35F674294F24184C7E00F0 /* ExperienceStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperienceStep.swift; sourceTree = "<group>"; };
+		153F7BD667E56BD45AF726B3 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
+		19AF704046B0E8A7553DBFDE /* FetchStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchStateView.swift; sourceTree = "<group>"; };
+		20508A2BD41BA405C201B120 /* Workout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workout.swift; sourceTree = "<group>"; };
+		20A37B3945336EA8DEE48F9D /* ScanTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanTab.swift; sourceTree = "<group>"; };
+		2782169B28FF23B49C2BB830 /* ManualImportTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualImportTab.swift; sourceTree = "<group>"; };
+		2AD56FEE5B4C3361F696FDB4 /* CreateWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateWorkoutView.swift; sourceTree = "<group>"; };
+		2AD876559D9F2136388B37FF /* ProfileTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileTab.swift; sourceTree = "<group>"; };
+		2B5A0949B764DCC771FEE474 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		2E709444D0AC40ADA209D9CD /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		391F5DB9958843CE2390431E /* HomeStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStats.swift; sourceTree = "<group>"; };
+		3A31F92DC98E3C9C46AA29B5 /* EmailSignInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignInSheet.swift; sourceTree = "<group>"; };
+		3EEFF07B285A8E85D0F3D5FF /* StatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatCard.swift; sourceTree = "<group>"; };
+		3F2F08FBF2F3C573DD16F9A4 /* ProductIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductIDs.swift; sourceTree = "<group>"; };
+		3F402A3F3DE6BDF3FCD59480 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		4164C468BDAFD9E24B726F89 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		4208F10BD92B4361F00491C0 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		4321971ED635AECEC974AD81 /* BodyMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetric.swift; sourceTree = "<group>"; };
+		46E17EE4780932F90F49D90D /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		479A4A2D835B9A041507FD64 /* CompleteStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteStep.swift; sourceTree = "<group>"; };
+		48A19A0396A6C300C35C317A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		48B0B9D0A31BB4C2A29A288C /* APIRequest+InstagramImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIRequest+InstagramImport.swift"; sourceTree = "<group>"; };
+		4AACF2EE09167A0E03B08E17 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		52211B3F0A951675FC69E087 /* SyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncEngine.swift; sourceTree = "<group>"; };
+		52B1F42262E12F7924C4E82A /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		587B4225A4B723E865D5DDFF /* SyncStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusIndicator.swift; sourceTree = "<group>"; };
+		58DD7FD8F8122D3500FCA2E7 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		59BBCF9A923ADEE93F8A608E /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		5D6F6DFA9632A3288589095E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5E37D2E9D80708139C6D0B53 /* DeleteAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAccountView.swift; sourceTree = "<group>"; };
+		5E6BC7E58A505B8B208C96A7 /* BackgroundSyncTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSyncTask.swift; sourceTree = "<group>"; };
+		61AD105F2F5AC40D8A5E712D /* DatabaseMigrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseMigrator.swift; sourceTree = "<group>"; };
+		6391591B6604353BBDF2EA34 /* WorkoutRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRepository.swift; sourceTree = "<group>"; };
+		64C725768200434559440000 /* WorkoutGeneratorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutGeneratorView.swift; sourceTree = "<group>"; };
+		6512F8474C90D275230D4E6E /* InstagramWorkoutEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramWorkoutEditView.swift; sourceTree = "<group>"; };
+		6E7FE8582F4174BABCBE2E20 /* MetricsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricsTab.swift; sourceTree = "<group>"; };
+		70ABEEED580A4286BD546CD2 /* AIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIModels.swift; sourceTree = "<group>"; };
+		74861895E759A15ECC647EA5 /* JSONCoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONCoding.swift; sourceTree = "<group>"; };
+		76F3DB38DFE5B706FBD45B71 /* PersonalRecordsStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalRecordsStep.swift; sourceTree = "<group>"; };
+		79B76C6F65A467AA43413079 /* GoalsStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsStep.swift; sourceTree = "<group>"; };
+		7DB2B6FE827306A1927D6844 /* AIFeatureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIFeatureCard.swift; sourceTree = "<group>"; };
+		7FFF4A221C3794EACAD55EE7 /* Kinex FitTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = "Kinex FitTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8022168EAE27B8511CAA1FB0 /* EquipmentStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentStep.swift; sourceTree = "<group>"; };
+		80750E8D8DEEE625DB511E13 /* PendingImportsBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingImportsBanner.swift; sourceTree = "<group>"; };
+		820382E50B659AB39484DA16 /* KinexFitShareExtension.Debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KinexFitShareExtension.Debug.entitlements; sourceTree = "<group>"; };
+		85B0DE5BDD43E7C71EA17DA2 /* SubscriptionStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionStatusView.swift; sourceTree = "<group>"; };
+		8E39E3B709D493110C391694 /* SyncPayloadV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPayloadV1.swift; sourceTree = "<group>"; };
+		8F1F121FAD676820FB4F6509 /* InstagramQuotaIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramQuotaIndicator.swift; sourceTree = "<group>"; };
+		9191381754023702D26D90DF /* BasicProfileStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasicProfileStep.swift; sourceTree = "<group>"; };
+		944E35914EAEB44A4434C182 /* AppFeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeatureFlags.swift; sourceTree = "<group>"; };
+		948984025EFE2F1765915861 /* AIQuotaIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIQuotaIndicator.swift; sourceTree = "<group>"; };
+		949BC3BCC78B7C64E0CBE8BC /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
+		94CDE058A8B8512123A40228 /* HomeTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTab.swift; sourceTree = "<group>"; };
+		9598CFF27DE251970B63899E /* WorkoutFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutFormView.swift; sourceTree = "<group>"; };
+		96ED4DEB6136F9EBDE5150F4 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		97685FB362222DC6B667DA6B /* EnhanceWithAIButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhanceWithAIButton.swift; sourceTree = "<group>"; };
+		9B36F6F2A259E9ED40867B1E /* EmailSignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignUpView.swift; sourceTree = "<group>"; };
+		9D0EF7B80A9ECCD4A5E9A6BF /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		9E7B3BB42CA334B028B5839B /* GoogleSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignInManager.swift; sourceTree = "<group>"; };
+		A41D4084856AA0A62DCE9663 /* KinexFitShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = KinexFitShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A716A6252F364A2AB2262CF9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		A76D2854A7D8B38302EAF9F0 /* InstagramFetchError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramFetchError.swift; sourceTree = "<group>"; };
+		A825E2DF7800911492375643 /* NotificationPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPermissionView.swift; sourceTree = "<group>"; };
+		ABD5A1A9EF3AE915BF5FD8B9 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		ACB1E1EF855F1B4253BF0A76 /* InstagramImportReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramImportReviewView.swift; sourceTree = "<group>"; };
+		ADAEDB9542E072D7E9D8AD46 /* TextExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextExtractionService.swift; sourceTree = "<group>"; };
+		B67C2A0E101BCD694B5C661C /* ScheduleStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleStep.swift; sourceTree = "<group>"; };
+		B684CB5C65893670C5687DD3 /* PurchaseValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseValidator.swift; sourceTree = "<group>"; };
+		B74EB8DBCD5F332533B341D4 /* WorkoutDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDivider.swift; sourceTree = "<group>"; };
+		B912A4D56DF3B08E913590D1 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
+		BB9CF6699899DE56AFE43804 /* InstagramFetchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramFetchService.swift; sourceTree = "<group>"; };
+		BEEBDE6FB2DD1FEC2D49AE8C /* WorkoutDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDetailView.swift; sourceTree = "<group>"; };
+		C3301AB014CB54626DAE3275 /* EmailPasswordAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailPasswordAuthService.swift; sourceTree = "<group>"; };
+		C562C8E59B642958EE17EE7A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		C69E5A94A914A78C005ABBE0 /* ShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareView.swift; sourceTree = "<group>"; };
+		CB1E49E06BC7F95EFA01F1B4 /* AuthSessionEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSessionEvents.swift; sourceTree = "<group>"; };
+		CB5869D9A823BD46BE4FB619 /* InstagramFetchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramFetchModels.swift; sourceTree = "<group>"; };
+		CCDA5C5511907C88F247FD7E /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
+		CD742703F77A788904A06A5F /* EnhancementResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancementResultView.swift; sourceTree = "<group>"; };
+		D03E5FF6477F2DC34E498DC0 /* OCRResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRResultView.swift; sourceTree = "<group>"; };
+		D2C9A223E816F231463E51A8 /* InstagramImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramImport.swift; sourceTree = "<group>"; };
+		D3572F554EA702F4F8C6B715 /* CalendarTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarTab.swift; sourceTree = "<group>"; };
+		D57580B62864E158CB32E3FC /* UserRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRepository.swift; sourceTree = "<group>"; };
+		D5DBD379AEF6C7237F57BC21 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		D9161EAFD48A6507DA998918 /* TrainingProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingProfile.swift; sourceTree = "<group>"; };
+		D98B3609FC75E9F43F3736D3 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		DD63365294142619EA613B2A /* WorkoutRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRowView.swift; sourceTree = "<group>"; };
+		E093A91C14DA12D002584FEF /* KinexFitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KinexFitApp.swift; sourceTree = "<group>"; };
+		E19836D1296E7191534405C9 /* WorkoutsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutsTab.swift; sourceTree = "<group>"; };
+		E52FA56000EC75AE17763243 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
+		E6CB60AD751B804BE2A2C48B /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
+		EB23CEEA961D1DD0ADA29B25 /* Kinex Fit.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "Kinex Fit.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EDCF82EF1BF5C7505375EA3F /* InstagramImportTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramImportTab.swift; sourceTree = "<group>"; };
+		F00F875A4D885F9BCEB75857 /* FacebookSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacebookSignInManager.swift; sourceTree = "<group>"; };
+		F2AD3E020C9A72E6FB14A083 /* FeatureFlagService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagService.swift; sourceTree = "<group>"; };
+		F2EAFB44BCE60B9DDA8F41D2 /* APIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRequest.swift; sourceTree = "<group>"; };
+		F50E11B9223C0E7A0A8ACD92 /* AuthSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSmokeTests.swift; sourceTree = "<group>"; };
+		F6309D0F9546A93B71022DF8 /* InstagramImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramImportService.swift; sourceTree = "<group>"; };
+		F82A1736672A56EF8E1C5C34 /* AppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLinks.swift; sourceTree = "<group>"; };
+		FC636647966DA52FCF82ED84 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		FF893620505BAE35C7256D90 /* OnboardingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCoordinator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		1A2B3C4D5E6F000000000006 /* Frameworks */ = {
+		8F8071C19322B0B70F567BB0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B3DE00692C0A682ECEFA1DF1 /* GRDB in Frameworks */,
+				3F4C74AD310F7F647878DB3A /* GoogleSignIn in Frameworks */,
+				CC9D3A4B5676B00AE055CED7 /* FacebookCore in Frameworks */,
+				F54E36A4E67605BD0538C7E2 /* FacebookLogin in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		11EF2F122F29476F00AF6E67 /* Models */ = {
+		121E7A9441A3E18E86F0AB00 /* KinexFitShareExtension */ = {
 			isa = PBXGroup;
 			children = (
-				11EF2F0E2F29476F00AF6E67 /* AuthModels.swift */,
-				11EF2F0F2F29476F00AF6E67 /* BodyMetric.swift */,
-				11EF2F102F29476F00AF6E67 /* User.swift */,
-				11EF2F112F29476F00AF6E67 /* Workout.swift */,
+				820382E50B659AB39484DA16 /* KinexFitShareExtension.Debug.entitlements */,
+				C69E5A94A914A78C005ABBE0 /* ShareView.swift */,
+				FC636647966DA52FCF82ED84 /* ShareViewController.swift */,
 			);
-			path = Models;
+			path = KinexFitShareExtension;
 			sourceTree = "<group>";
 		};
-		11EF2F1A2F29478200AF6E67 /* Services */ = {
+		13B60BE39567A2A73B89E9F2 /* AI */ = {
 			isa = PBXGroup;
 			children = (
-				11EF2F172F29478200AF6E67 /* AuthService.swift */,
-				11EF2F182F29478200AF6E67 /* UserRepository.swift */,
-				11EF2F192F29478200AF6E67 /* WorkoutRepository.swift */,
+				948984025EFE2F1765915861 /* AIQuotaIndicator.swift */,
+				CD742703F77A788904A06A5F /* EnhancementResultView.swift */,
+				97685FB362222DC6B667DA6B /* EnhanceWithAIButton.swift */,
+				64C725768200434559440000 /* WorkoutGeneratorView.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+		20FDC32AF5079613632E02E2 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E52FA56000EC75AE17763243 /* AIService.swift */,
+				D98B3609FC75E9F43F3736D3 /* AuthService.swift */,
+				C3301AB014CB54626DAE3275 /* EmailPasswordAuthService.swift */,
+				F00F875A4D885F9BCEB75857 /* FacebookSignInManager.swift */,
+				F2AD3E020C9A72E6FB14A083 /* FeatureFlagService.swift */,
+				9E7B3BB42CA334B028B5839B /* GoogleSignInManager.swift */,
+				A76D2854A7D8B38302EAF9F0 /* InstagramFetchError.swift */,
+				BB9CF6699899DE56AFE43804 /* InstagramFetchService.swift */,
+				F6309D0F9546A93B71022DF8 /* InstagramImportService.swift */,
+				52B1F42262E12F7924C4E82A /* NotificationManager.swift */,
+				B912A4D56DF3B08E913590D1 /* OCRService.swift */,
+				ADAEDB9542E072D7E9D8AD46 /* TextExtractionService.swift */,
+				D57580B62864E158CB32E3FC /* UserRepository.swift */,
+				6391591B6604353BBDF2EA34 /* WorkoutRepository.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
 		};
-		11EF2F202F29478B00AF6E67 /* Auth */ = {
+		21684FFEB9937ABEEA94A1F0 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
-				11EF2F1E2F29478B00AF6E67 /* AuthViewModel.swift */,
-				11EF2F1F2F29478B00AF6E67 /* TokenStore.swift */,
-			);
-			path = Auth;
-			sourceTree = "<group>";
-		};
-		11EF2F242F29479400AF6E67 /* Auth */ = {
-			isa = PBXGroup;
-			children = (
-				11EF2F232F29479400AF6E67 /* SignInView.swift */,
-			);
-			path = Auth;
-			sourceTree = "<group>";
-		};
-		11EF2F262F29479400AF6E67 /* Main */ = {
-			isa = PBXGroup;
-			children = (
-				11EF2F252F29479400AF6E67 /* MainTabView.swift */,
-			);
-			path = Main;
-			sourceTree = "<group>";
-		};
-		11EF2F282F29479400AF6E67 /* Metrics */ = {
-			isa = PBXGroup;
-			children = (
-				11EF2F272F29479400AF6E67 /* MetricsTab.swift */,
-			);
-			path = Metrics;
-			sourceTree = "<group>";
-		};
-		11EF2F2A2F29479400AF6E67 /* Profile */ = {
-			isa = PBXGroup;
-			children = (
-				11EF2F292F29479400AF6E67 /* ProfileTab.swift */,
+				5E37D2E9D80708139C6D0B53 /* DeleteAccountView.swift */,
+				0934E344F05738B7ED931F63 /* HelpView.swift */,
+				2AD876559D9F2136388B37FF /* ProfileTab.swift */,
+				C562C8E59B642958EE17EE7A /* SettingsView.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
 		};
-		11EF2F2C2F29479400AF6E67 /* Scan */ = {
+		2285CB4A28B64490871E1D37 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				11EF2F2B2F29479400AF6E67 /* ScanTab.swift */,
-			);
-			path = Scan;
-			sourceTree = "<group>";
-		};
-		11EF2F2E2F29479400AF6E67 /* Workouts */ = {
-			isa = PBXGroup;
-			children = (
-				11EF2F2D2F29479400AF6E67 /* WorkoutsTab.swift */,
-			);
-			path = Workouts;
-			sourceTree = "<group>";
-		};
-		11EF2F2F2F29479400AF6E67 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				11EF2F242F29479400AF6E67 /* Auth */,
-				11EF2F262F29479400AF6E67 /* Main */,
-				11EF2F282F29479400AF6E67 /* Metrics */,
-				11EF2F2A2F29479400AF6E67 /* Profile */,
-				11EF2F2C2F29479400AF6E67 /* Scan */,
-				11EF2F2E2F29479400AF6E67 /* Workouts */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		1A2B3C4D5E6F000000000003 = {
-			isa = PBXGroup;
-			children = (
-				1A2B3C4D5E6F000000000030 /* KinexFit */,
-				1A2B3C4D5E6F000000000037 /* Frameworks */,
-				1A2B3C4D5E6F000000000004 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		1A2B3C4D5E6F000000000004 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				1A2B3C4D5E6F000000000008 /* Kinex Fit.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		1A2B3C4D5E6F000000000030 /* KinexFit */ = {
-			isa = PBXGroup;
-			children = (
-				11EF2F2F2F29479400AF6E67 /* Views */,
-				11EF2F202F29478B00AF6E67 /* Auth */,
-				11EF2F1A2F29478200AF6E67 /* Services */,
-				11EF2F122F29476F00AF6E67 /* Models */,
-				1A2B3C4D5E6F000000000031 /* App */,
-				1A2B3C4D5E6F000000000033 /* Networking */,
-				1A2B3C4D5E6F000000000034 /* Persistence */,
-				1A2B3C4D5E6F000000000035 /* Sync */,
-				1A2B3C4D5E6F000000000036 /* Resources */,
-			);
-			path = KinexFit;
-			sourceTree = "<group>";
-		};
-		1A2B3C4D5E6F000000000031 /* App */ = {
-			isa = PBXGroup;
-			children = (
-				1A2B3C4D5E6F000000000010 /* KinexFitApp.swift */,
-				1A2B3C4D5E6F000000000011 /* AppState.swift */,
-				1A2B3C4D5E6F000000000012 /* RootView.swift */,
-				1A2B3C4D5E6F000000000013 /* AppEnvironment.swift */,
-				1A2B3C4D5E6F000000000014 /* AppConfig.swift */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-		1A2B3C4D5E6F000000000033 /* Networking */ = {
-			isa = PBXGroup;
-			children = (
-				1A2B3C4D5E6F000000000016 /* APIClient.swift */,
-				1A2B3C4D5E6F000000000017 /* APIRequest.swift */,
-			);
-			path = Networking;
-			sourceTree = "<group>";
-		};
-		1A2B3C4D5E6F000000000034 /* Persistence */ = {
-			isa = PBXGroup;
-			children = (
-				1A2B3C4D5E6F000000000018 /* AppDatabase.swift */,
-				1A2B3C4D5E6F000000000019 /* DatabaseMigrator.swift */,
-			);
-			path = Persistence;
-			sourceTree = "<group>";
-		};
-		1A2B3C4D5E6F000000000035 /* Sync */ = {
-			isa = PBXGroup;
-			children = (
-				1A2B3C4D5E6F00000000001A /* SyncEngine.swift */,
-			);
-			path = Sync;
-			sourceTree = "<group>";
-		};
-		1A2B3C4D5E6F000000000036 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				1A2B3C4D5E6F00000000001B /* Assets.xcassets */,
-				1A2B3C4D5E6F00000000001C /* Info.plist */,
+				5D6F6DFA9632A3288589095E /* Assets.xcassets */,
+				A716A6252F364A2AB2262CF9 /* Info.plist */,
+				48A19A0396A6C300C35C317A /* PrivacyInfo.xcprivacy */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
 		};
-		1A2B3C4D5E6F000000000037 /* Frameworks */ = {
+		27C322F86C5CEE0DD82FD838 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				CB1E49E06BC7F95EFA01F1B4 /* AuthSessionEvents.swift */,
+				4164C468BDAFD9E24B726F89 /* AuthViewModel.swift */,
+				153F7BD667E56BD45AF726B3 /* TokenStore.swift */,
 			);
-			name = Frameworks;
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		33F17CEF0F07269EC0FCB87D /* App */ = {
+			isa = PBXGroup;
+			children = (
+				2B5A0949B764DCC771FEE474 /* AppConfig.swift */,
+				4208F10BD92B4361F00491C0 /* AppDelegate.swift */,
+				96ED4DEB6136F9EBDE5150F4 /* AppEnvironment.swift */,
+				944E35914EAEB44A4434C182 /* AppFeatureFlags.swift */,
+				F82A1736672A56EF8E1C5C34 /* AppLinks.swift */,
+				4AACF2EE09167A0E03B08E17 /* AppState.swift */,
+				E093A91C14DA12D002584FEF /* KinexFitApp.swift */,
+				2E709444D0AC40ADA209D9CD /* RootView.swift */,
+				ABD5A1A9EF3AE915BF5FD8B9 /* Theme.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		3C785CC8A7495C4F81E1866F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				EB23CEEA961D1DD0ADA29B25 /* Kinex Fit.app */,
+				7FFF4A221C3794EACAD55EE7 /* Kinex FitTests.xctest */,
+				A41D4084856AA0A62DCE9663 /* KinexFitShareExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3EFB9A6A901FD9D5461A08E1 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				0BB65F99FCAF2F3406FD8CA0 /* AIGeneratorCard.swift */,
+				19AF704046B0E8A7553DBFDE /* FetchStateView.swift */,
+				8F1F121FAD676820FB4F6509 /* InstagramQuotaIndicator.swift */,
+				B74EB8DBCD5F332533B341D4 /* WorkoutDivider.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		4AF2425F9BDF9F360D59710C /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				5E6BC7E58A505B8B208C96A7 /* BackgroundSyncTask.swift */,
+				59BBCF9A923ADEE93F8A608E /* NetworkMonitor.swift */,
+				52211B3F0A951675FC69E087 /* SyncEngine.swift */,
+				8E39E3B709D493110C391694 /* SyncPayloadV1.swift */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
+		4CFE96174714DD4B66566E16 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				949BC3BCC78B7C64E0CBE8BC /* AuthModels.swift */,
+				4321971ED635AECEC974AD81 /* BodyMetric.swift */,
+				CB5869D9A823BD46BE4FB619 /* InstagramFetchModels.swift */,
+				D2C9A223E816F231463E51A8 /* InstagramImport.swift */,
+				0994D14EC4D128B33720A18F /* Settings.swift */,
+				D9161EAFD48A6507DA998918 /* TrainingProfile.swift */,
+				D5DBD379AEF6C7237F57BC21 /* User.swift */,
+				20508A2BD41BA405C201B120 /* Workout.swift */,
+				F684B7116C71AF0F6BBAA6C9 /* AI */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		5045D1089296E65CC3B5F0CE /* KinexFitTests */ = {
+			isa = PBXGroup;
+			children = (
+				F50E11B9223C0E7A0A8ACD92 /* AuthSmokeTests.swift */,
+			);
+			path = KinexFitTests;
+			sourceTree = "<group>";
+		};
+		52C458309F02EB22C309E67D /* Workouts */ = {
+			isa = PBXGroup;
+			children = (
+				BEEBDE6FB2DD1FEC2D49AE8C /* WorkoutDetailView.swift */,
+				9598CFF27DE251970B63899E /* WorkoutFormView.swift */,
+				DD63365294142619EA613B2A /* WorkoutRowView.swift */,
+				E19836D1296E7191534405C9 /* WorkoutsTab.swift */,
+			);
+			path = Workouts;
+			sourceTree = "<group>";
+		};
+		556A176C9D5109847E1D7929 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				CCDA5C5511907C88F247FD7E /* AppDatabase.swift */,
+				61AD105F2F5AC40D8A5E712D /* DatabaseMigrator.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		5C263AA36A37543113F6DA5B /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				58DD7FD8F8122D3500FCA2E7 /* APIClient.swift */,
+				F2EAFB44BCE60B9DDA8F41D2 /* APIRequest.swift */,
+				48B0B9D0A31BB4C2A29A288C /* APIRequest+InstagramImport.swift */,
+				74861895E759A15ECC647EA5 /* JSONCoding.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		697C38549A8E21B88803E555 /* KinexFit */ = {
+			isa = PBXGroup;
+			children = (
+				33F17CEF0F07269EC0FCB87D /* App */,
+				27C322F86C5CEE0DD82FD838 /* Auth */,
+				4CFE96174714DD4B66566E16 /* Models */,
+				5C263AA36A37543113F6DA5B /* Networking */,
+				556A176C9D5109847E1D7929 /* Persistence */,
+				2285CB4A28B64490871E1D37 /* Resources */,
+				20FDC32AF5079613632E02E2 /* Services */,
+				EA21EF9DCD2937056FC4BFD3 /* Store */,
+				4AF2425F9BDF9F360D59710C /* Sync */,
+				CAE1C0D421D0CFC6EAD7CDC4 /* Views */,
+			);
+			path = KinexFit;
+			sourceTree = "<group>";
+		};
+		7354CAFA927E387536256F20 /* Metrics */ = {
+			isa = PBXGroup;
+			children = (
+				6E7FE8582F4174BABCBE2E20 /* MetricsTab.swift */,
+			);
+			path = Metrics;
+			sourceTree = "<group>";
+		};
+		76EEDC28EAA27A1F6298CB7D /* ImportTabs */ = {
+			isa = PBXGroup;
+			children = (
+				EDCF82EF1BF5C7505375EA3F /* InstagramImportTab.swift */,
+				2782169B28FF23B49C2BB830 /* ManualImportTab.swift */,
+				099D2E55B3C39E5A43436EAB /* PhotoImportTab.swift */,
+			);
+			path = ImportTabs;
+			sourceTree = "<group>";
+		};
+		8A5A7F3AF17F38ED8674876E /* Import */ = {
+			isa = PBXGroup;
+			children = (
+				ACB1E1EF855F1B4253BF0A76 /* InstagramImportReviewView.swift */,
+				80750E8D8DEEE625DB511E13 /* PendingImportsBanner.swift */,
+			);
+			path = Import;
+			sourceTree = "<group>";
+		};
+		99CAB5E8A6A5369A46ADC540 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				A825E2DF7800911492375643 /* NotificationPermissionView.swift */,
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
+		B11B941B051A3D5DA5E7034D /* Create */ = {
+			isa = PBXGroup;
+			children = (
+				2AD56FEE5B4C3361F696FDB4 /* CreateWorkoutView.swift */,
+				6512F8474C90D275230D4E6E /* InstagramWorkoutEditView.swift */,
+				3EFB9A6A901FD9D5461A08E1 /* Components */,
+				76EEDC28EAA27A1F6298CB7D /* ImportTabs */,
+			);
+			path = Create;
+			sourceTree = "<group>";
+		};
+		B4A496B386220AC242140C37 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				3A31F92DC98E3C9C46AA29B5 /* EmailSignInSheet.swift */,
+				9B36F6F2A259E9ED40867B1E /* EmailSignUpView.swift */,
+				46E17EE4780932F90F49D90D /* SignInView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		BD3F42B68F2299D3F5551009 /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				D3572F554EA702F4F8C6B715 /* CalendarTab.swift */,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
+		BE459A19AE517EC7596F2C76 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				391F5DB9958843CE2390431E /* HomeStats.swift */,
+				94CDE058A8B8512123A40228 /* HomeTab.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		BFACC306FE138ED8C77175AE /* Scan */ = {
+			isa = PBXGroup;
+			children = (
+				D03E5FF6477F2DC34E498DC0 /* OCRResultView.swift */,
+				20A37B3945336EA8DEE48F9D /* ScanTab.swift */,
+			);
+			path = Scan;
+			sourceTree = "<group>";
+		};
+		C3C7A92377BC8B7805A8678A /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				9D0EF7B80A9ECCD4A5E9A6BF /* MainTabView.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		CAE1C0D421D0CFC6EAD7CDC4 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F912B8CC3855C70E849D9885 /* Add */,
+				13B60BE39567A2A73B89E9F2 /* AI */,
+				B4A496B386220AC242140C37 /* Auth */,
+				BD3F42B68F2299D3F5551009 /* Calendar */,
+				F559B3317704150F2389F233 /* Components */,
+				B11B941B051A3D5DA5E7034D /* Create */,
+				BE459A19AE517EC7596F2C76 /* Home */,
+				8A5A7F3AF17F38ED8674876E /* Import */,
+				C3C7A92377BC8B7805A8678A /* Main */,
+				7354CAFA927E387536256F20 /* Metrics */,
+				99CAB5E8A6A5369A46ADC540 /* Notifications */,
+				D574B26CC2040628187A0EE5 /* Onboarding */,
+				21684FFEB9937ABEEA94A1F0 /* Profile */,
+				BFACC306FE138ED8C77175AE /* Scan */,
+				E227866AC71A796D7B8CB521 /* Store */,
+				52C458309F02EB22C309E67D /* Workouts */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D574B26CC2040628187A0EE5 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				9191381754023702D26D90DF /* BasicProfileStep.swift */,
+				479A4A2D835B9A041507FD64 /* CompleteStep.swift */,
+				8022168EAE27B8511CAA1FB0 /* EquipmentStep.swift */,
+				0E35F674294F24184C7E00F0 /* ExperienceStep.swift */,
+				79B76C6F65A467AA43413079 /* GoalsStep.swift */,
+				FF893620505BAE35C7256D90 /* OnboardingCoordinator.swift */,
+				76F3DB38DFE5B706FBD45B71 /* PersonalRecordsStep.swift */,
+				B67C2A0E101BCD694B5C661C /* ScheduleStep.swift */,
+				073756617261BC671E989161 /* WelcomeStep.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		E227866AC71A796D7B8CB521 /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				3F402A3F3DE6BDF3FCD59480 /* PaywallView.swift */,
+				85B0DE5BDD43E7C71EA17DA2 /* SubscriptionStatusView.swift */,
+			);
+			path = Store;
+			sourceTree = "<group>";
+		};
+		EA21EF9DCD2937056FC4BFD3 /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				3F2F08FBF2F3C573DD16F9A4 /* ProductIDs.swift */,
+				B684CB5C65893670C5687DD3 /* PurchaseValidator.swift */,
+				E6CB60AD751B804BE2A2C48B /* StoreManager.swift */,
+			);
+			path = Store;
+			sourceTree = "<group>";
+		};
+		F4382397D58D71F2FEC6EE7E = {
+			isa = PBXGroup;
+			children = (
+				697C38549A8E21B88803E555 /* KinexFit */,
+				121E7A9441A3E18E86F0AB00 /* KinexFitShareExtension */,
+				5045D1089296E65CC3B5F0CE /* KinexFitTests */,
+				3C785CC8A7495C4F81E1866F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F559B3317704150F2389F233 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				7DB2B6FE827306A1927D6844 /* AIFeatureCard.swift */,
+				3EEFF07B285A8E85D0F3D5FF /* StatCard.swift */,
+				587B4225A4B723E865D5DDFF /* SyncStatusIndicator.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		F684B7116C71AF0F6BBAA6C9 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				70ABEEED580A4286BD546CD2 /* AIModels.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+		F912B8CC3855C70E849D9885 /* Add */ = {
+			isa = PBXGroup;
+			children = (
+				0D38E8B33BD997AD4B12F9B9 /* AddWorkoutTab.swift */,
+			);
+			path = Add;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1A2B3C4D5E6F000000000002 /* Kinex Fit */ = {
+		3B3D53A186D9A415B6DF12C1 /* KinexFitShareExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1A2B3C4D5E6F000000000045 /* Build configuration list for PBXNativeTarget "Kinex Fit" */;
+			buildConfigurationList = D0C01E0B7EB35384A6ECEFD3 /* Build configuration list for PBXNativeTarget "KinexFitShareExtension" */;
 			buildPhases = (
-				1A2B3C4D5E6F000000000005 /* Sources */,
-				1A2B3C4D5E6F000000000006 /* Frameworks */,
-				1A2B3C4D5E6F000000000007 /* Resources */,
-				11EF2F392F29666500AF6E67 /* Embed Frameworks */,
+				CEDA77CC3A734A55A3E4BEF6 /* Sources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = "Kinex Fit";
+			name = KinexFitShareExtension;
 			packageProductDependencies = (
 			);
+			productName = KinexFitShareExtension;
+			productReference = A41D4084856AA0A62DCE9663 /* KinexFitShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		9AB114BC923DCAD31D4FF8D5 /* Kinex Fit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 244C78D5EF5F7B575377CFB9 /* Build configuration list for PBXNativeTarget "Kinex Fit" */;
+			buildPhases = (
+				0C54C57DC69BD95B54A351ED /* Sources */,
+				59C2247098436F9987336095 /* Resources */,
+				8F8071C19322B0B70F567BB0 /* Frameworks */,
+				F5FE4D067934F16FB68F4AEF /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				79477700EE178E9C06996CB8 /* PBXTargetDependency */,
+			);
+			name = "Kinex Fit";
+			packageProductDependencies = (
+				33DFF65D44F59BDD0476CBE5 /* GRDB */,
+				917FA021EEB3292AB35945B4 /* GoogleSignIn */,
+				8B725E1DC09C714547A141B4 /* FacebookCore */,
+				B6198D933A6CCD5035ABF8B7 /* FacebookLogin */,
+			);
 			productName = "Kinex Fit";
-			productReference = 1A2B3C4D5E6F000000000008 /* Kinex Fit.app */;
+			productReference = EB23CEEA961D1DD0ADA29B25 /* Kinex Fit.app */;
 			productType = "com.apple.product-type.application";
+		};
+		CC1CBE76C2BBB7D5BA6EAF10 /* Kinex FitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6ECB9C13E819063F672D0B6B /* Build configuration list for PBXNativeTarget "Kinex FitTests" */;
+			buildPhases = (
+				943165C496D078901F5C1323 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DDED64666E062C9D077299FC /* PBXTargetDependency */,
+			);
+			name = "Kinex FitTests";
+			packageProductDependencies = (
+			);
+			productName = "Kinex FitTests";
+			productReference = 7FFF4A221C3794EACAD55EE7 /* Kinex FitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		1A2B3C4D5E6F000000000001 /* Project object */ = {
+		ADB714D78300FC31ACA6E446 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1630;
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
 				TargetAttributes = {
-					1A2B3C4D5E6F000000000002 = {
-						CreatedOnToolsVersion = 15.0;
+					3B3D53A186D9A415B6DF12C1 = {
+						DevelopmentTeam = J6G8H8EZWS;
+					};
+					9AB114BC923DCAD31D4FF8D5 = {
+						DevelopmentTeam = J6G8H8EZWS;
 					};
 				};
 			};
-			buildConfigurationList = 1A2B3C4D5E6F000000000042 /* Build configuration list for PBXProject "	" */;
+			buildConfigurationList = 776C46E4D21D5864AA5F487D /* Build configuration list for PBXProject "Kinex Fit" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
 				Base,
+				en,
 			);
-			mainGroup = 1A2B3C4D5E6F000000000003;
+			mainGroup = F4382397D58D71F2FEC6EE7E;
+			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				F9B514C268842BC5059B736D /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
+				88FAF597F5352C7B80DFC340 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
+				8A7B7B7C72630E6B430DA2D1 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
-			productRefGroup = 1A2B3C4D5E6F000000000004 /* Products */;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1A2B3C4D5E6F000000000002 /* Kinex Fit */,
+				9AB114BC923DCAD31D4FF8D5 /* Kinex Fit */,
+				CC1CBE76C2BBB7D5BA6EAF10 /* Kinex FitTests */,
+				3B3D53A186D9A415B6DF12C1 /* KinexFitShareExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		1A2B3C4D5E6F000000000007 /* Resources */ = {
+		59C2247098436F9987336095 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1A2B3C4D5E6F00000000002B /* Assets.xcassets in Resources */,
+				A1CCF999F330B5E445843E22 /* Assets.xcassets in Resources */,
+				C03EE1E3F623FD5BFF0D9847 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		1A2B3C4D5E6F000000000005 /* Sources */ = {
+		0C54C57DC69BD95B54A351ED /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				11EF2F302F29479400AF6E67 /* MainTabView.swift in Sources */,
-				11EF2F312F29479400AF6E67 /* SignInView.swift in Sources */,
-				11EF2F322F29479400AF6E67 /* MetricsTab.swift in Sources */,
-				11EF2F332F29479400AF6E67 /* WorkoutsTab.swift in Sources */,
-				11EF2F342F29479400AF6E67 /* ScanTab.swift in Sources */,
-				11EF2F352F29479400AF6E67 /* ProfileTab.swift in Sources */,
-				1A2B3C4D5E6F000000000020 /* KinexFitApp.swift in Sources */,
-				11EF2F132F29476F00AF6E67 /* BodyMetric.swift in Sources */,
-				11EF2F142F29476F00AF6E67 /* User.swift in Sources */,
-				11EF2F152F29476F00AF6E67 /* Workout.swift in Sources */,
-				11EF2F162F29476F00AF6E67 /* AuthModels.swift in Sources */,
-				1A2B3C4D5E6F000000000021 /* AppState.swift in Sources */,
-				1A2B3C4D5E6F000000000022 /* RootView.swift in Sources */,
-				11EF2F212F29478B00AF6E67 /* AuthViewModel.swift in Sources */,
-				11EF2F222F29478B00AF6E67 /* TokenStore.swift in Sources */,
-				1A2B3C4D5E6F000000000023 /* AppEnvironment.swift in Sources */,
-				1A2B3C4D5E6F000000000024 /* AppConfig.swift in Sources */,
-				11EF2F1B2F29478200AF6E67 /* AuthService.swift in Sources */,
-				11EF2F1C2F29478200AF6E67 /* WorkoutRepository.swift in Sources */,
-				11EF2F1D2F29478200AF6E67 /* UserRepository.swift in Sources */,
-				1A2B3C4D5E6F000000000026 /* APIClient.swift in Sources */,
-				1A2B3C4D5E6F000000000027 /* APIRequest.swift in Sources */,
-				1A2B3C4D5E6F000000000028 /* AppDatabase.swift in Sources */,
-				1A2B3C4D5E6F000000000029 /* DatabaseMigrator.swift in Sources */,
-				1A2B3C4D5E6F00000000002A /* SyncEngine.swift in Sources */,
+				FC10EEFA6FA4E9E5BB24B8B1 /* AIFeatureCard.swift in Sources */,
+				6D8819C5BBB3E7BCE544A9A8 /* AIGeneratorCard.swift in Sources */,
+				3AD197A45D6DB4B6A213932E /* AIModels.swift in Sources */,
+				77B7FCCB49712235F0CA6E87 /* AIQuotaIndicator.swift in Sources */,
+				8B94A72C3A14A2058879A2C6 /* AIService.swift in Sources */,
+				155D538F0753B74BC2A9FDB9 /* APIClient.swift in Sources */,
+				66073701149A5485DDF897CB /* APIRequest+InstagramImport.swift in Sources */,
+				3C07EA85317E159E624EC4D3 /* APIRequest.swift in Sources */,
+				13DECE3E661DFE7286C712BF /* AddWorkoutTab.swift in Sources */,
+				F0A268DA39C89019FE803BBB /* AppConfig.swift in Sources */,
+				A4EC2B9298DEBB1A9EF15628 /* AppDatabase.swift in Sources */,
+				B6556C8E1B6D5DDDDBB79327 /* AppDelegate.swift in Sources */,
+				A626C350078136567059981D /* AppEnvironment.swift in Sources */,
+				F0C2A9ACA85A5EE95974D3E2 /* AppFeatureFlags.swift in Sources */,
+				734A7B378A0C3339C4D0990C /* AppLinks.swift in Sources */,
+				7AEC531D38224C078529EE8E /* AppState.swift in Sources */,
+				C49E40F8FA67CC98E0EDC5B3 /* AuthModels.swift in Sources */,
+				EE56C7325CA24C545F424F39 /* AuthService.swift in Sources */,
+				2E05F525A0643870A093232E /* AuthSessionEvents.swift in Sources */,
+				FF7DA8E3243524C8D4C1AE41 /* AuthViewModel.swift in Sources */,
+				78B6185CA0DB8536DAE154C4 /* BackgroundSyncTask.swift in Sources */,
+				DAA2A3EB1AF6B42D5B3F7DFE /* BasicProfileStep.swift in Sources */,
+				1F300C392F2383DD0F97879F /* BodyMetric.swift in Sources */,
+				0A74F0F12F28BBBB8A432D84 /* CalendarTab.swift in Sources */,
+				507258834C91D31553383E7A /* CompleteStep.swift in Sources */,
+				232827D435953630F2808BE8 /* CreateWorkoutView.swift in Sources */,
+				E4AFE44BC09F07D3353549E4 /* DatabaseMigrator.swift in Sources */,
+				DBF56914B34CE526614710A9 /* DeleteAccountView.swift in Sources */,
+				00E858ED0B635DF7E12967EE /* EmailPasswordAuthService.swift in Sources */,
+				EDC43890ED7D0ABD8919F6CB /* EmailSignInSheet.swift in Sources */,
+				2337FBA148A30C7874DFA5ED /* EmailSignUpView.swift in Sources */,
+				CF5548C9EEBDF114B2030F80 /* EnhanceWithAIButton.swift in Sources */,
+				25CED3E0875FC21B8E140C2A /* EnhancementResultView.swift in Sources */,
+				E1B6406AD18F68E7154BA057 /* EquipmentStep.swift in Sources */,
+				A9DD38613231F8F4CB8F9D0B /* ExperienceStep.swift in Sources */,
+				F848CF90121E12CFB7099FC0 /* FacebookSignInManager.swift in Sources */,
+				38F8976C6AD953C18BE4758B /* FeatureFlagService.swift in Sources */,
+				9AC617055E83790A07587064 /* FetchStateView.swift in Sources */,
+				3307AE96623C917EFAA1A64E /* GoalsStep.swift in Sources */,
+				D0A5ED88D1ABD1F330D2CA1B /* GoogleSignInManager.swift in Sources */,
+				58227D0F98C426A2F8A04706 /* HelpView.swift in Sources */,
+				9820E0739B7417CD0DB3B6BD /* HomeStats.swift in Sources */,
+				99A7555F6D727FA93E115238 /* HomeTab.swift in Sources */,
+				F1F9499858CDD5F51368923E /* InstagramFetchError.swift in Sources */,
+				78DBBF5860D578D0007BDCC4 /* InstagramFetchModels.swift in Sources */,
+				A83B0C4032B6538FA8C8A14C /* InstagramFetchService.swift in Sources */,
+				68C69C70239017378AC2A5ED /* InstagramImport.swift in Sources */,
+				8609320B7CF72BC1909178DE /* InstagramImportReviewView.swift in Sources */,
+				A615F3385D47DCAC700638CA /* InstagramImportService.swift in Sources */,
+				3711488B4A32BB904B139CBF /* InstagramImportTab.swift in Sources */,
+				FDABF9FB4C9CAEC195FFA40C /* InstagramQuotaIndicator.swift in Sources */,
+				A77004360813FE9DEC4B5BB9 /* InstagramWorkoutEditView.swift in Sources */,
+				15F6E3582C94F72DC9627D69 /* JSONCoding.swift in Sources */,
+				FEF523ED2E2D84FDD012856C /* KinexFitApp.swift in Sources */,
+				166253E1C029BF71DFFC0C24 /* MainTabView.swift in Sources */,
+				BD24C04428C21DF0EAAF3A10 /* ManualImportTab.swift in Sources */,
+				19209DA66BC8B9D3A71470C1 /* MetricsTab.swift in Sources */,
+				9498561B93A2B103965010D3 /* NetworkMonitor.swift in Sources */,
+				492BE5FA7C60CBA61558A806 /* NotificationManager.swift in Sources */,
+				8858D470E6035723B5120AFB /* NotificationPermissionView.swift in Sources */,
+				A1D84016BB58AAFD5556E224 /* OCRResultView.swift in Sources */,
+				AE4CE5A3A6AA7F6DA0A39E5A /* OCRService.swift in Sources */,
+				E5D51B20867CC09DD6F32695 /* OnboardingCoordinator.swift in Sources */,
+				287664179876E59E837BCC4B /* PaywallView.swift in Sources */,
+				FC54A67A79C8A6505A4E6172 /* PendingImportsBanner.swift in Sources */,
+				E6A87C9974A854EA56A2F9B5 /* PersonalRecordsStep.swift in Sources */,
+				CF7134F8872794C03FAFE010 /* PhotoImportTab.swift in Sources */,
+				D30F172D1D8DE2C53D4D78C7 /* ProductIDs.swift in Sources */,
+				09BF637EBC03DE8E9CA1347F /* ProfileTab.swift in Sources */,
+				20C1E86B60962A17786862EA /* PurchaseValidator.swift in Sources */,
+				30C2DE10CD6E328B67599FAF /* RootView.swift in Sources */,
+				A9B382E17839AD6AC63F26B8 /* ScanTab.swift in Sources */,
+				525DC6C36AC7F4DA9700BE8D /* ScheduleStep.swift in Sources */,
+				DCC0B696F64B1BF213A814EF /* Settings.swift in Sources */,
+				D71CBDF59D5E08FC6997FD2E /* SettingsView.swift in Sources */,
+				F0C43446F53DB86803508139 /* SignInView.swift in Sources */,
+				54BF1FD514704B26BDA3530E /* StatCard.swift in Sources */,
+				E25C34CAA0895BD42D061D98 /* StoreManager.swift in Sources */,
+				23065E977C328D7B92DE337A /* SubscriptionStatusView.swift in Sources */,
+				71A6698DF6EF0DB7944174F5 /* SyncEngine.swift in Sources */,
+				FB469F435BC04C5C0488F7CF /* SyncPayloadV1.swift in Sources */,
+				B8AF0DF4A0C0DCBB2781D846 /* SyncStatusIndicator.swift in Sources */,
+				EA6484DD566023A8F81B71E1 /* TextExtractionService.swift in Sources */,
+				CA95F1404EF7261F2B97D024 /* Theme.swift in Sources */,
+				EC6EAB0C234A8B2183AD2369 /* TokenStore.swift in Sources */,
+				B88AB658B60E74C7C7EB1CD1 /* TrainingProfile.swift in Sources */,
+				F230668C89DDDFC6CBCB23C4 /* User.swift in Sources */,
+				025966618AE39C994C785DAE /* UserRepository.swift in Sources */,
+				66216D0063BFABD68FDD75FE /* WelcomeStep.swift in Sources */,
+				8DE533AE0302CE90C3DB5D9C /* Workout.swift in Sources */,
+				A32ED93C4AB20B2A21ADB044 /* WorkoutDetailView.swift in Sources */,
+				0E24B79154ACC72F93D2D62E /* WorkoutDivider.swift in Sources */,
+				7C17B8902507B3F6FEBBCB09 /* WorkoutFormView.swift in Sources */,
+				B49DAC8654002D336AAB2CB5 /* WorkoutGeneratorView.swift in Sources */,
+				3D366807F9469173DFA3C2DE /* WorkoutRepository.swift in Sources */,
+				5D0193B2023E9975DBFFA42F /* WorkoutRowView.swift in Sources */,
+				B5B8D2297E5B7165427F5CAD /* WorkoutsTab.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		943165C496D078901F5C1323 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5489CB92230289420246E89A /* AuthSmokeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CEDA77CC3A734A55A3E4BEF6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F9608657256FEF8E6F913B08 /* ShareView.swift in Sources */,
+				A7B5CEC239BA21AE33D56748 /* ShareViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		79477700EE178E9C06996CB8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3B3D53A186D9A415B6DF12C1 /* KinexFitShareExtension */;
+			targetProxy = A5C4F6046BFB33E72113F8B5 /* PBXContainerItemProxy */;
+		};
+		DDED64666E062C9D077299FC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9AB114BC923DCAD31D4FF8D5 /* Kinex Fit */;
+			targetProxy = 256A3450C531F625A89C6DF2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
-		1A2B3C4D5E6F000000000040 /* Debug */ = {
+		244A63C2FFC733A048E35875 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				DEAD_CODE_STRIPPING = YES;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				ONLY_ACTIVE_ARCH = YES;
+				CODE_SIGN_ENTITLEMENTS = KinexFitShareExtension/KinexFitShareExtension.Debug.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J6G8H8EZWS;
+				INFOPLIST_FILE = KinexFitShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kinex.fit.shareextension;
+				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
-		1A2B3C4D5E6F000000000041 /* Release */ = {
+		43A807684D426ADEE689E5D3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				DEAD_CODE_STRIPPING = YES;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				SWIFT_COMPILATION_MODE = wholemodule;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "Kinex Fit.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J6G8H8EZWS;
+				INFOPLIST_FILE = KinexFit/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kinex.fit;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
-		1A2B3C4D5E6F000000000043 /* Debug */ = {
+		4EC862B299B000CB321ACE22 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CODE_SIGN_ENTITLEMENTS = "Kinex Fit.entitlements";
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = "";
-				INFOPLIST_FILE = KinexFit/Resources/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Kinex Fit";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kinex.fit;
-				PRODUCT_NAME = "Kinex Fit";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		52D8A27C378D2792F9075F55 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
-		1A2B3C4D5E6F000000000044 /* Release */ = {
+		7E165914F3C293FEE0C984FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kinex Fit.app/Kinex Fit";
+			};
+			name = Debug;
+		};
+		88E0412807D037E7CF53180D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CODE_SIGN_ENTITLEMENTS = "Kinex Fit.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Kinex Fit.Debug.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = J6G8H8EZWS;
 				INFOPLIST_FILE = KinexFit/Resources/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Kinex Fit";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -497,37 +1110,144 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kinex.fit;
-				PRODUCT_NAME = "Kinex Fit";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		D900296D6EB1BDE1B533F398 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kinex Fit.app/Kinex Fit";
+			};
+			name = Release;
+		};
+		FA58C133426245D8BB3FA94B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = KinexFitShareExtension/KinexFitShareExtension.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J6G8H8EZWS;
+				INFOPLIST_FILE = KinexFitShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kinex.fit.shareextension;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1A2B3C4D5E6F000000000042 /* Build configuration list for PBXProject "	" */ = {
+		244C78D5EF5F7B575377CFB9 /* Build configuration list for PBXNativeTarget "Kinex Fit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1A2B3C4D5E6F000000000040 /* Debug */,
-				1A2B3C4D5E6F000000000041 /* Release */,
+				88E0412807D037E7CF53180D /* Debug */,
+				43A807684D426ADEE689E5D3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
-		1A2B3C4D5E6F000000000045 /* Build configuration list for PBXNativeTarget "Kinex Fit" */ = {
+		6ECB9C13E819063F672D0B6B /* Build configuration list for PBXNativeTarget "Kinex FitTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1A2B3C4D5E6F000000000043 /* Debug */,
-				1A2B3C4D5E6F000000000044 /* Release */,
+				7E165914F3C293FEE0C984FC /* Debug */,
+				D900296D6EB1BDE1B533F398 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
+		};
+		776C46E4D21D5864AA5F487D /* Build configuration list for PBXProject "Kinex Fit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				52D8A27C378D2792F9075F55 /* Debug */,
+				4EC862B299B000CB321ACE22 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D0C01E0B7EB35384A6ECEFD3 /* Build configuration list for PBXNativeTarget "KinexFitShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				244A63C2FFC733A048E35875 /* Debug */,
+				FA58C133426245D8BB3FA94B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		88FAF597F5352C7B80DFC340 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
+		8A7B7B7C72630E6B430DA2D1 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+		F9B514C268842BC5059B736D /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/facebook-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 17.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		33DFF65D44F59BDD0476CBE5 /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 88FAF597F5352C7B80DFC340 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			productName = GRDB;
+		};
+		8B725E1DC09C714547A141B4 /* FacebookCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F9B514C268842BC5059B736D /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookCore;
+		};
+		917FA021EEB3292AB35945B4 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8A7B7B7C72630E6B430DA2D1 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		B6198D933A6CCD5035ABF8B7 /* FacebookLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F9B514C268842BC5059B736D /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookLogin;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 1A2B3C4D5E6F000000000001 /* Project object */;
+	rootObject = ADB714D78300FC31ACA6E446 /* Project object */;
 }

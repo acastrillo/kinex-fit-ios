@@ -33,7 +33,7 @@ final class AIService {
 
     /// Enhance a workout from raw text (OCR, Instagram, manual input)
     func enhanceWorkout(text: String) async throws -> EnhanceWorkoutResponse {
-        logger.info("Enhancing workout from text: \(text.prefix(50))...")
+        logger.info("Enhancing workout from text (length: \(text.count))")
 
         struct EnhanceRequest: Encodable {
             let text: String
@@ -47,7 +47,7 @@ final class AIService {
 
         do {
             let response: EnhanceWorkoutResponse = try await apiClient.send(request)
-            logger.info("Enhancement successful: \(response.workout.title)")
+            logger.info("Enhancement successful")
             return response
         } catch let error as APIError {
             throw mapAPIError(error)
@@ -70,7 +70,7 @@ final class AIService {
 
         do {
             let response: EnhanceWorkoutResponse = try await apiClient.send(request)
-            logger.info("Enhancement successful: \(response.workout.title)")
+            logger.info("Enhancement successful")
             return response
         } catch let error as APIError {
             throw mapAPIError(error)
@@ -81,7 +81,7 @@ final class AIService {
 
     /// Generate a new workout from a natural language prompt
     func generateWorkout(prompt: String) async throws -> GenerateWorkoutResponse {
-        logger.info("Generating workout from prompt: \(prompt.prefix(50))...")
+        logger.info("Generating workout from prompt (length: \(prompt.count))")
 
         struct GenerateRequest: Encodable {
             let prompt: String
@@ -95,7 +95,7 @@ final class AIService {
 
         do {
             let response: GenerateWorkoutResponse = try await apiClient.send(request)
-            logger.info("Generation successful: \(response.workout.title)")
+            logger.info("Generation successful")
             return response
         } catch let error as APIError {
             throw mapAPIError(error)
@@ -112,8 +112,8 @@ final class AIService {
 
         do {
             let response: WorkoutRecommendationResponse = try await apiClient.send(request)
-            if let workout = response.workout {
-                logger.info("WOD received: \(workout.title)")
+            if response.workout != nil {
+                logger.info("WOD received")
             }
             return response
         } catch let error as APIError {
@@ -131,8 +131,8 @@ final class AIService {
 
         do {
             let response: WorkoutRecommendationResponse = try await apiClient.send(request)
-            if let workout = response.workout {
-                logger.info("WOW received: \(workout.title)")
+            if response.workout != nil {
+                logger.info("WOW received")
             }
             return response
         } catch let error as APIError {
@@ -144,11 +144,11 @@ final class AIService {
 
     private func mapAPIError(_ error: APIError) -> AIError {
         switch error {
-        case .httpStatus(429):
+        case .httpStatus(429, _):
             return .rateLimited
-        case .httpStatus(403):
+        case .httpStatus(403, _):
             return .notAvailableForTier(tier: "current")
-        case .httpStatus(let code):
+        case .httpStatus(let code, _):
             return .enhancementFailed("Server error (code \(code))")
         default:
             return .networkError(error)

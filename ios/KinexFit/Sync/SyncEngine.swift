@@ -16,6 +16,7 @@ enum SyncError: Error {
 final class SyncEngine {
     private let database: AppDatabase
     private let apiClient: APIClient
+    private let syncLock = NSLock()
     private var isSyncing = false
 
     init(database: AppDatabase, apiClient: APIClient) {
@@ -40,15 +41,13 @@ final class SyncEngine {
 
     // MARK: - Process Sync Queue
 
-    @MainActor
     func processSyncQueue() async throws {
-        guard !isSyncing else {
+        guard beginSync() else {
             logger.info("Sync already in progress, skipping")
             return
         }
 
-        isSyncing = true
-        defer { isSyncing = false }
+        defer { endSync() }
 
         logger.info("Starting sync queue processing")
 
@@ -72,40 +71,53 @@ final class SyncEngine {
 
     private func syncItem(_ item: SyncQueueItem) async throws {
         guard let payloadData = item.payload?.data(using: .utf8),
-              let workout = try? JSONDecoder().decode(Workout.self, from: payloadData) else {
+              let payload = try? JSONCoding.apiDecoder().decode(SyncPayloadV1.self, from: payloadData) else {
             throw SyncError.unsupportedOperation
         }
 
-        let path: String
-        let method: HTTPMethod
-        let body: Workout
-
         switch (item.entity, item.operation) {
         case ("workout", "create"):
-            path = "/api/mobile/workouts"
-            method = .post
-            body = workout
+            guard let workout = payload.workout else {
+                throw SyncError.unsupportedOperation
+            }
+            let request = try APIRequest.json(path: "/api/mobile/workouts", method: .post, body: workout)
+            _ = try await apiClient.send(request)
 
         case ("workout", "update"):
-            path = "/api/mobile/workouts/\(workout.id)"
-            method = .put
-            body = workout
+            guard let workout = payload.workout else {
+                throw SyncError.unsupportedOperation
+            }
+            let request = try APIRequest.json(path: "/api/mobile/workouts/\(workout.id)", method: .put, body: workout)
+            _ = try await apiClient.send(request)
 
         case ("workout", "delete"):
-            path = "/api/mobile/workouts/\(workout.id)"
-            method = .delete
-            body = workout
+            guard let workoutId = payload.workoutId else {
+                throw SyncError.unsupportedOperation
+            }
+            let request = APIRequest(path: "/api/mobile/workouts/\(workoutId)", method: .delete)
+            _ = try await apiClient.send(request)
 
         default:
             throw SyncError.unsupportedOperation
         }
+    }
 
-        // Create request
-        let request = try APIRequest.json(path: path, method: method, body: body)
+    private func beginSync() -> Bool {
+        syncLock.lock()
+        defer { syncLock.unlock() }
 
-        // Send request
-        struct EmptyResponse: Decodable {}
-        let _: EmptyResponse = try await apiClient.send(request)
+        if isSyncing {
+            return false
+        }
+
+        isSyncing = true
+        return true
+    }
+
+    private func endSync() {
+        syncLock.lock()
+        isSyncing = false
+        syncLock.unlock()
     }
 
     // MARK: - Error Handling

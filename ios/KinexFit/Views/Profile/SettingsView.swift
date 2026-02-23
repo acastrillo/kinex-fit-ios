@@ -3,6 +3,11 @@ import SwiftUI
 struct SettingsView: View {
     @StateObject private var settingsManager = SettingsManager()
     @State private var showingDeleteAccount = false
+    let onAccountDeleted: () async -> Void
+
+    init(onAccountDeleted: @escaping () async -> Void = {}) {
+        self.onAccountDeleted = onAccountDeleted
+    }
 
     var body: some View {
         List {
@@ -46,7 +51,7 @@ struct SettingsView: View {
 
             // Privacy & Legal Section
             Section("Privacy & Legal") {
-                Link(destination: URL(string: "https://kinexfit.com/privacy")!) {
+                Link(destination: AppLinks.privacyPolicy) {
                     HStack {
                         Label("Privacy Policy", systemImage: "hand.raised")
                         Spacer()
@@ -56,7 +61,7 @@ struct SettingsView: View {
                     }
                 }
 
-                Link(destination: URL(string: "https://kinexfit.com/terms")!) {
+                Link(destination: AppLinks.termsOfService) {
                     HStack {
                         Label("Terms of Service", systemImage: "doc.text")
                         Spacer()
@@ -69,7 +74,7 @@ struct SettingsView: View {
 
             // Support Section
             Section("Support") {
-                Link(destination: URL(string: "https://kinexfit.com/support")!) {
+                Link(destination: AppLinks.supportCenter) {
                     HStack {
                         Label("Support Center", systemImage: "lifepreserver")
                         Spacer()
@@ -79,7 +84,7 @@ struct SettingsView: View {
                     }
                 }
 
-                Link(destination: URL(string: "mailto:support@kinexfit.com")!) {
+                Link(destination: AppLinks.supportEmail) {
                     HStack {
                         Label("Contact Support", systemImage: "envelope")
                         Spacer()
@@ -119,7 +124,7 @@ struct SettingsView: View {
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showingDeleteAccount) {
-            DeleteAccountView()
+            DeleteAccountView(onAccountDeleted: onAccountDeleted)
         }
     }
 }

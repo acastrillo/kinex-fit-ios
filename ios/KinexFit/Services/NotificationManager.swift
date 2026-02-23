@@ -61,7 +61,7 @@ final class NotificationManager: NSObject, ObservableObject {
     func didReceiveDeviceToken(_ deviceToken: Data) {
         let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
         self.deviceToken = tokenString
-        logger.info("Device token received: \(tokenString.prefix(20))...")
+        logger.info("Device token received")
 
         // Send token to backend
         Task {
@@ -87,8 +87,7 @@ final class NotificationManager: NSObject, ObservableObject {
                 body: RegisterTokenRequest(deviceToken: token)
             )
 
-            struct EmptyResponse: Decodable {}
-            let _: EmptyResponse = try await apiClient.send(request)
+            _ = try await apiClient.send(request)
 
             logger.info("Device token registered with backend")
         } catch {
@@ -192,7 +191,7 @@ final class NotificationManager: NSObject, ObservableObject {
 
 extension NotificationManager: UNUserNotificationCenterDelegate {
     /// Handle notification when app is in foreground
-    func userNotificationCenter(
+    nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
@@ -204,7 +203,7 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
     }
 
     /// Handle notification tap
-    func userNotificationCenter(
+    nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
@@ -221,15 +220,24 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
     }
 
     private func handleNotificationAction(_ actionIdentifier: String, notificationIdentifier: String) async {
+        let routingEnabled = AppState.shared?.featureFlags.pushActionRoutingEnabled ?? true
+
         switch actionIdentifier {
         case UNNotificationDefaultActionIdentifier:
             // User tapped the notification
             logger.info("User tapped notification")
-            // TODO: Navigate to relevant screen
+            if routingEnabled {
+                AppState.shared?.navigateToTab(.library)
+            }
 
         case "COMPLETE_WORKOUT":
             logger.info("User marked workout complete")
-            // TODO: Mark workout as complete
+            // We don't track completion entities yet, so route to workout library
+            // and clear pending local notification for immediate feedback.
+            cancelNotification(identifier: notificationIdentifier)
+            if routingEnabled {
+                AppState.shared?.navigateToTab(.library)
+            }
 
         case "SNOOZE_WORKOUT":
             logger.info("User snoozed workout")
@@ -244,7 +252,9 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
 
         case "VIEW_STREAK":
             logger.info("User wants to view streak")
-            // TODO: Navigate to progress/stats screen
+            if routingEnabled {
+                AppState.shared?.navigateToTab(.stats)
+            }
 
         default:
             break
@@ -258,7 +268,7 @@ extension NotificationManager {
     static var preview: NotificationManager {
         NotificationManager(
             apiClient: APIClient(
-                baseURL: URL(string: "https://kinexfit.com")!,
+                baseURL: AppConfig.previewAPIBaseURL,
                 tokenStore: InMemoryTokenStore()
             )
         )

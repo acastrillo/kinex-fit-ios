@@ -17,6 +17,7 @@ final class KeychainTokenStore: TokenStore {
     private let service = "com.kinex.fit"
     private let accessTokenAccount = "accessToken"
     private let refreshTokenAccount = "refreshToken"
+    private let accessibility = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
 
     var accessToken: String? {
         getToken(account: accessTokenAccount)
@@ -87,11 +88,18 @@ final class KeychainTokenStore: TokenStore {
         }
 
         let data = Data(token.utf8)
-        let updateStatus = SecItemUpdate(baseQuery as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        let updateStatus = SecItemUpdate(
+            baseQuery as CFDictionary,
+            [
+                kSecValueData as String: data,
+                kSecAttrAccessible as String: accessibility
+            ] as CFDictionary
+        )
 
         if updateStatus == errSecItemNotFound {
             var addQuery = baseQuery
             addQuery[kSecValueData as String] = data
+            addQuery[kSecAttrAccessible as String] = accessibility
             let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
             guard addStatus == errSecSuccess else {
                 throw TokenStoreError.unexpectedStatus(addStatus)

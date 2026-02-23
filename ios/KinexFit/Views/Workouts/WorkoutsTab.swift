@@ -19,6 +19,7 @@ struct WorkoutsTab: View {
     @State private var pendingCount = 0
     @State private var failedCount = 0
     @State private var showSyncBanner = false
+    @State private var hasPerformedInitialSync = false
 
     private var workoutRepository: WorkoutRepository {
         appState.environment.workoutRepository
@@ -39,38 +40,19 @@ struct WorkoutsTab: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if isLoading {
-                    LoadingView()
-                } else if workouts.isEmpty {
-                    EmptyWorkoutsView(onAddTapped: { showingAddWorkout = true })
-                } else if !searchText.isEmpty && filteredWorkouts.isEmpty {
-                    ContentUnavailableView.search(text: searchText)
-                } else {
-                    workoutList
-                }
-            }
-            .navigationTitle("Workouts")
-            .searchable(text: $searchText, prompt: "Search workouts")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    if pendingCount > 0 || failedCount > 0 {
-                        SyncStatusIndicator(
-                            status: syncStatus,
-                            pendingCount: pendingCount,
-                            failedCount: failedCount,
-                            onTap: triggerManualSync
-                        )
-                    }
-                }
+            ZStack {
+                AppTheme.background
+                    .ignoresSafeArea()
 
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingAddWorkout = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
+                content
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: Workout.self) { workout in
+                WorkoutDetailView(
+                    workout: workout,
+                    onUpdate: updateWorkout,
+                    onDelete: { try await deleteWorkout(id: workout.id) }
+                )
             }
             .safeAreaInset(edge: .top) {
                 if showSyncBanner && (pendingCount > 0 || failedCount > 0) {
@@ -102,51 +84,156 @@ struct WorkoutsTab: View {
             .refreshable {
                 await loadWorkouts()
                 await triggerSync()
-                appState.checkForPendingImports()
+                if appState.featureFlags.shareExtensionImportEnabled {
+                    appState.checkForPendingImports()
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-                appState.checkForPendingImports()
+                if appState.featureFlags.shareExtensionImportEnabled {
+                    appState.checkForPendingImports()
+                }
             }
         }
         .task {
             await startObserving()
-            appState.checkForPendingImports()
+            if appState.featureFlags.shareExtensionImportEnabled {
+                appState.checkForPendingImports()
+            }
             updateSyncStatus()
+            if !hasPerformedInitialSync {
+                hasPerformedInitialSync = true
+                await triggerSync()
+            }
         }
     }
 
-    // MARK: - Workout List
+    private var content: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                header
 
-    private var workoutList: some View {
-        List {
-            // Pending imports banner
-            if appState.instagramImportService.hasPendingImports {
-                Section {
+                if appState.featureFlags.shareExtensionImportEnabled && appState.instagramImportService.hasPendingImports {
                     PendingImportsBanner(
                         selectedImport: $selectedImport,
                         showingImportReview: $showingImportReview
                     )
+                    .padding(.horizontal, 16)
                 }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
+
+                if isLoading {
+                    LoadingView()
+                        .padding(.top, 80)
+                } else if workouts.isEmpty {
+                    EmptyWorkoutsView(onAddTapped: { showingAddWorkout = true })
+                        .padding(.top, 80)
+                } else if !searchText.isEmpty && filteredWorkouts.isEmpty {
+                    SearchEmptyState(query: searchText)
+                        .padding(.top, 80)
+                } else {
+                    workoutCards
+                }
+            }
+            .padding(.top, 12)
+            .padding(.bottom, 32)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Workout Library")
+                        .font(.system(size: 38, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppTheme.primaryText)
+
+                    Text("\(workouts.count) workout\(workouts.count == 1 ? "" : "s") saved")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+
+                Spacer(minLength: 12)
+
+                VStack(spacing: 10) {
+                    Button {
+                        showingAddWorkout = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(AppTheme.accent)
+                            .frame(width: 44, height: 44)
+                            .background(AppTheme.cardBackground)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                            }
+                    }
+
+                    if pendingCount > 0 || failedCount > 0 {
+                        SyncStatusIndicator(
+                            status: syncStatus,
+                            pendingCount: pendingCount,
+                            failedCount: failedCount,
+                            onTap: triggerManualSync
+                        )
+                    }
+                }
             }
 
-            // Workouts
+            searchField
+        }
+        .padding(.horizontal, 16)
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(AppTheme.secondaryText)
+
+            TextField("Search workouts...", text: $searchText)
+                .textInputAutocapitalization(.never)
+                .disableAutocorrection(true)
+                .foregroundStyle(AppTheme.primaryText)
+
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(AppTheme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        }
+    }
+
+    private var workoutCards: some View {
+        LazyVStack(spacing: 14) {
             ForEach(filteredWorkouts) { workout in
                 NavigationLink(value: workout) {
                     WorkoutRowView(workout: workout)
                 }
+                .buttonStyle(.plain)
+                .contextMenu {
+                    Button(role: .destructive) {
+                        Task {
+                            try? await deleteWorkout(id: workout.id)
+                        }
+                    } label: {
+                        Label("Delete Workout", systemImage: "trash")
+                    }
+                }
             }
-            .onDelete(perform: deleteWorkouts)
         }
-        .listStyle(.plain)
-        .navigationDestination(for: Workout.self) { workout in
-            WorkoutDetailView(
-                workout: workout,
-                onUpdate: updateWorkout,
-                onDelete: { try await deleteWorkout(id: workout.id) }
-            )
-        }
+        .padding(.horizontal, 16)
     }
 
     // MARK: - Data Operations
@@ -176,7 +263,8 @@ struct WorkoutsTab: View {
         let workout = Workout(
             title: title,
             content: content?.isEmpty == true ? nil : content,
-            source: .manual
+            source: .manual,
+            exerciseCount: estimateExerciseCount(from: content)
         )
         try await workoutRepository.create(workout)
     }
@@ -189,23 +277,41 @@ struct WorkoutsTab: View {
         try await workoutRepository.delete(id: id)
     }
 
-    private func deleteWorkouts(at offsets: IndexSet) {
-        Task {
-            for index in offsets {
-                let workout = filteredWorkouts[index]
-                try? await workoutRepository.delete(id: workout.id)
-            }
-        }
-    }
-
     private func saveImportedWorkout(title: String, content: String?) async throws {
         let workout = Workout(
             title: title,
             content: content,
-            source: .instagram
+            source: .instagram,
+            exerciseCount: estimateExerciseCount(from: content),
+            difficulty: inferDifficulty(title: title, content: content)
         )
         try await workoutRepository.create(workout)
         selectedImport = nil
+    }
+
+    private func estimateExerciseCount(from content: String?) -> Int? {
+        guard let content else { return nil }
+        let lines = content
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { line in
+                !line.isEmpty &&
+                !line.hasPrefix("-") &&
+                !line.hasPrefix("#") &&
+                !line.lowercased().contains("warm") &&
+                !line.lowercased().contains("cool")
+            }
+
+        guard !lines.isEmpty else { return nil }
+        return min(lines.count, 30)
+    }
+
+    private func inferDifficulty(title: String, content: String?) -> String? {
+        let sourceText = "\(title) \(content ?? "")".lowercased()
+        if sourceText.contains("beginner") { return "beginner" }
+        if sourceText.contains("advanced") || sourceText.contains("elite") { return "advanced" }
+        if sourceText.contains("intermediate") { return "intermediate" }
+        return nil
     }
 
     // MARK: - Sync Operations
@@ -224,7 +330,6 @@ struct WorkoutsTab: View {
                 syncStatus = .idle
             } else {
                 syncStatus = .success
-                // Hide success status after 2 seconds
                 Task {
                     try? await Task.sleep(for: .seconds(2))
                     if syncStatus == .success {
@@ -245,7 +350,8 @@ struct WorkoutsTab: View {
 
         do {
             try await syncEngine.processSyncQueue()
-            await loadWorkouts() // Refresh workouts after sync
+            _ = try await workoutRepository.importFromServer()
+            await loadWorkouts() // Refresh workouts after push + pull sync
         } catch {
             // Sync failed, status will be updated by updateSyncStatus
         }
@@ -267,29 +373,67 @@ private struct LoadingView: View {
     var body: some View {
         VStack(spacing: 16) {
             ProgressView()
+                .tint(AppTheme.accent)
+
             Text("Loading workouts...")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.secondaryText)
         }
+        .frame(maxWidth: .infinity)
     }
 }
 
-// MARK: - Empty State
+// MARK: - Empty States
 
 private struct EmptyWorkoutsView: View {
     let onAddTapped: () -> Void
 
     var body: some View {
-        ContentUnavailableView {
-            Label("No Workouts", systemImage: "dumbbell")
-        } description: {
-            Text("Add your first workout to get started")
-        } actions: {
+        VStack(spacing: 16) {
+            Image(systemName: "dumbbell")
+                .font(.system(size: 42, weight: .regular))
+                .foregroundStyle(AppTheme.secondaryText)
+
+            Text("No Workouts Yet")
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundStyle(AppTheme.primaryText)
+
+            Text("Add your first workout to start building your library.")
+                .font(.subheadline)
+                .foregroundStyle(AppTheme.secondaryText)
+                .multilineTextAlignment(.center)
+
             Button("Add Workout") {
                 onAddTapped()
             }
             .buttonStyle(.borderedProminent)
+            .tint(AppTheme.accent)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 32)
+    }
+}
+
+private struct SearchEmptyState: View {
+    let query: String
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 34, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
+
+            Text("No Matches")
+                .font(.headline)
+                .foregroundStyle(AppTheme.primaryText)
+
+            Text("No workouts found for \"\(query)\".")
+                .font(.subheadline)
+                .foregroundStyle(AppTheme.secondaryText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 24)
     }
 }
 
@@ -301,28 +445,31 @@ private struct EmptyWorkoutsView: View {
     // Add sample workouts
     Task {
         let repo = appState.environment.workoutRepository
-        try? await repo.create(Workout(
-            title: "Push Day",
-            content: "Bench Press 4x8\nOverhead Press 3x10\nTricep Dips 3x12",
-            source: .manual
+        _ = try? await repo.create(Workout(
+            title: "This Week's Workout - Endurance Builder",
+            content: "A high-intensity conditioning workout combining aerobic intervals with functional strength movements.",
+            source: .manual,
+            durationMinutes: 55,
+            exerciseCount: 9,
+            difficulty: "advanced"
         ))
-        try? await repo.create(Workout(
-            title: "HIIT Session",
-            content: "20 min AMRAP\n10 Burpees\n20 Air Squats\n30 Double Unders",
-            source: .instagram
-        ))
-        try? await repo.create(Workout(
-            title: "CrossFit WOD",
-            content: "Fran\n21-15-9\nThrusters 95/65\nPull-ups",
-            source: .ocr
+        _ = try? await repo.create(Workout(
+            title: "30-Minute Bodyweight Full Body Blast",
+            content: "High-intensity bodyweight circuit targeting all major muscle groups. Perfect for building work capacity.",
+            source: .instagram,
+            durationMinutes: 30,
+            exerciseCount: 7,
+            difficulty: "advanced"
         ))
     }
 
     return WorkoutsTab()
         .environmentObject(appState)
+        .appDarkTheme()
 }
 
 #Preview("Empty State") {
     WorkoutsTab()
         .environmentObject(AppState(environment: .preview))
+        .appDarkTheme()
 }

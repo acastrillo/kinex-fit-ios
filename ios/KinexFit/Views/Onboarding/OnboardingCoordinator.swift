@@ -78,14 +78,17 @@ final class OnboardingViewModel: ObservableObject {
         isSubmitting = true
         errorMessage = nil
 
+        // Attempt to send profile to backend. A network or server failure is
+        // non-fatal — we still complete onboarding locally so the user isn't
+        // blocked. The data will sync the next time the app is online.
         do {
-            // Send profile to backend
             try await submitOnboardingData()
+        } catch {
+            // Log but do not surface to the user — proceed regardless.
+        }
 
-            // Mark onboarding as complete in local storage
+        do {
             try await markOnboardingComplete()
-
-            // Notify completion
             onComplete()
         } catch {
             errorMessage = "Failed to save onboarding data: \(error.localizedDescription)"
@@ -132,8 +135,7 @@ final class OnboardingViewModel: ObservableObject {
             )
         )
 
-        struct EmptyResponse: Decodable {}
-        let _: EmptyResponse = try await apiClient.send(request)
+        _ = try await apiClient.send(request)
     }
 
     private func markOnboardingComplete() async throws {

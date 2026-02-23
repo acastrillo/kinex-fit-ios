@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import OSLog
 
 private let logger = Logger(subsystem: "com.kinex.fit", category: "AuthService")
@@ -55,12 +56,16 @@ final class AuthService {
 
             // Convert to User model and save to local database
             let user = response.user.toUser()
+            if try await shouldResetLocalData(for: user.id) {
+                try await clearUserScopedData()
+                logger.info("Cleared local user-scoped data due to account switch")
+            }
             try await saveUser(user)
 
             logger.info("Sign-in successful for user: \(user.id)")
             return user
         } catch let error as APIError {
-            throw mapAPIError(error)
+            throw mapSignInAPIError(error, provider: provider)
         } catch {
             logger.error("Sign-in failed: \(error.localizedDescription)")
             throw AuthError.networkError(error)
@@ -98,7 +103,7 @@ final class AuthService {
             logger.info("Token refresh successful")
             return true
         } catch let error as APIError {
-            if case .httpStatus(let code) = error, code == 401 {
+            if case .httpStatus(let code, _) = error, code == 401 {
                 // Refresh token is invalid, clear tokens
                 try? tokenStore.clearAll()
                 throw AuthError.sessionInvalid
@@ -118,13 +123,11 @@ final class AuthService {
         logger.info("Signing out")
 
         // Notify backend (best effort, don't fail if this errors)
-        if let refreshToken = tokenStore.refreshToken {
+        if tokenStore.accessToken != nil {
             do {
-                let request = SignOutRequest(refreshToken: refreshToken)
-                let apiRequest = try APIRequest.json(
+                let apiRequest = APIRequest(
                     path: "/api/mobile/auth/signout",
-                    method: .post,
-                    body: request
+                    method: .post
                 )
                 _ = try await apiClient.send(apiRequest)
             } catch {
@@ -163,8 +166,10 @@ final class AuthService {
     private func isAccessTokenUsable() -> Bool {
         return tokenStore.accessToken != nil
     }
+
     private func saveUser(_ user: User) async throws {
         try await database.dbQueue.write { db in
+            _ = try User.deleteAll(db)
             try user.save(db)
         }
         logger.debug("User saved to local database")
@@ -172,23 +177,74 @@ final class AuthService {
 
     private func clearLocalUser() async throws {
         try await database.dbQueue.write { db in
-            try User.deleteAll(db)
+            _ = try User.deleteAll(db)
+            _ = try Workout.deleteAll(db)
+            try db.execute(sql: "DELETE FROM body_metrics")
+            try db.execute(sql: "DELETE FROM sync_queue")
         }
-        logger.debug("Local user data cleared")
+        logger.debug("Local user data and user-scoped content cleared")
+    }
+
+    private func shouldResetLocalData(for incomingUserID: String) async throws -> Bool {
+        try await database.dbQueue.read { db in
+            let existingUserID = try String.fetchOne(db, sql: "SELECT id FROM users LIMIT 1")
+            guard let existingUserID else { return false }
+            return existingUserID != incomingUserID
+        }
+    }
+
+    private func clearUserScopedData() async throws {
+        try await database.dbQueue.write { db in
+            _ = try Workout.deleteAll(db)
+            try db.execute(sql: "DELETE FROM body_metrics")
+            try db.execute(sql: "DELETE FROM sync_queue")
+        }
     }
 
     private func mapAPIError(_ error: APIError) -> AuthError {
         switch error {
-        case .httpStatus(401):
+        case .httpStatus(401, _):
             return .invalidIdentityToken
-        case .httpStatus(429):
+        case .httpStatus(429, _):
             return .rateLimited(retryAfter: 60)
-        case .httpStatus(let code) where code >= 500:
+        case .httpStatus(let code, _) where code >= 500:
             return .serverError("Server error (\(code))")
         case .decoding:
             return .serverError("Invalid response from server")
         default:
             return .unknown
         }
+    }
+
+    private func mapSignInAPIError(_ error: APIError, provider: AuthProvider) -> AuthError {
+        if case .httpStatus(let statusCode, let responseBody) = error, provider == .google {
+            if let backendMessage = parseBackendMessage(from: responseBody) {
+                logger.error("Google sign-in backend rejection (status \(statusCode)): \(backendMessage, privacy: .public)")
+                return .providerError(backendMessage)
+            }
+            if statusCode >= 500 {
+                return .providerError("Backend error during Google sign-in (\(statusCode)). Please try again shortly.")
+            }
+            return .providerError("Google token was rejected. Verify GIDServerClientID uses your Web OAuth client ID from Google Cloud.")
+        }
+        return mapAPIError(error)
+    }
+
+    private func parseBackendMessage(from data: Data?) -> String? {
+        guard let data, !data.isEmpty else { return nil }
+
+        if let errorResponse = try? JSONCoding.apiDecoder().decode(APIErrorResponse.self, from: data) {
+            if let message = errorResponse.message, !message.isEmpty {
+                return message
+            }
+            if !errorResponse.error.isEmpty {
+                return errorResponse.error
+            }
+        }
+
+        guard let text = String(data: data, encoding: .utf8), !text.isEmpty else {
+            return nil
+        }
+        return text
     }
 }

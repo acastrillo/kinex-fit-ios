@@ -14,24 +14,45 @@ final class AuthViewModel: ObservableObject {
 
     private let authService: AuthService
     private let userRepository: UserRepository
+    private let workoutRepository: WorkoutRepository
     private let googleSignInManager: GoogleSignInManager
     private let facebookSignInManager: FacebookSignInManager
     private let emailPasswordAuthService: EmailPasswordAuthService
+    private var cancellables = Set<AnyCancellable>()
 
     #if DEBUG
     /// Enable dev mode to bypass authentication (DEBUG builds only)
     @Published var devModeEnabled: Bool = false
     #endif
 
-    init(authService: AuthService, userRepository: UserRepository, googleSignInManager: GoogleSignInManager, facebookSignInManager: FacebookSignInManager, emailPasswordAuthService: EmailPasswordAuthService) {
+    init(authService: AuthService, userRepository: UserRepository, workoutRepository: WorkoutRepository, googleSignInManager: GoogleSignInManager, facebookSignInManager: FacebookSignInManager, emailPasswordAuthService: EmailPasswordAuthService) {
         self.authService = authService
         self.userRepository = userRepository
+        self.workoutRepository = workoutRepository
         self.googleSignInManager = googleSignInManager
         self.facebookSignInManager = facebookSignInManager
         self.emailPasswordAuthService = emailPasswordAuthService
+        observeSessionInvalidation()
     }
 
     // MARK: - Initialization
+
+    private func observeSessionInvalidation() {
+        NotificationCenter.default.publisher(for: .authSessionInvalidated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                Task { @MainActor in
+                    self.googleSignInManager.signOut()
+                    self.facebookSignInManager.signOut()
+                    try? await self.userRepository.clear()
+                    self.error = nil
+                    self.isLoading = false
+                    self.authState = .signedOut
+                }
+            }
+            .store(in: &cancellables)
+    }
 
     /// Check for existing session on app launch
     func checkExistingSession() async {
@@ -51,6 +72,9 @@ final class AuthViewModel: ObservableObject {
             do {
                 if let user = try await userRepository.getCurrentUser() {
                     authState = .signedIn(user)
+                    Task { @MainActor [weak self] in
+                        await self?.importWorkoutsAfterAuthentication(context: "session restore")
+                    }
                     logger.info("Restored session for user: \(user.id)")
                     return
                 }
@@ -63,6 +87,9 @@ final class AuthViewModel: ObservableObject {
                 try await authService.refreshTokens()
                 if let user = try await userRepository.getCurrentUser() {
                     authState = .signedIn(user)
+                    Task { @MainActor [weak self] in
+                        await self?.importWorkoutsAfterAuthentication(context: "session refresh")
+                    }
                     return
                 }
             } catch {
@@ -121,6 +148,7 @@ final class AuthViewModel: ObservableObject {
                     lastName: lastName
                 )
                 authState = .signedIn(user)
+                await importWorkoutsAfterAuthentication(context: "apple sign-in")
                 logger.info("Sign in successful")
             } catch let authError as AuthError {
                 error = authError
@@ -171,6 +199,7 @@ final class AuthViewModel: ObservableObject {
             )
 
             authState = .signedIn(user)
+            await importWorkoutsAfterAuthentication(context: "google sign-in")
             logger.info("Google authentication successful")
         } catch let googleError as GoogleSignInError {
             // Don't show error for user cancellation
@@ -179,8 +208,8 @@ final class AuthViewModel: ObservableObject {
                 return
             }
 
-            error = .providerError(googleError.localizedDescription ?? "Google Sign In failed")
-            logger.error("Google Sign In failed: \(googleError.localizedDescription ?? "unknown")")
+            error = .providerError(googleError.localizedDescription)
+            logger.error("Google Sign In failed: \(googleError.localizedDescription)")
         } catch let authError as AuthError {
             error = authError
             logger.error("Backend authentication failed: \(authError.localizedDescription)")
@@ -218,6 +247,7 @@ final class AuthViewModel: ObservableObject {
             )
 
             authState = .signedIn(user)
+            await importWorkoutsAfterAuthentication(context: "facebook sign-in")
             logger.info("Facebook authentication successful")
         } catch let facebookError as FacebookSignInError {
             // Don't show error for user cancellation
@@ -226,8 +256,8 @@ final class AuthViewModel: ObservableObject {
                 return
             }
 
-            error = .providerError(facebookError.localizedDescription ?? "Facebook Sign In failed")
-            logger.error("Facebook Sign In failed: \(facebookError.localizedDescription ?? "unknown")")
+            error = .providerError(facebookError.localizedDescription)
+            logger.error("Facebook Sign In failed: \(facebookError.localizedDescription)")
         } catch let authError as AuthError {
             error = authError
             logger.error("Backend authentication failed: \(authError.localizedDescription)")
@@ -251,6 +281,7 @@ final class AuthViewModel: ObservableObject {
             let user = try await emailPasswordAuthService.signIn(email: email, password: password)
 
             authState = .signedIn(user)
+            await importWorkoutsAfterAuthentication(context: "email sign-in")
             logger.info("Email/password sign in successful")
         } catch let authError as AuthError {
             error = authError
@@ -293,6 +324,7 @@ final class AuthViewModel: ObservableObject {
             )
 
             authState = .signedIn(user)
+            await importWorkoutsAfterAuthentication(context: "email sign-up")
             logger.info("Email/password sign up successful")
         } catch let authError as AuthError {
             error = authError
@@ -318,6 +350,15 @@ final class AuthViewModel: ObservableObject {
         logger.info("User signed out")
     }
 
+    private func importWorkoutsAfterAuthentication(context: String) async {
+        do {
+            let importedCount = try await workoutRepository.importFromServer()
+            logger.info("Imported \(importedCount) workout(s) after \(context, privacy: .public)")
+        } catch {
+            logger.warning("Workout import failed after \(context, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     // MARK: - Error Handling
 
     func clearError() {
@@ -332,6 +373,7 @@ extension AuthViewModel {
         AuthViewModel(
             authService: AppEnvironment.preview.authService,
             userRepository: AppEnvironment.preview.userRepository,
+            workoutRepository: AppEnvironment.preview.workoutRepository,
             googleSignInManager: GoogleSignInManager(),
             facebookSignInManager: FacebookSignInManager(),
             emailPasswordAuthService: AppEnvironment.preview.emailPasswordAuthService

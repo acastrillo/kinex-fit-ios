@@ -70,12 +70,6 @@ struct RefreshTokenResponse: Decodable {
     let tokenType: String
 }
 
-// MARK: - Sign Out Request
-
-struct SignOutRequest: Encodable {
-    let refreshToken: String
-}
-
 // MARK: - API Error Response
 
 struct APIErrorResponse: Decodable {

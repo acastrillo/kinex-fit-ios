@@ -13,15 +13,18 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         logger.info("App launched")
 
-        if let clientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String,
-           !clientID.isEmpty {
-            GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
-        } else {
-            logger.error("Missing GIDClientID in Info.plist")
+        do {
+            try GoogleSignInManager.configureSharedInstanceForLaunch()
+        } catch let configError as GoogleSignInError {
+            logger.error("Google Sign In launch configuration error: \(configError.localizedDescription, privacy: .public)")
+        } catch {
+            logger.error("Unexpected Google Sign In launch configuration error: \(error.localizedDescription)")
         }
 
         // Initialize Facebook SDK
         ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
+
+        configureSystemAppearance()
 
         // Register notification categories
         if let notificationManager = AppState.shared?.environment.notificationManager {
@@ -29,6 +32,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 notificationManager.registerNotificationCategories()
             }
         }
+
+        BackgroundSyncTask.registerBackgroundTask()
+        BackgroundSyncTask.scheduleBackgroundSync()
 
         return true
     }
@@ -98,5 +104,29 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 notificationManager.didFailToRegisterForRemoteNotifications(error: error)
             }
         }
+    }
+
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        BackgroundSyncTask.scheduleBackgroundSync()
+    }
+
+    private func configureSystemAppearance() {
+        let navAppearance = UINavigationBarAppearance()
+        navAppearance.configureWithOpaqueBackground()
+        navAppearance.backgroundColor = UIColor.black
+        navAppearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        navAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+
+        UINavigationBar.appearance().standardAppearance = navAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
+        UINavigationBar.appearance().compactAppearance = navAppearance
+
+        let tabAppearance = UITabBarAppearance()
+        tabAppearance.configureWithOpaqueBackground()
+        tabAppearance.backgroundColor = UIColor.black
+        tabAppearance.shadowColor = UIColor(white: 1.0, alpha: 0.08)
+
+        UITabBar.appearance().standardAppearance = tabAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabAppearance
     }
 }

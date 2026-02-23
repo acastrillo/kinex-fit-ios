@@ -24,6 +24,10 @@ struct DatabaseMigratorFactory {
                 table.column("title", .text).notNull()
                 table.column("content", .text)
                 table.column("source", .text)
+                table.column("durationMinutes", .integer)
+                table.column("exerciseCount", .integer)
+                table.column("difficulty", .text)
+                table.column("imageURL", .text)
                 table.column("createdAt", .datetime).notNull()
                 table.column("updatedAt", .datetime).notNull()
             }
@@ -56,6 +60,15 @@ struct DatabaseMigratorFactory {
         migrator.registerMigration("add-subscriptionExpiresAt") { db in
             try db.alter(table: "users") { table in
                 table.add(column: "subscriptionExpiresAt", .datetime)
+            }
+        }
+
+        migrator.registerMigration("add-workout-card-metadata") { db in
+            try db.alter(table: "workouts") { table in
+                table.add(column: "durationMinutes", .integer)
+                table.add(column: "exerciseCount", .integer)
+                table.add(column: "difficulty", .text)
+                table.add(column: "imageURL", .text)
             }
         }
 

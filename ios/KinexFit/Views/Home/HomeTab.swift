@@ -147,7 +147,7 @@ struct HomeTab: View {
             content: content,
             source: .manual // AI-generated but saved as manual entry
         )
-        try? await workoutRepository.create(workout)
+        _ = try? await workoutRepository.create(workout)
         await loadStats()
     }
 }
