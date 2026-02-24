@@ -4,7 +4,6 @@ import SwiftUI
 struct HomeTab: View {
     @EnvironmentObject private var appState: AppState
     @State private var stats: HomeStats = .empty
-    @State private var isLoading = true
     @State private var showingWorkoutGenerator = false
     @State private var user: User?
 
@@ -13,37 +12,31 @@ struct HomeTab: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    // Greeting section
-                    greetingSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                greetingSection
 
-                    // AI Feature Card
-                    AIFeatureCard {
-                        showingWorkoutGenerator = true
-                    }
-
-                    // Stats section header
-                    Text("Your Progress")
-                        .font(.headline)
-                        .foregroundStyle(AppTheme.primaryText)
-
-                    // Stats grid
-                    statsGrid
+                AIFeatureCard {
+                    showingWorkoutGenerator = true
                 }
-                .padding()
+
+                statsGrid
+
+                quickActionsSection
             }
-            .background(AppTheme.background)
-            .navigationTitle("Home")
-            .refreshable {
-                await loadStats()
-            }
-            .sheet(isPresented: $showingWorkoutGenerator) {
-                WorkoutGeneratorView { title, content in
-                    Task {
-                        await saveGeneratedWorkout(title: title, content: content)
-                    }
+            .padding(.horizontal, 16)
+            .padding(.top, 18)
+            .padding(.bottom, 30)
+        }
+        .background(AppTheme.background.ignoresSafeArea())
+        .scrollIndicators(.hidden)
+        .refreshable {
+            await loadStats()
+        }
+        .sheet(isPresented: $showingWorkoutGenerator) {
+            WorkoutGeneratorView { title, content in
+                Task {
+                    await saveGeneratedWorkout(title: title, content: content)
                 }
             }
         }
@@ -57,66 +50,97 @@ struct HomeTab: View {
 
     private var greetingSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(timeBasedGreeting)
-                .font(.title2)
-                .fontWeight(.semibold)
+            Text("Welcome back, \(displayName)!")
+                .font(.system(size: 30, weight: .bold))
                 .foregroundStyle(AppTheme.primaryText)
 
-            if let firstName = user?.firstName, !firstName.isEmpty {
-                Text("Welcome back, \(firstName)!")
-                    .font(.headline)
-                    .foregroundStyle(AppTheme.secondaryText)
-            }
-
             Text("Ready to crush your fitness goals today?")
-                .font(.subheadline)
-                .foregroundStyle(AppTheme.tertiaryText)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
         }
     }
 
-    private var timeBasedGreeting: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 5..<12:
-            return "Good morning"
-        case 12..<17:
-            return "Good afternoon"
-        default:
-            return "Good evening"
+    private var displayName: String {
+        if let firstName = user?.firstName?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !firstName.isEmpty {
+            return firstName
         }
+        return "Athlete"
     }
 
     // MARK: - Stats Grid
 
     private var statsGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-            StatCard(
-                title: "Workouts This Week",
-                value: "\(stats.workoutsThisWeek)",
-                icon: "target",
-                iconColor: AppTheme.statTarget
-            )
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Your Progress")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
 
-            StatCard(
-                title: "Total Workouts",
-                value: "\(stats.totalWorkouts)",
-                icon: "dumbbell.fill",
-                iconColor: AppTheme.statDumbbell
-            )
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                StatCard(
+                    title: "WORKOUTS THIS WEEK",
+                    value: "\(stats.workoutsThisWeek)",
+                    icon: "target",
+                    iconColor: AppTheme.statTarget
+                )
 
-            StatCard(
-                title: "Hours Trained",
-                value: stats.formattedHoursTrained,
-                icon: "clock.fill",
-                iconColor: AppTheme.statClock
-            )
+                StatCard(
+                    title: "TOTAL WORKOUTS",
+                    value: "\(stats.totalWorkouts)",
+                    icon: "dumbbell.fill",
+                    iconColor: AppTheme.statDumbbell
+                )
 
-            StatCard(
-                title: "Streak",
-                value: stats.formattedStreak,
-                icon: "flame.fill",
-                iconColor: AppTheme.statStreak
-            )
+                StatCard(
+                    title: "HOURS TRAINED",
+                    value: stats.formattedHoursTrained,
+                    icon: "clock.fill",
+                    iconColor: AppTheme.statClock
+                )
+
+                StatCard(
+                    title: "STREAK",
+                    value: stats.formattedStreak,
+                    icon: "rosette",
+                    iconColor: AppTheme.statStreak
+                )
+            }
+        }
+    }
+
+    private var quickActionsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Quick Actions")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            Button {
+                appState.navigateToTab(.add)
+            } label: {
+                HStack(spacing: 14) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 42, height: 42)
+                        .background(AppTheme.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Add Workout")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(AppTheme.primaryText)
+
+                        Text("Create or import workout")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(AppTheme.secondaryText)
+                    }
+
+                    Spacer()
+                }
+                .padding(14)
+                .kinexCard()
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -132,12 +156,9 @@ struct HomeTab: View {
 
             await MainActor.run {
                 stats = newStats
-                isLoading = false
             }
         } catch {
-            await MainActor.run {
-                isLoading = false
-            }
+            // Keep previous stats on transient failure.
         }
     }
 

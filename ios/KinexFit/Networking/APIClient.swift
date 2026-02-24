@@ -56,6 +56,11 @@ struct APIClient {
             logger.error("Auth request failed: path=\(request.path, privacy: .public) traceID=\(authTraceID, privacy: .public) status=\(httpResponse.statusCode) headers=\(headers, privacy: .public) body=\(responseText, privacy: .public)")
         }
 
+        if shouldLogDiagnostics(path: request.path) {
+            let responseText = String(data: data, encoding: .utf8) ?? "<non-utf8-body>"
+            logger.error("Request failed: path=\(request.path, privacy: .public) status=\(httpResponse.statusCode) body=\(responseText, privacy: .public)")
+        }
+
         throw APIError.httpStatus(httpResponse.statusCode, data)
     }
 
@@ -123,6 +128,12 @@ struct APIClient {
             "/api/mobile/auth/refresh"
         ]
         return !noAuthorizationPrefixes.contains { path.hasPrefix($0) }
+    }
+
+    private func shouldLogDiagnostics(path: String) -> Bool {
+        path.hasPrefix("/api/mobile/workouts")
+            || path.hasPrefix("/api/workouts")
+            || path.hasPrefix("/api/mobile/user/onboarding")
     }
 
     fileprivate func performTokenRefresh() async -> Bool {

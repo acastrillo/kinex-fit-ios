@@ -6,42 +6,58 @@ struct AIFeatureCard: View {
     let onGenerateTapped: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "sparkles")
-                    .font(.title2)
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(AppTheme.accent)
 
-                Text("Workout of the Week")
-                    .font(.headline)
-                    .foregroundStyle(AppTheme.primaryText)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Workout of the Week")
+                        .font(.system(size: 19, weight: .bold))
+                        .foregroundStyle(AppTheme.primaryText)
+
+                    Text("Your free AI-generated weekly workout plan")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
             }
 
-            // Description
-            Text("Let AI create a personalized workout based on your goals and available equipment.")
-                .font(.subheadline)
-                .foregroundStyle(AppTheme.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 12) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(AppTheme.accent)
+                    .padding(.top, 8)
 
-            // Generate button
+                Text("Get Your AI Workout")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(AppTheme.primaryText)
+
+                Text("AI workout tailored to your training profile.\nFresh every week!")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+
             Button(action: onGenerateTapped) {
                 HStack {
                     Image(systemName: "sparkles")
                     Text("Generate This Week's Workout")
                 }
-                .font(.subheadline.weight(.semibold))
+                .font(.system(size: 17, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(AppTheme.accent)
-                .foregroundStyle(.black)
-                .cornerRadius(12)
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .shadow(color: AppTheme.accent.opacity(0.38), radius: 16, y: 7)
             }
             .buttonStyle(.plain)
         }
-        .padding()
-        .background(AppTheme.cardBackground)
-        .cornerRadius(16)
+        .padding(16)
+        .kinexCard(cornerRadius: 18)
     }
 }
 

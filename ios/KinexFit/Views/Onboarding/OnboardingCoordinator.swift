@@ -1,4 +1,7 @@
 import SwiftUI
+import OSLog
+
+private let onboardingLogger = Logger(subsystem: "com.kinex.fit", category: "Onboarding")
 
 @MainActor
 final class OnboardingViewModel: ObservableObject {
@@ -84,7 +87,7 @@ final class OnboardingViewModel: ObservableObject {
         do {
             try await submitOnboardingData()
         } catch {
-            // Log but do not surface to the user — proceed regardless.
+            onboardingLogger.error("Failed to submit onboarding data to backend: \(error.localizedDescription, privacy: .public)")
         }
 
         do {

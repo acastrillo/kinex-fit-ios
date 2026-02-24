@@ -5,42 +5,51 @@ import SwiftUI
 enum AppTheme {
     // MARK: - Primary Colors
 
-    /// Primary accent color (orange) - used for buttons, selected tabs, highlights
-    static let accent = Color(red: 1.0, green: 0.6, blue: 0.0) // Orange #FF9900
+    /// Primary accent color used by CTA buttons and active navigation states.
+    static let accent = Color(red: 1.0, green: 0.42, blue: 0.21) // #FF6B35
 
-    /// Main background color (pure black)
-    static let background = Color.black
+    /// Accent tint for soft fills/chips.
+    static let accentMuted = Color(red: 0.52, green: 0.24, blue: 0.12)
 
-    /// Card background color (dark gray)
-    static let cardBackground = Color(red: 0.11, green: 0.11, blue: 0.118) // #1C1C1E
+    /// Main page background.
+    static let background = Color(red: 0.02, green: 0.03, blue: 0.06) // #05080F
 
-    /// Elevated card/surface (slightly lighter)
-    static let cardBackgroundElevated = Color(red: 0.17, green: 0.17, blue: 0.18) // #2C2C2E
+    /// Card background color.
+    static let cardBackground = Color(red: 0.06, green: 0.07, blue: 0.10) // #10121A
+
+    /// Elevated card/surface.
+    static let cardBackgroundElevated = Color(red: 0.09, green: 0.10, blue: 0.14) // #171A24
+
+    /// Default card border.
+    static let cardBorder = Color.white.opacity(0.09)
+
+    /// Subtle separator line color.
+    static let separator = Color.white.opacity(0.08)
 
     // MARK: - Text Colors
 
     /// Primary text color (white)
     static let primaryText = Color.white
 
-    /// Secondary text color (gray)
-    static let secondaryText = Color(white: 0.6)
+    /// Secondary text color
+    static let secondaryText = Color(red: 0.64, green: 0.66, blue: 0.71)
 
-    /// Tertiary text color (darker gray)
-    static let tertiaryText = Color(white: 0.4)
+    /// Tertiary text color
+    static let tertiaryText = Color(red: 0.46, green: 0.48, blue: 0.54)
 
     // MARK: - Stat Icon Colors
 
     /// Target/goal icon color (orange)
     static let statTarget = accent
 
-    /// Dumbbell/workout icon color (soft blue)
-    static let statDumbbell = Color(red: 0.4, green: 0.6, blue: 0.8) // Faded blue
+    /// Dumbbell/workout icon color
+    static let statDumbbell = Color(red: 0.23, green: 0.27, blue: 0.34)
 
-    /// Clock/time icon color (teal/cyan)
-    static let statClock = Color(red: 0.0, green: 0.8, blue: 0.8) // Teal
+    /// Clock/time icon color
+    static let statClock = Color(red: 0.20, green: 0.53, blue: 1.00)
 
     /// Streak/flame icon color (green)
-    static let statStreak = Color(red: 0.3, green: 0.85, blue: 0.4) // Green
+    static let statStreak = Color(red: 0.11, green: 0.84, blue: 0.58)
 
     // MARK: - Semantic Colors
 
@@ -67,5 +76,16 @@ extension View {
         self
             .preferredColorScheme(.dark)
             .tint(AppTheme.accent)
+    }
+
+    /// Shared Kinex card treatment.
+    func kinexCard(cornerRadius: CGFloat = 16, fill: Color = AppTheme.cardBackground) -> some View {
+        self
+            .background(fill)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(AppTheme.cardBorder, lineWidth: 1)
+            }
     }
 }

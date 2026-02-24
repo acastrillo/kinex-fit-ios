@@ -111,9 +111,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     private func configureSystemAppearance() {
+        let accentColor = UIColor(red: 1.0, green: 0.42, blue: 0.21, alpha: 1.0)
+        let secondaryText = UIColor(red: 0.64, green: 0.66, blue: 0.71, alpha: 1.0)
+        let backgroundColor = UIColor(red: 0.02, green: 0.03, blue: 0.06, alpha: 1.0)
+
         let navAppearance = UINavigationBarAppearance()
         navAppearance.configureWithOpaqueBackground()
-        navAppearance.backgroundColor = UIColor.black
+        navAppearance.backgroundColor = backgroundColor
+        navAppearance.shadowColor = UIColor(white: 1.0, alpha: 0.08)
         navAppearance.titleTextAttributes = [.foregroundColor: UIColor.white]
         navAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
 
@@ -123,8 +128,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
         let tabAppearance = UITabBarAppearance()
         tabAppearance.configureWithOpaqueBackground()
-        tabAppearance.backgroundColor = UIColor.black
+        tabAppearance.backgroundColor = backgroundColor
         tabAppearance.shadowColor = UIColor(white: 1.0, alpha: 0.08)
+
+        let itemAppearance = tabAppearance.stackedLayoutAppearance
+        itemAppearance.normal.iconColor = secondaryText
+        itemAppearance.normal.titleTextAttributes = [.foregroundColor: secondaryText]
+        itemAppearance.selected.iconColor = accentColor
+        itemAppearance.selected.titleTextAttributes = [.foregroundColor: accentColor]
 
         UITabBar.appearance().standardAppearance = tabAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabAppearance

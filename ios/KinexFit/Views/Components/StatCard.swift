@@ -9,29 +9,29 @@ struct StatCard: View {
     let iconColor: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Icon
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(iconColor)
-
-            Spacer()
-
-            // Value and Title
-            VStack(alignment: .leading, spacing: 4) {
-                Text(value)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppTheme.primaryText)
-
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top) {
                 Text(title)
-                    .font(.caption)
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(AppTheme.secondaryText)
+                    .lineLimit(2)
+
+                Spacer(minLength: 8)
+
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(iconColor)
             }
+
+            Text(value)
+                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .foregroundStyle(AppTheme.primaryText)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(AppTheme.cardBackground)
-        .cornerRadius(16)
+        .frame(minHeight: 98)
+        .padding(12)
+        .kinexCard(cornerRadius: 14)
     }
 }
 

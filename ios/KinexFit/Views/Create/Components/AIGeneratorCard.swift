@@ -5,49 +5,57 @@ struct AIGeneratorCard: View {
     let onGenerate: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
+        VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
                 Image(systemName: "sparkles")
-                    .font(.title2)
-                    .foregroundStyle(.orange)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(AppTheme.accent)
 
                 Text("AI Workout Generator")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(AppTheme.primaryText)
             }
 
-            // Description
             Text("Describe your workout in plain English. AI creates a complete plan with exercises, sets, and weights.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
                 .lineLimit(3)
 
-            // Feature chips
-            HStack(spacing: 8) {
-                FeatureChip(icon: "person.fill", text: "Personalized to your PRs")
-                FeatureChip(icon: "dumbbell.fill", text: "Equipment-aware")
-                FeatureChip(icon: "target", text: "Goal-optimized")
-            }
-            .font(.caption)
+            ViewThatFits(in: .vertical) {
+                HStack(spacing: 7) {
+                    FeatureChip(icon: "person.fill", text: "Personalized to your PRs")
+                    FeatureChip(icon: "dumbbell.fill", text: "Equipment-aware")
+                    FeatureChip(icon: "target", text: "Goal-optimized")
+                }
 
-            // Generate button
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(spacing: 7) {
+                        FeatureChip(icon: "person.fill", text: "Personalized to your PRs")
+                        FeatureChip(icon: "dumbbell.fill", text: "Equipment-aware")
+                    }
+
+                    FeatureChip(icon: "target", text: "Goal-optimized")
+                }
+            }
+
             Button(action: onGenerate) {
                 HStack {
                     Image(systemName: "sparkles")
                     Text("Generate Workout")
-                        .fontWeight(.semibold)
+                    Image(systemName: "chevron.right")
                 }
+                .font(.system(size: 18, weight: .semibold))
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.orange)
+                .padding(.vertical, 12)
+                .background(AppTheme.accent)
                 .foregroundStyle(.white)
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .shadow(color: AppTheme.accent.opacity(0.35), radius: 14, y: 6)
             }
+            .buttonStyle(.plain)
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(16)
+        .padding(16)
+        .kinexCard(cornerRadius: 18)
     }
 }
 
@@ -59,14 +67,15 @@ private struct FeatureChip: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.caption2)
+                .font(.system(size: 12, weight: .semibold))
             Text(text)
+                .font(.system(size: 12, weight: .medium))
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.orange.opacity(0.15))
-        .foregroundStyle(.orange)
-        .cornerRadius(6)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(AppTheme.cardBackgroundElevated)
+        .foregroundStyle(AppTheme.secondaryText)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 

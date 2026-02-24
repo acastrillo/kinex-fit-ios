@@ -157,21 +157,15 @@ final class WorkoutRepository {
     /// Import workouts from backend and merge into local storage.
     /// Existing local rows with matching IDs are updated in place.
     @discardableResult
-    func importFromServer(limit: Int = 1000, maxPages: Int = 5) async throws -> Int {
-        let cappedLimit = max(1, min(limit, 1000))
+    func importFromServer(limit: Int = 100, maxPages: Int = 20) async throws -> Int {
+        let cappedLimit = max(1, min(limit, 200))
         let cappedPages = max(1, maxPages)
         var cursor: String?
         var page = 0
         var mergedByID: [String: Workout] = [:]
 
         repeat {
-            var queryItems = [URLQueryItem(name: "limit", value: String(cappedLimit))]
-            if let cursor {
-                queryItems.append(URLQueryItem(name: "cursor", value: cursor))
-            }
-
-            let request = APIRequest(path: "/api/mobile/workouts", queryItems: queryItems)
-            let response: MobileWorkoutListResponse = try await apiClient.send(request)
+            let response = try await fetchWorkoutPage(limit: cappedLimit, cursor: cursor)
 
             for remoteWorkout in response.workouts {
                 guard let mappedWorkout = Self.mapRemoteWorkout(remoteWorkout) else { continue }
@@ -205,6 +199,27 @@ final class WorkoutRepository {
 
         logger.info("Imported \(workoutsToUpsert.count) workouts from backend")
         return workoutsToUpsert.count
+    }
+
+    private func fetchWorkoutPage(limit: Int, cursor: String?) async throws -> MobileWorkoutListResponse {
+        var queryItems = [URLQueryItem(name: "limit", value: String(limit))]
+        if let cursor {
+            queryItems.append(URLQueryItem(name: "cursor", value: cursor))
+        }
+
+        let mobileRequest = APIRequest(path: "/api/mobile/workouts", queryItems: queryItems)
+
+        do {
+            return try await apiClient.send(mobileRequest)
+        } catch let apiError as APIError {
+            guard case .httpStatus(let statusCode, _) = apiError, statusCode >= 500 else {
+                throw apiError
+            }
+
+            logger.warning("Mobile workouts fetch failed with status \(statusCode); retrying with web workouts endpoint")
+            let fallbackRequest = APIRequest(path: "/api/workouts", queryItems: queryItems)
+            return try await apiClient.send(fallbackRequest)
+        }
     }
 
     private enum SyncOperation: String {
@@ -270,9 +285,9 @@ final class WorkoutRepository {
             keys: [CodingKeys]
         ) -> [MobileWorkout]? {
             for key in keys {
-                if let value = try? container.decodeIfPresent([MobileWorkout].self, forKey: key),
-                   let value {
-                    return value
+                let decoded: [MobileWorkout]? = try? container.decodeIfPresent([MobileWorkout].self, forKey: key)
+                if let decoded {
+                    return decoded
                 }
             }
             return nil
@@ -283,9 +298,9 @@ final class WorkoutRepository {
             keys: [CodingKeys]
         ) -> String? {
             for key in keys {
-                if let value = try? container.decodeIfPresent(String.self, forKey: key),
-                   let value {
-                    return value
+                let decoded: String? = try? container.decodeIfPresent(String.self, forKey: key)
+                if let decoded {
+                    return decoded
                 }
             }
             return nil
@@ -384,16 +399,18 @@ final class WorkoutRepository {
             in container: KeyedDecodingContainer<CodingKeys>,
             key: CodingKeys
         ) -> String? {
-            if let stringValue = try? container.decodeIfPresent(String.self, forKey: key),
-               let stringValue {
+            let stringValue: String? = try? container.decodeIfPresent(String.self, forKey: key)
+            if let stringValue {
                 return stringValue
             }
-            if let intValue = try? container.decodeIfPresent(Int.self, forKey: key),
-               let intValue {
+
+            let intValue: Int? = try? container.decodeIfPresent(Int.self, forKey: key)
+            if let intValue {
                 return String(intValue)
             }
-            if let doubleValue = try? container.decodeIfPresent(Double.self, forKey: key),
-               let doubleValue {
+
+            let doubleValue: Double? = try? container.decodeIfPresent(Double.self, forKey: key)
+            if let doubleValue {
                 return String(doubleValue)
             }
             return nil
@@ -415,18 +432,18 @@ final class WorkoutRepository {
             in container: KeyedDecodingContainer<CodingKeys>,
             key: CodingKeys
         ) -> Int? {
-            if let intValue = try? container.decodeIfPresent(Int.self, forKey: key),
-               let intValue {
+            let intValue: Int? = try? container.decodeIfPresent(Int.self, forKey: key)
+            if let intValue {
                 return intValue
             }
 
-            if let doubleValue = try? container.decodeIfPresent(Double.self, forKey: key),
-               let doubleValue {
+            let doubleValue: Double? = try? container.decodeIfPresent(Double.self, forKey: key)
+            if let doubleValue {
                 return Int(doubleValue.rounded())
             }
 
-            if let stringValue = try? container.decodeIfPresent(String.self, forKey: key),
-               let stringValue,
+            let stringValue: String? = try? container.decodeIfPresent(String.self, forKey: key)
+            if let stringValue,
                let parsed = Int(stringValue.trimmingCharacters(in: .whitespacesAndNewlines)) {
                 return parsed
             }

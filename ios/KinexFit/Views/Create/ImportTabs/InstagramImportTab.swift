@@ -19,20 +19,27 @@ struct InstagramImportTab: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // URL Input Section
             VStack(alignment: .leading, spacing: 8) {
-                Label("Source URL", systemImage: "link")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text("Source URL")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(AppTheme.primaryText)
 
                 HStack(spacing: 12) {
                     TextField("https://www.instagram.com/p/...", text: $instagramURL)
-                        .textFieldStyle(.roundedBorder)
                         .textContentType(.URL)
                         .keyboardType(.URL)
                         .autocapitalization(.none)
                         .autocorrectionDisabled()
                         .disabled(isFetching)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 12)
+                        .background(AppTheme.cardBackgroundElevated)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(AppTheme.cardBorder, lineWidth: 1)
+                        }
+                        .foregroundStyle(AppTheme.primaryText)
 
                     Button(action: fetchWorkout) {
                         if isFetching {
@@ -44,16 +51,19 @@ struct InstagramImportTab: View {
                                 .fontWeight(.semibold)
                         }
                     }
-                    .buttonStyle(.borderedProminent)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 11)
+                    .background(AppTheme.accent.opacity(canFetch ? 1 : 0.45))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .disabled(!canFetch)
                 }
 
                 Text("Paste Instagram, TikTok, or other workout URLs")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(AppTheme.secondaryText)
             }
 
-            // Fetch State Display
             FetchStateView(
                 state: fetchState,
                 onProcessAndEdit: processAndEdit,
@@ -73,7 +83,7 @@ struct InstagramImportTab: View {
                 }
             }
         }
-        .padding()
+        .padding(2)
         .alert("Error", isPresented: $showingError) {
             Button("OK", role: .cancel) { }
         } message: {

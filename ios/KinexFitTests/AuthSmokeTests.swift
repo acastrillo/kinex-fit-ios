@@ -294,6 +294,90 @@ final class AuthSmokeTests: XCTestCase {
         XCTAssertEqual(workout?.content, "Description fallback")
         XCTAssertEqual(workout?.source, .instagram)
     }
+
+    func testImportFromServerFallsBackToWebEndpointOnMobileServerError() async throws {
+        let database = try AppDatabase.inMemory()
+        let tokenStore = InMemoryTokenStore()
+        try tokenStore.setAccessToken("access-import-fallback")
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+
+        let apiClient = APIClient(
+            baseURL: URL(string: "https://kinexfit.com")!,
+            tokenStore: tokenStore,
+            session: session
+        )
+        let syncEngine = SyncEngine(database: database, apiClient: apiClient)
+        let repository = WorkoutRepository(
+            database: database,
+            apiClient: apiClient,
+            syncEngine: syncEngine
+        )
+
+        var mobileRequestCount = 0
+        var webRequestCount = 0
+
+        MockURLProtocol.requestHandler = { request in
+            guard let url = request.url else {
+                throw TestFailure("Missing request URL")
+            }
+
+            switch url.path {
+            case "/api/mobile/workouts":
+                mobileRequestCount += 1
+                let response = HTTPURLResponse(
+                    url: url,
+                    statusCode: 500,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+
+                return (response, Data("{\"error\":\"Failed to fetch workouts\"}".utf8))
+
+            case "/api/workouts":
+                webRequestCount += 1
+                XCTAssertEqual(request.httpMethod, "GET")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-import-fallback")
+
+                let response = HTTPURLResponse(
+                    url: url,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+
+                let payload = """
+                {
+                  "workouts": [
+                    {
+                      "workoutId": "workout-fallback-1",
+                      "title": "Fallback Workout",
+                      "content": "Recovered via /api/workouts",
+                      "source": "manual",
+                      "createdAt": "2026-02-23T19:00:00Z",
+                      "updatedAt": "2026-02-23T19:00:00Z"
+                    }
+                  ]
+                }
+                """
+
+                return (response, Data(payload.utf8))
+
+            default:
+                throw TestFailure("Unexpected path: \(url.path)")
+            }
+        }
+
+        let imported = try await repository.importFromServer()
+        XCTAssertEqual(imported, 1)
+        XCTAssertEqual(mobileRequestCount, 1)
+        XCTAssertEqual(webRequestCount, 1)
+
+        let workout = try await repository.fetch(id: "workout-fallback-1")
+        XCTAssertEqual(workout?.title, "Fallback Workout")
+    }
 }
 
 private final class MockURLProtocol: URLProtocol {

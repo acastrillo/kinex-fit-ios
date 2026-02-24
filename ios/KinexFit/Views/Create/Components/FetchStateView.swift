@@ -35,37 +35,42 @@ struct FetchStateView: View {
         VStack(spacing: 12) {
             Image(systemName: "arrow.down.circle")
                 .font(.largeTitle)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(AppTheme.accent)
 
             Text("Ready to import")
-                .font(.subheadline)
+                .font(.system(size: 20, weight: .semibold))
                 .fontWeight(.medium)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.primaryText)
 
             Text("Enter Instagram URL and click Fetch")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 22)
+        .padding(.horizontal, 12)
+        .kinexCard(cornerRadius: 14, fill: AppTheme.background)
     }
 
     private var fetchingView: some View {
         VStack(spacing: 16) {
             ProgressView()
                 .scaleEffect(1.2)
+                .tint(AppTheme.accent)
 
             Text("Fetching from Instagram...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(AppTheme.primaryText)
 
             Text("This may take a few seconds")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 22)
+        .padding(.horizontal, 12)
+        .kinexCard(cornerRadius: 14, fill: AppTheme.background)
     }
 
     private func successView(workout: FetchedWorkout) -> some View {
@@ -75,9 +80,9 @@ struct FetchStateView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                 Text("Workout fetched successfully")
-                    .font(.subheadline)
+                    .font(.system(size: 18, weight: .semibold))
                     .fontWeight(.medium)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(AppTheme.primaryText)
             }
 
             // Preview card
@@ -88,16 +93,16 @@ struct FetchStateView: View {
                         Image(systemName: "person.circle.fill")
                             .foregroundStyle(.pink)
                         Text("@\(author.username)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(AppTheme.secondaryText)
                     }
                 }
 
                 // Caption preview
                 if !workout.content.isEmpty {
                     Text(workout.shortContent)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
                         .lineLimit(3)
                 }
 
@@ -107,7 +112,7 @@ struct FetchStateView: View {
                         Image(systemName: "list.bullet")
                             .font(.caption2)
                         Text("\(workout.exerciseCount) exercises detected")
-                            .font(.caption)
+                            .font(.system(size: 13, weight: .medium))
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -117,41 +122,43 @@ struct FetchStateView: View {
                 }
             }
             .padding()
-            .background(Color(.tertiarySystemBackground))
-            .cornerRadius(12)
+            .kinexCard(cornerRadius: 12, fill: AppTheme.cardBackgroundElevated)
 
             // Process & Edit button
             Button(action: { onProcessAndEdit(workout) }) {
                 HStack {
                     Image(systemName: "square.and.pencil")
                     Text("Process & Edit")
-                        .fontWeight(.semibold)
                 }
+                .font(.system(size: 17, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(Color.green)
+                .background(AppTheme.accent)
                 .foregroundStyle(.white)
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
+            .buttonStyle(.plain)
         }
+        .padding(12)
+        .kinexCard(cornerRadius: 14, fill: AppTheme.background)
     }
 
     private func errorView(error: InstagramFetchError) -> some View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.largeTitle)
-                .foregroundStyle(.orange)
+                .foregroundStyle(AppTheme.warning)
 
             Text(error.errorDescription ?? "An error occurred")
-                .font(.subheadline)
+                .font(.system(size: 17, weight: .semibold))
                 .fontWeight(.medium)
-                .foregroundStyle(.primary)
+                .foregroundStyle(AppTheme.primaryText)
                 .multilineTextAlignment(.center)
 
             if let recoverySuggestion = error.recoverySuggestion {
                 Text(recoverySuggestion)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(AppTheme.secondaryText)
                     .multilineTextAlignment(.center)
             }
 
@@ -161,10 +168,11 @@ struct FetchStateView: View {
                         Image(systemName: "arrow.clockwise")
                         Text("Try Again")
                     }
+                    .font(.system(size: 16, weight: .semibold))
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
-                    .background(Color(.secondarySystemBackground))
-                    .cornerRadius(8)
+                    .background(AppTheme.cardBackgroundElevated)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
@@ -177,8 +185,9 @@ struct FetchStateView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 22)
         .padding(.horizontal, 20)
+        .kinexCard(cornerRadius: 14, fill: AppTheme.background)
     }
 }
 

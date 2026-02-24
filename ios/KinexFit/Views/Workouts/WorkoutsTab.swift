@@ -2,7 +2,6 @@ import SwiftUI
 import UIKit
 
 struct WorkoutsTab: View {
-    @ObservedObject var authViewModel: AuthViewModel
     @EnvironmentObject private var appState: AppState
     @State private var workouts: [Workout] = []
     @State private var isLoading = true
@@ -21,7 +20,6 @@ struct WorkoutsTab: View {
     @State private var failedCount = 0
     @State private var showSyncBanner = false
     @State private var hasPerformedInitialSync = false
-    @State private var showingProfileSheet = false
 
     private var workoutRepository: WorkoutRepository {
         appState.environment.workoutRepository
@@ -70,9 +68,6 @@ struct WorkoutsTab: View {
             }
             .sheet(isPresented: $showingAddWorkout) {
                 WorkoutFormView(mode: .create, onSave: createWorkout)
-            }
-            .sheet(isPresented: $showingProfileSheet) {
-                ProfileTab(authViewModel: authViewModel)
             }
             .sheet(isPresented: $showingImportReview) {
                 if let importItem = selectedImport {
@@ -146,50 +141,20 @@ struct WorkoutsTab: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top) {
+            HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Workout Library")
-                        .font(.system(size: 38, weight: .heavy, design: .rounded))
+                        .font(.system(size: 34, weight: .bold))
                         .foregroundStyle(AppTheme.primaryText)
 
                     Text("\(workouts.count) workout\(workouts.count == 1 ? "" : "s") saved")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(.system(size: 17, weight: .medium))
                         .foregroundStyle(AppTheme.secondaryText)
                 }
 
                 Spacer(minLength: 12)
 
                 VStack(spacing: 10) {
-                    Button {
-                        showingProfileSheet = true
-                    } label: {
-                        Image(systemName: "line.3.horizontal")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(AppTheme.primaryText)
-                            .frame(width: 44, height: 44)
-                            .background(AppTheme.cardBackground)
-                            .clipShape(Circle())
-                            .overlay {
-                                Circle()
-                                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                            }
-                    }
-
-                    Button {
-                        showingAddWorkout = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(AppTheme.accent)
-                            .frame(width: 44, height: 44)
-                            .background(AppTheme.cardBackground)
-                            .clipShape(Circle())
-                            .overlay {
-                                Circle()
-                                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                            }
-                    }
-
                     if pendingCount > 0 || failedCount > 0 {
                         SyncStatusIndicator(
                             status: syncStatus,
@@ -227,12 +192,7 @@ struct WorkoutsTab: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(AppTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        }
+        .kinexCard(cornerRadius: 14, fill: AppTheme.cardBackgroundElevated)
     }
 
     private var workoutCards: some View {
@@ -411,7 +371,7 @@ private struct EmptyWorkoutsView: View {
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "dumbbell")
-                .font(.system(size: 42, weight: .regular))
+                .font(.system(size: 30, weight: .regular))
                 .foregroundStyle(AppTheme.secondaryText)
 
             Text("No Workouts Yet")
@@ -441,7 +401,7 @@ private struct SearchEmptyState: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 34, weight: .medium))
+                .font(.system(size: 22, weight: .medium))
                 .foregroundStyle(AppTheme.secondaryText)
 
             Text("No Matches")
@@ -483,13 +443,13 @@ private struct SearchEmptyState: View {
         ))
     }
 
-    return WorkoutsTab(authViewModel: .previewSignedIn)
+    return WorkoutsTab()
         .environmentObject(appState)
         .appDarkTheme()
 }
 
 #Preview("Empty State") {
-    WorkoutsTab(authViewModel: .previewSignedIn)
+    WorkoutsTab()
         .environmentObject(AppState(environment: .preview))
         .appDarkTheme()
 }

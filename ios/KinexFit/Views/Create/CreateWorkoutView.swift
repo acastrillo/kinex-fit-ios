@@ -7,17 +7,17 @@ struct CreateWorkoutView: View {
     @State private var showingAIGenerate = false
 
     enum ImportTab: String, CaseIterable, Identifiable {
-        case instagram = "Instagram"
-        case photo = "Photo"
+        case instagram = "URL/Social"
+        case photo = "Image/OCR"
         case manual = "Manual"
 
         var id: String { rawValue }
 
         var icon: String {
             switch self {
-            case .instagram: return "camera.on.rectangle"
-            case .photo: return "photo"
-            case .manual: return "pencil.line"
+            case .instagram: return "link"
+            case .photo: return "camera.viewfinder"
+            case .manual: return "doc.text"
             }
         }
     }
@@ -34,50 +34,45 @@ struct CreateWorkoutView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Header
-                    headerSection
+        ScrollView {
+            VStack(spacing: 20) {
+                headerSection
 
-                    // AI Generator Card
-                    AIGeneratorCard {
-                        showingAIGenerate = true
-                    }
-                    .padding(.horizontal)
+                importSection
+                    .padding(.horizontal, 16)
 
-                    // Divider
-                    WorkoutDivider()
-                        .padding(.horizontal)
+                WorkoutDivider()
+                    .padding(.horizontal, 16)
 
-                    // Import Section
-                    importSection
+                AIGeneratorCard {
+                    showingAIGenerate = true
                 }
-                .padding(.vertical)
+                .padding(.horizontal, 16)
             }
-            .background(Color(.systemBackground))
-            .navigationTitle("Create Workout")
-            .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: $showingAIGenerate) {
-                WorkoutGeneratorView { title, content in
-                    Task {
-                        await saveGeneratedWorkout(title: title, content: content)
-                    }
+            .padding(.top, 16)
+            .padding(.bottom, 28)
+        }
+        .background(AppTheme.background.ignoresSafeArea())
+        .scrollIndicators(.hidden)
+        .sheet(isPresented: $showingAIGenerate) {
+            WorkoutGeneratorView { title, content in
+                Task {
+                    await saveGeneratedWorkout(title: title, content: content)
                 }
             }
-            .sheet(isPresented: $appState.showInstagramEditSheet) {
-                if let workout = appState.pendingInstagramWorkout {
-                    InstagramWorkoutEditView(
-                        fetchedWorkout: workout,
-                        onSave: saveInstagramWorkout,
-                        onDiscard: dismissInstagramEdit
-                    )
-                }
+        }
+        .sheet(isPresented: $appState.showInstagramEditSheet) {
+            if let workout = appState.pendingInstagramWorkout {
+                InstagramWorkoutEditView(
+                    fetchedWorkout: workout,
+                    onSave: saveInstagramWorkout,
+                    onDiscard: dismissInstagramEdit
+                )
             }
-            .onChange(of: appState.featureFlags.shareExtensionImportEnabled) { _, enabled in
-                if !enabled && selectedTab == .instagram {
-                    selectedTab = .photo
-                }
+        }
+        .onChange(of: appState.featureFlags.shareExtensionImportEnabled) { _, enabled in
+            if !enabled && selectedTab == .instagram {
+                selectedTab = .photo
             }
         }
     }
@@ -86,22 +81,30 @@ struct CreateWorkoutView: View {
 
     private var headerSection: some View {
         VStack(spacing: 8) {
+            Text("Create Workout")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
+
             Text("Generate with AI or import from Instagram")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.horizontal)
+        .padding(.horizontal, 16)
     }
 
     private var importSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Section title
-            Text("Import Workout")
-                .font(.headline)
-                .padding(.horizontal)
+            HStack(spacing: 10) {
+                Image(systemName: "square.and.arrow.down")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppTheme.primaryText)
 
-            // Tab picker
+                Text("Import Workout")
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundStyle(AppTheme.primaryText)
+            }
+
             Picker("Import Method", selection: $selectedTab) {
                 ForEach(availableTabs) { tab in
                     Label(tab.rawValue, systemImage: tab.icon)
@@ -109,9 +112,10 @@ struct CreateWorkoutView: View {
                 }
             }
             .pickerStyle(.segmented)
-            .padding(.horizontal)
+            .padding(4)
+            .background(AppTheme.cardBackgroundElevated)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-            // Tab content
             Group {
                 switch selectedTab {
                 case .instagram:
@@ -122,8 +126,10 @@ struct CreateWorkoutView: View {
                     ManualImportTab()
                 }
             }
-            .frame(minHeight: 300)
+            .frame(minHeight: 320)
         }
+        .padding(16)
+        .kinexCard(cornerRadius: 18)
     }
 
     // MARK: - Actions

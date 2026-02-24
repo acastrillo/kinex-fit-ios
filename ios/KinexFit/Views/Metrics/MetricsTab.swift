@@ -1,5 +1,11 @@
 import SwiftUI
 
+private enum StatsDestination: Hashable {
+    case bodyWeight
+    case bodyMeasurements
+    case personalRecords
+}
+
 struct MetricsTab: View {
     @EnvironmentObject private var appState: AppState
     @State private var metrics: [BodyMetric] = []
@@ -8,31 +14,78 @@ struct MetricsTab: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if isLoading {
-                    ProgressView("Loading metrics...")
-                } else if metrics.isEmpty {
-                    EmptyMetricsView(onAddTapped: { showingAddMetric = true })
-                } else {
-                    MetricsListView(metrics: metrics)
-                }
-            }
-            .navigationTitle("Metrics")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingAddMetric = true
-                    } label: {
-                        Image(systemName: "plus")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Stats & Progress")
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundStyle(AppTheme.primaryText)
+
+                    Text("Track your fitness journey with detailed metrics")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+
+                    NavigationLink(value: StatsDestination.bodyWeight) {
+                        StatsFeatureCard(
+                            title: "Body Weight",
+                            subtitle: "Track your weight over time",
+                            icon: "scalemass",
+                            iconColor: AppTheme.accent
+                        )
                     }
+                    .buttonStyle(.plain)
+
+                    NavigationLink(value: StatsDestination.bodyMeasurements) {
+                        StatsFeatureCard(
+                            title: "Body Measurements",
+                            subtitle: "Track body fat % and measurements",
+                            icon: "ruler",
+                            iconColor: AppTheme.statDumbbell
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink(value: StatsDestination.personalRecords) {
+                        StatsFeatureCard(
+                            title: "Personal Records",
+                            subtitle: "Track your PRs and strength gains",
+                            icon: "arrow.up.right",
+                            iconColor: AppTheme.statClock
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 28)
+            }
+            .background(AppTheme.background.ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: StatsDestination.self) { destination in
+                switch destination {
+                case .bodyWeight:
+                    BodyWeightHistoryView(
+                        metrics: metrics,
+                        isLoading: isLoading,
+                        onAddTapped: { showingAddMetric = true }
+                    )
+                case .bodyMeasurements:
+                    MetricsPlaceholderDetailView(
+                        title: "Body Measurements",
+                        subtitle: "Track body fat and measurements over time"
+                    )
+                case .personalRecords:
+                    MetricsPlaceholderDetailView(
+                        title: "Personal Records",
+                        subtitle: "Save your best lifts and performance milestones"
+                    )
                 }
             }
             .sheet(isPresented: $showingAddMetric) {
                 AddMetricView()
             }
-        }
-        .task {
-            await loadMetrics()
+            .task {
+                await loadMetrics()
+            }
         }
     }
 
@@ -44,76 +97,121 @@ struct MetricsTab: View {
                     .fetchAll(db)
             }
         } catch {
-            // Handle error
+            metrics = []
         }
         isLoading = false
     }
 }
 
-// MARK: - Empty State
+private struct StatsFeatureCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let iconColor: Color
 
-private struct EmptyMetricsView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(iconColor)
+
+            Text(title)
+                .font(.system(size: 33, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            Text(subtitle)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .kinexCard(cornerRadius: 16, fill: AppTheme.cardBackgroundElevated)
+    }
+}
+
+private struct BodyWeightHistoryView: View {
+    let metrics: [BodyMetric]
+    let isLoading: Bool
     let onAddTapped: () -> Void
 
     var body: some View {
-        ContentUnavailableView {
-            Label("No Metrics", systemImage: "chart.line.uptrend.xyaxis")
-        } description: {
-            Text("Track your weight and body measurements")
-        } actions: {
-            Button("Add Measurement") {
-                onAddTapped()
+        Group {
+            if isLoading {
+                ProgressView("Loading metrics...")
+                    .tint(AppTheme.accent)
+            } else if metrics.isEmpty {
+                VStack(spacing: 14) {
+                    Text("No weight entries yet")
+                        .font(.headline)
+                        .foregroundStyle(AppTheme.primaryText)
+
+                    Text("Add your first body weight to start tracking progress.")
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .multilineTextAlignment(.center)
+
+                    Button("Add Measurement") {
+                        onAddTapped()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(AppTheme.accent)
+                }
+                .padding(24)
+            } else {
+                List(metrics) { metric in
+                    HStack {
+                        Text(metric.date, style: .date)
+                            .foregroundStyle(AppTheme.primaryText)
+
+                        Spacer()
+
+                        Text(metric.formattedWeight ?? "—")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(AppTheme.statClock)
+                    }
+                    .listRowBackground(AppTheme.cardBackground)
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .background(AppTheme.background)
             }
-            .buttonStyle(.borderedProminent)
         }
-    }
-}
-
-// MARK: - Metrics List
-
-private struct MetricsListView: View {
-    let metrics: [BodyMetric]
-
-    var body: some View {
-        List(metrics) { metric in
-            MetricRow(metric: metric)
-        }
-    }
-}
-
-// MARK: - Metric Row
-
-private struct MetricRow: View {
-    let metric: BodyMetric
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(metric.date, style: .date)
-                    .font(.headline)
-
-                Spacer()
-
-                if let weight = metric.formattedWeight {
-                    Text(weight)
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.blue)
+        .navigationTitle("Body Weight")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    onAddTapped()
+                } label: {
+                    Image(systemName: "plus")
+                        .foregroundStyle(AppTheme.accent)
                 }
             }
-
-            if let notes = metric.notes, !notes.isEmpty {
-                Text(notes)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
         }
-        .padding(.vertical, 4)
+        .background(AppTheme.background.ignoresSafeArea())
     }
 }
 
-// MARK: - Add Metric
+private struct MetricsPlaceholderDetailView: View {
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Text(title)
+                .font(.title2.weight(.bold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            Text(subtitle)
+                .font(.subheadline)
+                .foregroundStyle(AppTheme.secondaryText)
+                .multilineTextAlignment(.center)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AppTheme.background.ignoresSafeArea())
+        .navigationTitle(title)
+    }
+}
 
 struct AddMetricView: View {
     @Environment(\.dismiss) private var dismiss
@@ -183,13 +281,11 @@ struct AddMetricView: View {
             }
             dismiss()
         } catch {
-            // Handle error
+            // No-op fallback for now. Keeping UX non-blocking during visual redesign.
         }
         isSaving = false
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     MetricsTab()

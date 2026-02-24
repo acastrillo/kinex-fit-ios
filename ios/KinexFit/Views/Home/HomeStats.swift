@@ -10,8 +10,11 @@ struct HomeStats {
     /// Formatted hours trained string (shows hours if >= 60 min)
     var formattedHoursTrained: String {
         if hoursTrainedMinutes >= 60 {
-            let hours = hoursTrainedMinutes / 60
-            return "\(hours)"
+            let hours = Double(hoursTrainedMinutes) / 60.0
+            if hours.truncatingRemainder(dividingBy: 1) == 0 {
+                return "\(Int(hours))h"
+            }
+            return String(format: "%.1fh", hours)
         }
         return "\(hoursTrainedMinutes)m"
     }

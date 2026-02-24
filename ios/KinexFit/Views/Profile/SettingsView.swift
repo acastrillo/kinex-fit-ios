@@ -1,8 +1,17 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @StateObject private var settingsManager = SettingsManager()
+    @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var user: User?
+    @State private var firstName = ""
+    @State private var lastName = ""
+    @State private var email = ""
+    @State private var isSavingProfile = false
     @State private var showingDeleteAccount = false
+    @State private var showPaywall = false
+
     let onAccountDeleted: () async -> Void
 
     init(onAccountDeleted: @escaping () async -> Void = {}) {
@@ -10,129 +19,304 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        List {
-            // Units Section
-            Section("Units") {
-                Picker("Preferred Units", selection: $settingsManager.settings.preferredUnits) {
-                    ForEach(UnitSystem.allCases, id: \.self) { unit in
-                        Text(unit.displayName).tag(unit)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                header
+                profileCard
+
+                settingsSection(title: "Subscription") {
+                    SettingsRow(
+                        icon: "crown",
+                        title: "Manage Subscription",
+                        subtitle: "Current plan: \(user?.subscriptionTier.displayName ?? "Free")",
+                        action: { showPaywall = true }
+                    )
+                }
+
+                settingsSection(title: "Administration") {
+                    SettingsRow(
+                        icon: "shield",
+                        title: "Admin Panel",
+                        subtitle: "Manage users, settings, and system logs",
+                        action: { }
+                    )
+                }
+
+                settingsSection(title: "Stats & Progress") {
+                    SettingsRow(
+                        icon: "arrow.up.right",
+                        title: "Personal Records",
+                        subtitle: "View your PRs and strength progression",
+                        action: {
+                            appState.navigateToTab(.stats)
+                            dismiss()
+                        }
+                    )
+
+                    SettingsRow(
+                        icon: "waveform.path.ecg",
+                        title: "Body Metrics",
+                        subtitle: "Track weight, measurements, and body composition",
+                        action: {
+                            appState.navigateToTab(.stats)
+                            dismiss()
+                        }
+                    )
+
+                    SettingsRow(
+                        icon: "target",
+                        title: "Training Profile",
+                        subtitle: "Set goals and preferences for AI-powered workouts",
+                        action: { }
+                    )
+                }
+
+                settingsSection(title: "Data") {
+                    SettingsRow(
+                        icon: "trash",
+                        title: "Delete Account",
+                        subtitle: "Permanently remove your account",
+                        titleColor: AppTheme.error,
+                        action: { showingDeleteAccount = true }
+                    )
+                }
+
+                settingsSection(title: "Support") {
+                    NavigationLink {
+                        HelpView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            SettingsRowIcon(icon: "questionmark.circle")
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Help & FAQ")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(AppTheme.primaryText)
+
+                                Text("Get help and find answers")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(AppTheme.secondaryText)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(AppTheme.tertiaryText)
+                        }
+                        .padding(12)
                     }
+                    .buttonStyle(.plain)
                 }
-                .onChange(of: settingsManager.settings.preferredUnits) { _, newValue in
-                    settingsManager.updateUnits(newValue)
-                }
+
+                footer
             }
-
-            // Appearance Section
-            Section("Appearance") {
-                Picker("Theme", selection: $settingsManager.settings.theme) {
-                    ForEach(Theme.allCases, id: \.self) { theme in
-                        Text(theme.displayName).tag(theme)
-                    }
-                }
-                .onChange(of: settingsManager.settings.theme) { _, newValue in
-                    settingsManager.updateTheme(newValue)
-                }
-            }
-
-            // Notifications Section
-            Section("Notifications") {
-                Toggle("Workout Reminders", isOn: $settingsManager.settings.notificationsEnabled)
-                    .onChange(of: settingsManager.settings.notificationsEnabled) { _, newValue in
-                        settingsManager.updateNotifications(newValue)
-                    }
-
-                if settingsManager.settings.notificationsEnabled {
-                    Text("Configure notification preferences for workout reminders and weekly updates.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            // Privacy & Legal Section
-            Section("Privacy & Legal") {
-                Link(destination: AppLinks.privacyPolicy) {
-                    HStack {
-                        Label("Privacy Policy", systemImage: "hand.raised")
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Link(destination: AppLinks.termsOfService) {
-                    HStack {
-                        Label("Terms of Service", systemImage: "doc.text")
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            // Support Section
-            Section("Support") {
-                Link(destination: AppLinks.supportCenter) {
-                    HStack {
-                        Label("Support Center", systemImage: "lifepreserver")
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Link(destination: AppLinks.supportEmail) {
-                    HStack {
-                        Label("Contact Support", systemImage: "envelope")
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            // Account Section
-            Section("Account") {
-                Button(role: .destructive) {
-                    showingDeleteAccount = true
-                } label: {
-                    Label("Delete Account", systemImage: "trash")
-                }
-            }
-
-            // App Info Section
-            Section {
-                HStack {
-                    Text("Version")
-                    Spacer()
-                    Text(Bundle.main.appVersion)
-                        .foregroundStyle(.secondary)
-                }
-
-                HStack {
-                    Text("Build")
-                    Spacer()
-                    Text(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1")
-                        .foregroundStyle(.secondary)
-                }
-            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 34)
         }
-        .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.large)
+        .background(AppTheme.background.ignoresSafeArea())
+        .toolbar(.hidden, for: .navigationBar)
+        .task {
+            await loadUser()
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
         .sheet(isPresented: $showingDeleteAccount) {
             DeleteAccountView(onAccountDeleted: onAccountDeleted)
         }
     }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Settings")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            Text("Manage your account and app preferences")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
+        }
+    }
+
+    private var profileCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Profile")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            Text("Your personal information")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
+
+            profileField(title: "First Name", text: $firstName)
+            profileField(title: "Last Name", text: $lastName)
+            profileField(title: "Email", text: $email, editable: false)
+
+            Text("Contact support to change your email address")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
+
+            HStack {
+                Spacer()
+
+                Button {
+                    Task {
+                        await saveProfile()
+                    }
+                } label: {
+                    Text(isSavingProfile ? "Saving..." : "Save Changes")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background(AppTheme.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .shadow(color: AppTheme.accent.opacity(0.32), radius: 12, y: 6)
+                }
+                .buttonStyle(.plain)
+                .disabled(isSavingProfile)
+            }
+        }
+        .padding(16)
+        .kinexCard(cornerRadius: 18)
+    }
+
+    private var footer: some View {
+        VStack(spacing: 8) {
+            Text("Spotter")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(AppTheme.secondaryText)
+
+            Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"))")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
+
+            Text("Made with ❤️ for fitness enthusiasts")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 18)
+    }
+
+    private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .kinexCard(cornerRadius: 18)
+        }
+    }
+
+    private func profileField(title: String, text: Binding<String>, editable: Bool = true) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(AppTheme.primaryText)
+
+            TextField("", text: text)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(editable ? AppTheme.primaryText : AppTheme.secondaryText)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 11)
+                .background(AppTheme.cardBackgroundElevated)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(AppTheme.cardBorder, lineWidth: 1)
+                }
+                .disabled(!editable)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+        }
+    }
+
+    private func loadUser() async {
+        guard let currentUser = try? await appState.environment.userRepository.getCurrentUser() else { return }
+        user = currentUser
+        firstName = currentUser.firstName ?? ""
+        lastName = currentUser.lastName ?? ""
+        email = currentUser.email
+    }
+
+    private func saveProfile() async {
+        guard var existingUser = user else { return }
+
+        isSavingProfile = true
+        defer { isSavingProfile = false }
+
+        existingUser.firstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        existingUser.lastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        existingUser.updatedAt = Date()
+
+        do {
+            try await appState.environment.userRepository.save(existingUser)
+            user = existingUser
+        } catch {
+            // No-op fallback for now. Keeping UX stable during visual redesign.
+        }
+    }
 }
 
-// MARK: - Preview
+private struct SettingsRow: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    var titleColor: Color = AppTheme.primaryText
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                SettingsRowIcon(icon: icon)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(titleColor)
+
+                    Text(subtitle)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(AppTheme.tertiaryText)
+            }
+            .padding(12)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct SettingsRowIcon: View {
+    let icon: String
+
+    var body: some View {
+        Image(systemName: icon)
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(AppTheme.secondaryText)
+            .frame(width: 34, height: 34)
+            .background(AppTheme.cardBackgroundElevated)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
+    }
+}
 
 #Preview {
     NavigationStack {
         SettingsView()
+            .environmentObject(AppState(environment: .preview))
     }
 }

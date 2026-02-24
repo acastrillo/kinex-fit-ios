@@ -5,17 +5,16 @@ struct WorkoutDivider: View {
     var body: some View {
         HStack(spacing: 16) {
             Rectangle()
-                .fill(Color(.systemGray5))
+                .fill(AppTheme.separator)
                 .frame(height: 1)
 
-            Text("OR IMPORT EXISTING WORKOUT")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
+            Text("OR GENERATE WITH AI")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
                 .fixedSize()
 
             Rectangle()
-                .fill(Color(.systemGray5))
+                .fill(AppTheme.separator)
                 .frame(height: 1)
         }
         .padding(.vertical, 8)

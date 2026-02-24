@@ -4,7 +4,7 @@ struct WorkoutRowView: View {
     let workout: Workout
 
     private var cardBackground: Color {
-        Color(red: 0.03, green: 0.03, blue: 0.05)
+        AppTheme.cardBackground
     }
 
     private var normalizedContent: String? {
@@ -102,13 +102,13 @@ struct WorkoutRowView: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 Text(workout.title)
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(AppTheme.primaryText)
                     .lineLimit(3)
 
                 if let summaryText {
                     Text(summaryText)
-                        .font(.body)
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(AppTheme.secondaryText)
                         .lineLimit(3)
                 }
@@ -120,7 +120,7 @@ struct WorkoutRowView: View {
                         } icon: {
                             Image(systemName: "clock")
                         }
-                        .font(.subheadline)
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(AppTheme.secondaryText)
                     }
 
@@ -130,14 +130,14 @@ struct WorkoutRowView: View {
                         } icon: {
                             Image(systemName: "figure.strengthtraining.traditional")
                         }
-                        .font(.subheadline)
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(AppTheme.secondaryText)
                     }
                 }
 
                 if let difficultyLabel {
                     Text(difficultyLabel)
-                        .font(.caption)
+                        .font(.system(size: 13, weight: .semibold))
                         .fontWeight(.semibold)
                         .foregroundStyle(Color(red: 0.98, green: 0.82, blue: 0.21))
                         .padding(.horizontal, 8)
@@ -147,10 +147,10 @@ struct WorkoutRowView: View {
                 }
 
                 Divider()
-                    .overlay(Color.white.opacity(0.18))
+                    .overlay(AppTheme.separator)
 
                 Text("Added \(workout.createdAt.formatted(.dateTime.month(.defaultDigits).day().year()))")
-                    .font(.subheadline)
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(AppTheme.secondaryText)
             }
             .padding(16)
@@ -160,7 +160,7 @@ struct WorkoutRowView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(AppTheme.cardBorder, lineWidth: 1)
         }
     }
 

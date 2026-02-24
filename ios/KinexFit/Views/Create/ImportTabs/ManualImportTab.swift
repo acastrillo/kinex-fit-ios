@@ -11,28 +11,27 @@ struct ManualImportTab: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            // Instructions
             VStack(spacing: 8) {
                 Image(systemName: "pencil.line")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.green)
+                    .font(.system(size: 34))
+                    .foregroundStyle(AppTheme.statStreak)
 
                 Text("Manual Entry")
-                    .font(.headline)
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(AppTheme.primaryText)
 
                 Text("Type in your workout details directly")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(AppTheme.secondaryText)
                     .multilineTextAlignment(.center)
             }
             .padding(.top, 40)
 
-            // Example format
             VStack(alignment: .leading, spacing: 12) {
                 Text("Example Format:")
-                    .font(.caption)
+                    .font(.system(size: 15, weight: .semibold))
                     .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.secondaryText)
 
                 VStack(alignment: .leading, spacing: 4) {
                     ExampleText("Push Day")
@@ -41,11 +40,9 @@ struct ManualImportTab: View {
                     ExampleText("Tricep Dips 3x12")
                 }
                 .padding()
-                .background(Color(.tertiarySystemBackground))
-                .cornerRadius(8)
+                .kinexCard(cornerRadius: 8, fill: AppTheme.cardBackgroundElevated)
             }
 
-            // Create button
             Button(action: { showingManualEntry = true }) {
                 HStack {
                     Image(systemName: "plus.circle.fill")
@@ -54,9 +51,9 @@ struct ManualImportTab: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(Color.green)
+                .background(AppTheme.statStreak)
                 .foregroundStyle(.white)
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
             Spacer()
@@ -89,8 +86,8 @@ private struct ExampleText: View {
 
     var body: some View {
         Text(text)
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(AppTheme.secondaryText)
             .fontDesign(.monospaced)
     }
 }

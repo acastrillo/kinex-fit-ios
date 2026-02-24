@@ -8,23 +8,22 @@ struct PhotoImportTab: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            // Instructions
             VStack(spacing: 8) {
                 Image(systemName: "camera.viewfinder")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.blue)
+                    .font(.system(size: 34))
+                    .foregroundStyle(AppTheme.statClock)
 
                 Text("Scan Workout")
-                    .font(.headline)
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(AppTheme.primaryText)
 
                 Text("Take a photo or choose from your library to extract workout text")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(AppTheme.secondaryText)
                     .multilineTextAlignment(.center)
             }
             .padding(.top, 40)
 
-            // Action buttons
             VStack(spacing: 12) {
                 Button(action: { showingCamera = true }) {
                     HStack {
@@ -34,9 +33,9 @@ struct PhotoImportTab: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.blue)
+                    .background(AppTheme.accent)
                     .foregroundStyle(.white)
-                    .cornerRadius(12)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
                 Button(action: { showingPhotoPicker = true }) {
@@ -47,18 +46,21 @@ struct PhotoImportTab: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .foregroundStyle(.primary)
-                    .cornerRadius(12)
+                    .background(AppTheme.cardBackgroundElevated)
+                    .foregroundStyle(AppTheme.primaryText)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(AppTheme.cardBorder, lineWidth: 1)
+                    }
                 }
             }
 
             Spacer()
 
-            // Info note
             Text("OCR processing will extract text from your image")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
                 .multilineTextAlignment(.center)
         }
         .padding()
