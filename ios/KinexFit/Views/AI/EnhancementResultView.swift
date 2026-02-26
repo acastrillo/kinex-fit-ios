@@ -187,8 +187,8 @@ struct EnhancementResultView: View {
                 title: "Push Day - Chest & Triceps",
                 description: "Upper body push workout focusing on chest and triceps",
                 exercises: [
-                    EnhancedExercise(id: "1", name: "Bench Press", sets: 4, reps: .int(8), weight: "185 lbs", restSeconds: 90, notes: nil, duration: nil),
-                    EnhancedExercise(id: "2", name: "Incline Dumbbell Press", sets: 3, reps: .int(10), weight: "60 lbs", restSeconds: 60, notes: nil, duration: nil),
+                    EnhancedExercise(id: "1", name: "Bench Press", sets: 4, reps: .int(8), weight: .string("185 lbs"), restSeconds: 90, notes: nil, duration: nil),
+                    EnhancedExercise(id: "2", name: "Incline Dumbbell Press", sets: 3, reps: .int(10), weight: .string("60 lbs"), restSeconds: 60, notes: nil, duration: nil),
                     EnhancedExercise(id: "3", name: "Cable Flyes", sets: 3, reps: .int(12), weight: nil, restSeconds: 45, notes: nil, duration: nil),
                     EnhancedExercise(id: "4", name: "Tricep Pushdowns", sets: 3, reps: .int(15), weight: nil, restSeconds: 45, notes: nil, duration: nil),
                 ],

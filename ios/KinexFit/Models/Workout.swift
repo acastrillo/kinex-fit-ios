@@ -12,6 +12,8 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
     var exerciseCount: Int?
     var difficulty: String?
     var imageURL: String?
+    var sourceURL: String?
+    var sourceAuthor: String?
     var createdAt: Date
     var updatedAt: Date
 
@@ -24,6 +26,8 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
         exerciseCount: Int? = nil,
         difficulty: String? = nil,
         imageURL: String? = nil,
+        sourceURL: String? = nil,
+        sourceAuthor: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -35,6 +39,8 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
         self.exerciseCount = exerciseCount
         self.difficulty = difficulty
         self.imageURL = imageURL
+        self.sourceURL = sourceURL
+        self.sourceAuthor = sourceAuthor
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -46,6 +52,7 @@ enum WorkoutSource: String, Codable, CaseIterable {
     case manual
     case ocr
     case instagram
+    case tiktok
     case imported
 
     var displayName: String {
@@ -53,6 +60,7 @@ enum WorkoutSource: String, Codable, CaseIterable {
         case .manual: return "Manual"
         case .ocr: return "Scanned"
         case .instagram: return "Instagram"
+        case .tiktok: return "TikTok"
         case .imported: return "Imported"
         }
     }
@@ -62,6 +70,7 @@ enum WorkoutSource: String, Codable, CaseIterable {
         case .manual: return "pencil"
         case .ocr: return "doc.text.viewfinder"
         case .instagram: return "camera"
+        case .tiktok: return "play.rectangle"
         case .imported: return "square.and.arrow.down"
         }
     }
@@ -73,7 +82,7 @@ extension Workout: FetchableRecord, PersistableRecord {
     static let databaseTableName = "workouts"
 
     enum Columns: String, ColumnExpression {
-        case id, title, content, source, durationMinutes, exerciseCount, difficulty, imageURL, createdAt, updatedAt
+        case id, title, content, source, durationMinutes, exerciseCount, difficulty, imageURL, sourceURL, sourceAuthor, createdAt, updatedAt
     }
 
     init(row: Row) {
@@ -85,6 +94,8 @@ extension Workout: FetchableRecord, PersistableRecord {
         exerciseCount = row[Columns.exerciseCount]
         difficulty = row[Columns.difficulty]
         imageURL = row[Columns.imageURL]
+        sourceURL = row[Columns.sourceURL]
+        sourceAuthor = row[Columns.sourceAuthor]
         createdAt = row[Columns.createdAt]
         updatedAt = row[Columns.updatedAt]
     }
@@ -98,6 +109,8 @@ extension Workout: FetchableRecord, PersistableRecord {
         container[Columns.exerciseCount] = exerciseCount
         container[Columns.difficulty] = difficulty
         container[Columns.imageURL] = imageURL
+        container[Columns.sourceURL] = sourceURL
+        container[Columns.sourceAuthor] = sourceAuthor
         container[Columns.createdAt] = createdAt
         container[Columns.updatedAt] = updatedAt
     }

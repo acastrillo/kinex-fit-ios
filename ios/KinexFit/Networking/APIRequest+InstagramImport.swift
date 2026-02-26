@@ -12,6 +12,17 @@ extension APIRequest {
         )
     }
 
+    /// Fetch TikTok post content via backend scraper
+    /// - Parameter url: TikTok video URL
+    /// - Returns: APIRequest configured for TikTok fetch
+    static func fetchTikTok(url: String) throws -> APIRequest {
+        try json(
+            path: "/api/tiktok-fetch",
+            method: .post,
+            body: InstagramFetchRequest(url: url)
+        )
+    }
+
     /// Parse workout caption into structured data
     /// - Parameters:
     ///   - caption: Raw caption text from Instagram

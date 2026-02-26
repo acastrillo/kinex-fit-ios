@@ -15,13 +15,13 @@ enum InstagramFetchError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "Invalid Instagram URL"
+            return "Invalid URL"
         case .quotaExceeded(let used, let limit):
             return "Monthly scan quota exceeded (\(used)/\(limit) used)"
         case .rateLimited:
             return "Too many requests. Please try again later"
         case .postNotFound:
-            return "Instagram post not found"
+            return "Post not found"
         case .networkError:
             return "Network connection error"
         case .parsingFailed:
@@ -38,7 +38,7 @@ enum InstagramFetchError: LocalizedError {
     var recoverySuggestion: String? {
         switch self {
         case .invalidURL:
-            return "Please enter a valid Instagram post or reel URL (e.g., https://instagram.com/p/abc123)"
+            return "Please enter a valid Instagram or TikTok URL (e.g., instagram.com/p/abc123 or tiktok.com/@user/video/123)"
         case .quotaExceeded(_, let limit):
             return "You've used all \(limit) of your monthly scans. Upgrade your plan for more scans."
         case .rateLimited:

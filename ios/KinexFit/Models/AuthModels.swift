@@ -41,15 +41,18 @@ struct SignInResponse: Decodable {
         let onboardingCompleted: Bool
 
         func toUser() -> User {
-            User(
+            let tier = SubscriptionTier(rawValue: subscriptionTier) ?? .free
+            return User(
                 id: id,
                 email: email,
                 firstName: firstName,
                 lastName: lastName,
-                subscriptionTier: SubscriptionTier(rawValue: subscriptionTier) ?? .free,
+                subscriptionTier: tier,
                 subscriptionStatus: .active,
                 scanQuotaUsed: 0,
+                scanQuotaLimit: tier.defaultScanLimit,
                 aiQuotaUsed: 0,
+                aiQuotaLimit: tier.defaultAILimit,
                 onboardingCompleted: onboardingCompleted,
                 updatedAt: Date()
             )

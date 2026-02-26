@@ -108,7 +108,7 @@ final class AIService {
     func getWorkoutOfTheDay() async throws -> WorkoutRecommendationResponse {
         logger.info("Fetching workout of the day")
 
-        let request = APIRequest(path: "/api/mobile/ai/workout-of-the-day")
+        let request = APIRequest(path: "/api/mobile/ai/workout-of-the-day", method: .post)
 
         do {
             let response: WorkoutRecommendationResponse = try await apiClient.send(request)
@@ -127,7 +127,7 @@ final class AIService {
     func getWorkoutOfTheWeek() async throws -> WorkoutRecommendationResponse {
         logger.info("Fetching workout of the week")
 
-        let request = APIRequest(path: "/api/mobile/ai/workout-of-the-week")
+        let request = APIRequest(path: "/api/mobile/ai/workout-of-the-week", method: .post)
 
         do {
             let response: WorkoutRecommendationResponse = try await apiClient.send(request)
@@ -146,12 +146,25 @@ final class AIService {
         switch error {
         case .httpStatus(429, _):
             return .rateLimited
-        case .httpStatus(403, _):
-            return .notAvailableForTier(tier: "current")
-        case .httpStatus(let code, _):
-            return .enhancementFailed("Server error (code \(code))")
+        case .httpStatus(403, let data):
+            let message = Self.extractErrorMessage(from: data)
+            return .notAvailableForTier(tier: message ?? "current")
+        case .httpStatus(let code, let data):
+            let message = Self.extractErrorMessage(from: data) ?? "Server error (code \(code))"
+            logger.error("AI request failed: \(message, privacy: .public)")
+            return .enhancementFailed(message)
         default:
             return .networkError(error)
         }
+    }
+
+    /// Extract the "error" field from a JSON error response body
+    private static func extractErrorMessage(from data: Data?) -> String? {
+        guard let data = data,
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let message = json["error"] as? String else {
+            return nil
+        }
+        return message
     }
 }

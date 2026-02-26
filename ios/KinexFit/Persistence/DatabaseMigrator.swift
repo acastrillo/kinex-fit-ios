@@ -72,6 +72,20 @@ struct DatabaseMigratorFactory {
             }
         }
 
+        migrator.registerMigration("add-workout-source-metadata") { db in
+            try db.alter(table: "workouts") { table in
+                table.add(column: "sourceURL", .text)
+                table.add(column: "sourceAuthor", .text)
+            }
+        }
+
+        migrator.registerMigration("add-quota-limit-columns") { db in
+            try db.alter(table: "users") { table in
+                table.add(column: "scanQuotaLimit", .integer)
+                table.add(column: "aiQuotaLimit", .integer)
+            }
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

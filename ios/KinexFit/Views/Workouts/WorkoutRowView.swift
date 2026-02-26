@@ -102,13 +102,14 @@ struct WorkoutRowView: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 Text(workout.title)
-                    .font(.system(size: 26, weight: .bold))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                     .foregroundStyle(AppTheme.primaryText)
                     .lineLimit(3)
+                    .minimumScaleFactor(0.88)
 
                 if let summaryText {
                     Text(summaryText)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(AppTheme.secondaryText)
                         .lineLimit(3)
                 }
@@ -120,7 +121,7 @@ struct WorkoutRowView: View {
                         } icon: {
                             Image(systemName: "clock")
                         }
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(AppTheme.secondaryText)
                     }
 
@@ -130,17 +131,17 @@ struct WorkoutRowView: View {
                         } icon: {
                             Image(systemName: "figure.strengthtraining.traditional")
                         }
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(AppTheme.secondaryText)
                     }
                 }
 
                 if let difficultyLabel {
                     Text(difficultyLabel)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .fontWeight(.semibold)
                         .foregroundStyle(Color(red: 0.98, green: 0.82, blue: 0.21))
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 9)
                         .padding(.vertical, 4)
                         .background(Color(red: 0.28, green: 0.22, blue: 0.02))
                         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -150,7 +151,7 @@ struct WorkoutRowView: View {
                     .overlay(AppTheme.separator)
 
                 Text("Added \(workout.createdAt.formatted(.dateTime.month(.defaultDigits).day().year()))")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(AppTheme.secondaryText)
             }
             .padding(16)

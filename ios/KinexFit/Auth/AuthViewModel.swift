@@ -399,7 +399,9 @@ extension User {
             subscriptionTier: .free,
             subscriptionStatus: .active,
             scanQuotaUsed: 1,
+            scanQuotaLimit: SubscriptionTier.free.defaultScanLimit,
             aiQuotaUsed: 0,
+            aiQuotaLimit: SubscriptionTier.free.defaultAILimit,
             onboardingCompleted: true,
             updatedAt: Date()
         )
@@ -416,7 +418,9 @@ extension User {
             subscriptionTier: .free,
             subscriptionStatus: .active,
             scanQuotaUsed: 0,
+            scanQuotaLimit: SubscriptionTier.free.defaultScanLimit,
             aiQuotaUsed: 0,
+            aiQuotaLimit: SubscriptionTier.free.defaultAILimit,
             onboardingCompleted: false,
             updatedAt: Date()
         )

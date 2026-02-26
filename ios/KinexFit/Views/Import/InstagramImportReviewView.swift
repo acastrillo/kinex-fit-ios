@@ -1,5 +1,7 @@
 import SwiftUI
 
+/// Review view for Instagram imports from the Share Extension.
+/// Uses the shared WorkoutCardEditor for card-based exercise editing.
 struct InstagramImportReviewView: View {
     let importItem: InstagramImport
     let onSave: (String, String?) async throws -> Void
@@ -8,13 +10,22 @@ struct InstagramImportReviewView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appState: AppState
     @State private var title: String = ""
-    @State private var content: String = ""
+    @State private var description: String = ""
+    @State private var workoutCards: [EditableWorkoutCard] = []
+    @State private var rounds: Int? = nil
     @State private var mediaImage: UIImage?
     @State private var isProcessing = false
     @State private var isSaving = false
+    @State private var isEnhancing = false
     @State private var error: Error?
     @State private var showingError = false
-    @State private var showingRawText = false
+
+    @FocusState private var focusedField: Field?
+
+    private enum Field {
+        case title
+        case description
+    }
 
     private var importService: InstagramImportService {
         appState.instagramImportService
@@ -24,20 +35,23 @@ struct InstagramImportReviewView: View {
         !title.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    private var composedContent: String {
+        EditableWorkoutCard.composeContent(notes: description, cards: workoutCards, rounds: rounds)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 16) {
+                    headerSection
+
                     // Media preview
                     if let image = mediaImage {
                         Image(uiImage: image)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(maxHeight: 200)
-                            .cornerRadius(12)
-                            .shadow(radius: 4)
-                    } else {
-                        placeholderImage
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
 
                     // Source info
@@ -46,38 +60,51 @@ struct InstagramImportReviewView: View {
                     if isProcessing {
                         processingView
                     } else {
-                        // Editable fields
-                        editableFieldsSection
+                        // Imported workout card with enhance
+                        importedWorkoutCard
 
-                        // Raw text disclosure
-                        if let extractedText = importItem.extractedText, !extractedText.isEmpty {
-                            rawTextSection(text: extractedText)
+                        // Rounds indicator
+                        if let rounds, rounds > 0 {
+                            roundsCard(rounds: rounds)
                         }
-                    }
 
-                    Spacer(minLength: 100)
+                        // Workout details
+                        workoutDetailsCard
+
+                        // Exercise cards editor
+                        WorkoutCardEditor(
+                            cards: $workoutCards,
+                            defaultRestSeconds: 60,
+                            rounds: rounds
+                        )
+                    }
                 }
-                .padding()
+                .padding(.horizontal, 14)
+                .padding(.top, 16)
+                .padding(.bottom, 28)
             }
-            .navigationTitle("Import from Instagram")
-            .navigationBarTitleDisplayMode(.inline)
+            .background(AppTheme.background.ignoresSafeArea())
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Discard") {
                         onDiscard()
                         dismiss()
                     }
+                    .foregroundStyle(AppTheme.primaryText)
                     .disabled(isSaving)
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        Task { await save() }
+                ToolbarItem(placement: .keyboard) {
+                    HStack {
+                        Spacer()
+                        Button("Done") {
+                            focusedField = nil
+                        }
                     }
-                    .disabled(!isValid || isSaving || isProcessing)
-                    .fontWeight(.semibold)
                 }
             }
+            .interactiveDismissDisabled(isSaving)
             .overlay {
                 if isSaving {
                     savingOverlay
@@ -94,23 +121,22 @@ struct InstagramImportReviewView: View {
         }
     }
 
-    // MARK: - Subviews
+    // MARK: - Header
 
-    private var placeholderImage: some View {
-        RoundedRectangle(cornerRadius: 12)
-            .fill(Color(.secondarySystemBackground))
-            .frame(height: 150)
-            .overlay {
-                VStack(spacing: 8) {
-                    Image(systemName: "photo")
-                        .font(.largeTitle)
-                        .foregroundStyle(.tertiary)
-                    Text("No preview available")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-            }
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Import Workout")
+                .font(.system(size: 40, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
+                .lineLimit(2)
+
+            Text("Review and save your shared workout")
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
+        }
     }
+
+    // MARK: - Source Info
 
     private var sourceInfoSection: some View {
         HStack(spacing: 12) {
@@ -119,13 +145,13 @@ struct InstagramImportReviewView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Instagram Import")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(AppTheme.primaryText)
 
                 if let url = importItem.postURL {
                     Text(url)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
                         .lineLimit(1)
                 }
             }
@@ -133,82 +159,202 @@ struct InstagramImportReviewView: View {
             Spacer()
 
             Text(importItem.mediaType.rawValue.capitalized)
-                .font(.caption)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(4)
+                .kinexCard(cornerRadius: 6, fill: AppTheme.cardBackgroundElevated)
         }
-        .padding()
-        .background(Color(.tertiarySystemBackground))
-        .cornerRadius(12)
+        .padding(14)
+        .kinexCard(cornerRadius: 14)
     }
+
+    // MARK: - Processing
 
     private var processingView: some View {
         VStack(spacing: 16) {
             ProgressView()
+                .tint(AppTheme.accent)
             Text("Extracting text from media...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
     }
 
-    private var editableFieldsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Workout Details")
-                .font(.headline)
+    // MARK: - Imported Workout Card
 
-            VStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Title")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+    private var importedWorkoutCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Imported Workout", systemImage: "checkmark.circle")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(AppTheme.accent)
 
-                    TextField("Workout Title", text: $title)
-                        .textFieldStyle(.roundedBorder)
+                Spacer(minLength: 8)
+
+                Button {
+                    Task { await enhanceWithAI() }
+                } label: {
+                    HStack(spacing: 6) {
+                        if isEnhancing {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                        } else {
+                            Image(systemName: "sparkles")
+                        }
+                        Text(isEnhancing ? "Enhancing..." : "Enhance with AI")
+                    }
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(AppTheme.primaryText)
                 }
+                .buttonStyle(.plain)
+                .disabled(isEnhancing || composedContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Exercises & Details")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            if let text = importItem.extractedText ?? importItem.captionText, !text.isEmpty {
+                Rectangle()
+                    .fill(AppTheme.separator)
+                    .frame(height: 1)
 
-                    TextEditor(text: $content)
-                        .frame(minHeight: 200)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(.systemGray4), lineWidth: 1)
-                        )
+                Text("Original Text:")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(AppTheme.accent)
+
+                ScrollView {
+                    Text(text)
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .frame(minHeight: 60, maxHeight: 120)
             }
         }
+        .padding(14)
+        .kinexCard(cornerRadius: 16)
     }
 
-    private func rawTextSection(text: String) -> some View {
-        DisclosureGroup("View Extracted Text", isExpanded: $showingRawText) {
-            Text(text)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(8)
+    // MARK: - Rounds Card
+
+    private func roundsCard(rounds: Int) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("ROUNDS WORKOUT", systemImage: "sparkles")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(AppTheme.tertiaryText)
+
+            Text("\u{2022} Rounds: \(rounds)")
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(AppTheme.primaryText)
         }
+        .padding(14)
+        .kinexCard(cornerRadius: 14)
     }
+
+    // MARK: - Workout Details
+
+    private var workoutDetailsCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Workout Details")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text("Workout Name")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(AppTheme.primaryText)
+
+                TextField("Workout Name", text: $title)
+                    .focused($focusedField, equals: .title)
+                    .textInputAutocapitalization(.words)
+                    .foregroundStyle(AppTheme.primaryText)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
+                    .kinexCard(cornerRadius: 10, fill: AppTheme.cardBackgroundElevated)
+            }
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text("Description")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(AppTheme.primaryText)
+
+                ZStack(alignment: .topLeading) {
+                    TextEditor(text: $description)
+                        .focused($focusedField, equals: .description)
+                        .scrollContentBackground(.hidden)
+                        .foregroundStyle(AppTheme.primaryText)
+                        .frame(minHeight: 100)
+
+                    if description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text("Add notes about this workout...")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(AppTheme.tertiaryText)
+                            .padding(.top, 8)
+                            .padding(.leading, 6)
+                            .allowsHitTesting(false)
+                    }
+                }
+                .padding(10)
+                .kinexCard(cornerRadius: 12, fill: AppTheme.cardBackgroundElevated)
+            }
+
+            Rectangle()
+                .fill(AppTheme.separator)
+                .frame(height: 1)
+
+            // Summary
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Summary")
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundStyle(AppTheme.primaryText)
+
+                let cardCount = workoutCards.filter { !$0.trimmedName.isEmpty }.count
+
+                Text("Exercises: \(cardCount)")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(AppTheme.secondaryText)
+
+                Text("Source: Instagram Share")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(AppTheme.secondaryText)
+            }
+
+            // Save button
+            Button {
+                Task { await save() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "tray.and.arrow.down")
+                    Text("Save New Workout")
+                }
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 13)
+                .background(AppTheme.accent.opacity(isValid ? 1.0 : 0.45))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .shadow(color: AppTheme.accent.opacity(0.35), radius: 12, y: 4)
+            }
+            .buttonStyle(.plain)
+            .disabled(!isValid || isSaving || isEnhancing || isProcessing)
+        }
+        .padding(14)
+        .kinexCard(cornerRadius: 16)
+    }
+
+    // MARK: - Saving Overlay
 
     private var savingOverlay: some View {
         ZStack {
-            Color(.systemBackground)
-                .opacity(0.8)
+            AppTheme.background.opacity(0.82)
                 .ignoresSafeArea()
 
             VStack(spacing: 12) {
                 ProgressView()
+                    .tint(AppTheme.accent)
                 Text("Saving workout...")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(AppTheme.secondaryText)
             }
         }
     }
@@ -216,10 +362,8 @@ struct InstagramImportReviewView: View {
     // MARK: - Data Loading
 
     private func loadData() async {
-        // Load media image
         mediaImage = importService.getMediaImage(for: importItem)
 
-        // Process import if not already done
         if importItem.extractedText == nil && importItem.processingStatus == .pending {
             isProcessing = true
             do {
@@ -233,12 +377,10 @@ struct InstagramImportReviewView: View {
                     self.error = error
                     showingError = true
                     isProcessing = false
-                    // Use caption or empty
                     parseExtractedText(importItem.captionText)
                 }
             }
         } else {
-            // Use already extracted text
             parseExtractedText(importItem.extractedText ?? importItem.captionText)
         }
     }
@@ -246,22 +388,77 @@ struct InstagramImportReviewView: View {
     private func parseExtractedText(_ text: String?) {
         guard let text = text, !text.isEmpty else {
             title = "Instagram Workout"
-            content = ""
+            description = ""
+            workoutCards = []
             return
         }
 
         let parsed = WorkoutTextParser.parse(text)
         title = parsed.title
-        content = parsed.content
+
+        // Use WorkoutContentPresentation to extract exercises for card building
+        let presentation = WorkoutContentPresentation.from(
+            content: text,
+            source: .instagram,
+            durationMinutes: nil,
+            fallbackExerciseCount: nil
+        )
+
+        if !presentation.exercises.isEmpty {
+            workoutCards = EditableWorkoutCard.from(presentation: presentation)
+            rounds = presentation.rounds
+            description = EditableWorkoutCard.extractNotes(from: text, exercises: presentation.exercises)
+        } else {
+            // Fallback: no exercises detected, put text as description
+            description = parsed.content
+            workoutCards = []
+        }
     }
 
     // MARK: - Actions
 
+    private func enhanceWithAI() async {
+        let input = composedContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !input.isEmpty else { return }
+
+        isEnhancing = true
+        defer { isEnhancing = false }
+
+        let aiService = AIService(apiClient: appState.environment.apiClient)
+
+        do {
+            let response = try await aiService.enhanceWorkout(text: input)
+            title = response.workout.title
+
+            if let exercises = response.workout.exercises, !exercises.isEmpty {
+                workoutCards = EditableWorkoutCard.from(enhancedExercises: exercises)
+
+                var notes: [String] = []
+                if let desc = response.workout.description, !desc.isEmpty {
+                    notes.append(desc)
+                }
+                if let aiNotes = response.workout.aiNotes, !aiNotes.isEmpty {
+                    notes.append("")
+                    notes.append(contentsOf: aiNotes.map { "- \($0)" })
+                }
+                description = notes.joined(separator: "\n")
+
+                if let structure = response.workout.structure, let r = structure.rounds, r > 0 {
+                    rounds = r
+                }
+            }
+        } catch {
+            self.error = error
+            showingError = true
+        }
+    }
+
     private func save() async {
+        focusedField = nil
         isSaving = true
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
-        let trimmedContent = content.trimmingCharacters(in: .whitespaces)
+        let trimmedContent = composedContent.trimmingCharacters(in: .whitespacesAndNewlines)
 
         do {
             try await onSave(trimmedTitle, trimmedContent.isEmpty ? nil : trimmedContent)
@@ -282,13 +479,14 @@ struct InstagramImportReviewView: View {
     InstagramImportReviewView(
         importItem: InstagramImport(
             postURL: "https://instagram.com/p/abc123",
-            captionText: "Push Day\n\nBench Press 4x8\nOverhead Press 3x10",
+            captionText: "Push Day\n\nBench Press 4x8\nOverhead Press 3x10\nTricep Dips 3x12",
             mediaType: .image,
             mediaLocalPath: "test.jpg",
-            extractedText: "Push Day\n\nBench Press 4x8\nOverhead Press 3x10"
+            extractedText: "Push Day\n\nBench Press 4x8\nOverhead Press 3x10\nTricep Dips 3x12"
         ),
         onSave: { _, _ in },
         onDiscard: { }
     )
     .environmentObject(AppState(environment: .preview))
+    .appDarkTheme()
 }

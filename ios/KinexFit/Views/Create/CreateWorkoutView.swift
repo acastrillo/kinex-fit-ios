@@ -38,16 +38,13 @@ struct CreateWorkoutView: View {
             VStack(spacing: 20) {
                 headerSection
 
-                importSection
-                    .padding(.horizontal, 16)
-
-                WorkoutDivider()
-                    .padding(.horizontal, 16)
-
-                AIGeneratorCard {
+                AIFeatureCard {
                     showingAIGenerate = true
                 }
                 .padding(.horizontal, 16)
+
+                importSection
+                    .padding(.horizontal, 16)
             }
             .padding(.top, 16)
             .padding(.bottom, 28)
@@ -85,7 +82,7 @@ struct CreateWorkoutView: View {
                 .font(.system(size: 34, weight: .bold))
                 .foregroundStyle(AppTheme.primaryText)
 
-            Text("Generate with AI or import from Instagram")
+            Text("Generate with AI or import from social media")
                 .font(.system(size: 18, weight: .medium))
                 .foregroundStyle(AppTheme.secondaryText)
         }
@@ -149,11 +146,13 @@ struct CreateWorkoutView: View {
         let workout = Workout(
             title: title,
             content: content,
-            source: .instagram,
+            source: pendingWorkout.sourcePlatform.workoutSource,
             durationMinutes: pendingWorkout.parsedData.workoutV1?.totalDuration,
             exerciseCount: pendingWorkout.exerciseCount,
             difficulty: pendingWorkout.parsedData.workoutV1?.difficulty?.lowercased(),
-            imageURL: pendingWorkout.imageURL
+            imageURL: pendingWorkout.imageURL,
+            sourceURL: pendingWorkout.sourceURL,
+            sourceAuthor: pendingWorkout.author?.username
         )
         try await workoutRepository.create(workout)
 

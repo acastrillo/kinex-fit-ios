@@ -33,17 +33,17 @@ struct MainTabView: View {
                     }
                     .tag(AppState.MainTab.add)
 
-                MetricsTab()
-                    .tabItem {
-                        Label(AppState.MainTab.stats.title, systemImage: AppState.MainTab.stats.icon)
-                    }
-                    .tag(AppState.MainTab.stats)
-
                 CalendarTab()
                     .tabItem {
                         Label(AppState.MainTab.calendar.title, systemImage: AppState.MainTab.calendar.icon)
                     }
                     .tag(AppState.MainTab.calendar)
+
+                MetricsTab()
+                    .tabItem {
+                        Label(AppState.MainTab.stats.title, systemImage: AppState.MainTab.stats.icon)
+                    }
+                    .tag(AppState.MainTab.stats)
             }
         }
         .background(AppTheme.background.ignoresSafeArea())

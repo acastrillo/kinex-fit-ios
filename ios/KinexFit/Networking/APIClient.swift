@@ -47,6 +47,15 @@ struct APIClient {
             NotificationCenter.default.post(name: .authSessionInvalidated, object: nil)
         }
 
+        if shouldInvalidateSessionWithoutRefresh(
+            for: request,
+            statusCode: httpResponse.statusCode,
+            allowRefreshRetry: allowRefreshRetry
+        ) {
+            try? tokenStore.clearAll()
+            NotificationCenter.default.post(name: .authSessionInvalidated, object: nil)
+        }
+
         if isAuthEndpoint(path: request.path) {
             let responseText = String(data: data, encoding: .utf8) ?? "<non-utf8-body>"
             let headers = httpResponse.allHeaderFields
@@ -106,7 +115,25 @@ struct APIClient {
         guard allowRefreshRetry else { return false }
         guard statusCode == 401 else { return false }
         guard tokenStore.accessToken != nil, tokenStore.refreshToken != nil else { return false }
+        guard isSessionManagedEndpoint(path: request.path) else { return false }
         return !isAuthEndpoint(path: request.path)
+    }
+
+    private func shouldInvalidateSessionWithoutRefresh(
+        for request: APIRequest,
+        statusCode: Int,
+        allowRefreshRetry: Bool
+    ) -> Bool {
+        guard statusCode == 401 else { return false }
+        guard !isAuthEndpoint(path: request.path) else { return false }
+        guard isSessionManagedEndpoint(path: request.path) else { return false }
+
+        // If a refresh attempt is still possible, let refresh logic handle session invalidation.
+        if shouldAttemptTokenRefresh(for: request, statusCode: statusCode, allowRefreshRetry: allowRefreshRetry) {
+            return false
+        }
+
+        return tokenStore.accessToken != nil
     }
 
     private func isAuthEndpoint(path: String) -> Bool {
@@ -118,6 +145,19 @@ struct APIClient {
             "/api/mobile/auth/signout"
         ]
         return authPrefixes.contains { path.hasPrefix($0) }
+    }
+
+    /// Endpoints whose 401 responses should participate in session refresh/invalidation flow.
+    /// Social import endpoints can return 401 due to backend auth-policy mismatch even with a valid mobile session.
+    private func isSessionManagedEndpoint(path: String) -> Bool {
+        path.hasPrefix("/api/mobile/")
+            || path.hasPrefix("/api/workouts")
+            || path.hasPrefix("/api/instagram-fetch")
+            || path.hasPrefix("/api/tiktok-fetch")
+            || path.hasPrefix("/api/ingest")
+            || path.hasPrefix("/api/stripe/")
+            || path.hasPrefix("/api/body-metrics")
+            || path.hasPrefix("/api/user/profile")
     }
 
     private func shouldIncludeAuthorizationHeader(path: String) -> Bool {
@@ -134,6 +174,10 @@ struct APIClient {
         path.hasPrefix("/api/mobile/workouts")
             || path.hasPrefix("/api/workouts")
             || path.hasPrefix("/api/mobile/user/onboarding")
+            || path.hasPrefix("/api/mobile/ai")
+            || path.hasPrefix("/api/instagram-fetch")
+            || path.hasPrefix("/api/tiktok-fetch")
+            || path.hasPrefix("/api/ingest")
     }
 
     fileprivate func performTokenRefresh() async -> Bool {

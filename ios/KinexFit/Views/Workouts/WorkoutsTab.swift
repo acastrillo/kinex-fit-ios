@@ -144,11 +144,11 @@ struct WorkoutsTab: View {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Workout Library")
-                        .font(.system(size: 34, weight: .bold))
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
                         .foregroundStyle(AppTheme.primaryText)
 
                     Text("\(workouts.count) workout\(workouts.count == 1 ? "" : "s") saved")
-                        .font(.system(size: 17, weight: .medium))
+                        .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(AppTheme.secondaryText)
                 }
 
@@ -196,12 +196,15 @@ struct WorkoutsTab: View {
     }
 
     private var workoutCards: some View {
-        LazyVStack(spacing: 14) {
+        // Workaround: eager layout avoids first-row tap misalignment seen with LazyVStack in this view.
+        VStack(spacing: 14) {
             ForEach(filteredWorkouts) { workout in
                 NavigationLink(value: workout) {
                     WorkoutRowView(workout: workout)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .contentShape(Rectangle())
                 .contextMenu {
                     Button(role: .destructive) {
                         Task {
@@ -263,7 +266,8 @@ struct WorkoutsTab: View {
             content: content,
             source: .instagram,
             exerciseCount: estimateExerciseCount(from: content),
-            difficulty: inferDifficulty(title: title, content: content)
+            difficulty: inferDifficulty(title: title, content: content),
+            sourceURL: selectedImport?.postURL
         )
         try await workoutRepository.create(workout)
         selectedImport = nil

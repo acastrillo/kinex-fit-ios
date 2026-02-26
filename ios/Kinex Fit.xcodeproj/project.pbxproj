@@ -15,16 +15,18 @@
 		13DECE3E661DFE7286C712BF /* AddWorkoutTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D38E8B33BD997AD4B12F9B9 /* AddWorkoutTab.swift */; };
 		155D538F0753B74BC2A9FDB9 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58DD7FD8F8122D3500FCA2E7 /* APIClient.swift */; };
 		15F6E3582C94F72DC9627D69 /* JSONCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74861895E759A15ECC647EA5 /* JSONCoding.swift */; };
-		166253E1C029BF71DFFC0C24 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0EF7B80A9ECCD4A5E9A6BF /* MainTabView.swift */; };
-		19209DA66BC8B9D3A71470C1 /* MetricsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7FE8582F4174BABCBE2E20 /* MetricsTab.swift */; };
-		1F300C392F2383DD0F97879F /* BodyMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4321971ED635AECEC974AD81 /* BodyMetric.swift */; };
+			166253E1C029BF71DFFC0C24 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0EF7B80A9ECCD4A5E9A6BF /* MainTabView.swift */; };
+			19209DA66BC8B9D3A71470C1 /* MetricsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7FE8582F4174BABCBE2E20 /* MetricsTab.swift */; };
+			1B2C3D4E5F60718293A4B5C6 /* EditableWorkoutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D4E5F60718293A4B5C6D7E8 /* EditableWorkoutCard.swift */; };
+			1F300C392F2383DD0F97879F /* BodyMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4321971ED635AECEC974AD81 /* BodyMetric.swift */; };
 		20C1E86B60962A17786862EA /* PurchaseValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B684CB5C65893670C5687DD3 /* PurchaseValidator.swift */; };
 		23065E977C328D7B92DE337A /* SubscriptionStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B0DE5BDD43E7C71EA17DA2 /* SubscriptionStatusView.swift */; };
 		232827D435953630F2808BE8 /* CreateWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AD56FEE5B4C3361F696FDB4 /* CreateWorkoutView.swift */; };
-		2337FBA148A30C7874DFA5ED /* EmailSignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B36F6F2A259E9ED40867B1E /* EmailSignUpView.swift */; };
-		25CED3E0875FC21B8E140C2A /* EnhancementResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD742703F77A788904A06A5F /* EnhancementResultView.swift */; };
-		26E395664292735CD6DDEE7E /* KinexFitShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A41D4084856AA0A62DCE9663 /* KinexFitShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		287664179876E59E837BCC4B /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F402A3F3DE6BDF3FCD59480 /* PaywallView.swift */; };
+			2337FBA148A30C7874DFA5ED /* EmailSignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B36F6F2A259E9ED40867B1E /* EmailSignUpView.swift */; };
+			25CED3E0875FC21B8E140C2A /* EnhancementResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD742703F77A788904A06A5F /* EnhancementResultView.swift */; };
+			26E395664292735CD6DDEE7E /* KinexFitShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A41D4084856AA0A62DCE9663 /* KinexFitShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+			287664179876E59E837BCC4B /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F402A3F3DE6BDF3FCD59480 /* PaywallView.swift */; };
+			2C3D4E5F60718293A4B5C6D7 /* WorkoutCardEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E5F60718293A4B5C6D7E8F9 /* WorkoutCardEditor.swift */; };
 		2E05F525A0643870A093232E /* AuthSessionEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1E49E06BC7F95EFA01F1B4 /* AuthSessionEvents.swift */; };
 		30C2DE10CD6E328B67599FAF /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E709444D0AC40ADA209D9CD /* RootView.swift */; };
 		3307AE96623C917EFAA1A64E /* GoalsStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79B76C6F65A467AA43413079 /* GoalsStep.swift */; };
@@ -42,6 +44,8 @@
 		58227D0F98C426A2F8A04706 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0934E344F05738B7ED931F63 /* HelpView.swift */; };
 		5D0193B2023E9975DBFFA42F /* WorkoutRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD63365294142619EA613B2A /* WorkoutRowView.swift */; };
 		66073701149A5485DDF897CB /* APIRequest+InstagramImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48B0B9D0A31BB4C2A29A288C /* APIRequest+InstagramImport.swift */; };
+		66073701149A5485DDF898AB /* APIRequest+Subscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48B0B9D0A31BB4C2A29A289B /* APIRequest+Subscription.swift */; };
+		66073701149A5485DDF899BC /* APIRequest+Metrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48B0B9D0A31BB4C2A29A290C /* APIRequest+Metrics.swift */; };
 		66216D0063BFABD68FDD75FE /* WelcomeStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 073756617261BC671E989161 /* WelcomeStep.swift */; };
 		68C69C70239017378AC2A5ED /* InstagramImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C9A223E816F231463E51A8 /* InstagramImport.swift */; };
 		6D8819C5BBB3E7BCE544A9A8 /* AIGeneratorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BB65F99FCAF2F3406FD8CA0 /* AIGeneratorCard.swift */; };
@@ -63,6 +67,7 @@
 		A1CCF999F330B5E445843E22 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5D6F6DFA9632A3288589095E /* Assets.xcassets */; };
 		A1D84016BB58AAFD5556E224 /* OCRResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03E5FF6477F2DC34E498DC0 /* OCRResultView.swift */; };
 		A32ED93C4AB20B2A21ADB044 /* WorkoutDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEEBDE6FB2DD1FEC2D49AE8C /* WorkoutDetailView.swift */; };
+		CD34EF56AB78901234567890 /* WorkoutSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56789012345678 /* WorkoutSessionView.swift */; };
 		A4EC2B9298DEBB1A9EF15628 /* AppDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDA5C5511907C88F247FD7E /* AppDatabase.swift */; };
 		A615F3385D47DCAC700638CA /* InstagramImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6309D0F9546A93B71022DF8 /* InstagramImportService.swift */; };
 		A626C350078136567059981D /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96ED4DEB6136F9EBDE5150F4 /* AppEnvironment.swift */; };
@@ -164,10 +169,12 @@
 		2AD876559D9F2136388B37FF /* ProfileTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileTab.swift; sourceTree = "<group>"; };
 		2B5A0949B764DCC771FEE474 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		2E709444D0AC40ADA209D9CD /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		391F5DB9958843CE2390431E /* HomeStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStats.swift; sourceTree = "<group>"; };
-		3A31F92DC98E3C9C46AA29B5 /* EmailSignInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignInSheet.swift; sourceTree = "<group>"; };
-		3EEFF07B285A8E85D0F3D5FF /* StatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatCard.swift; sourceTree = "<group>"; };
-		3F2F08FBF2F3C573DD16F9A4 /* ProductIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductIDs.swift; sourceTree = "<group>"; };
+			391F5DB9958843CE2390431E /* HomeStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStats.swift; sourceTree = "<group>"; };
+			3A31F92DC98E3C9C46AA29B5 /* EmailSignInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignInSheet.swift; sourceTree = "<group>"; };
+			3D4E5F60718293A4B5C6D7E8 /* EditableWorkoutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableWorkoutCard.swift; sourceTree = "<group>"; };
+			3EEFF07B285A8E85D0F3D5FF /* StatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatCard.swift; sourceTree = "<group>"; };
+			3F2F08FBF2F3C573DD16F9A4 /* ProductIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductIDs.swift; sourceTree = "<group>"; };
+			4E5F60718293A4B5C6D7E8F9 /* WorkoutCardEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCardEditor.swift; sourceTree = "<group>"; };
 		3F402A3F3DE6BDF3FCD59480 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		4164C468BDAFD9E24B726F89 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		4208F10BD92B4361F00491C0 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -176,6 +183,8 @@
 		479A4A2D835B9A041507FD64 /* CompleteStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteStep.swift; sourceTree = "<group>"; };
 		48A19A0396A6C300C35C317A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		48B0B9D0A31BB4C2A29A288C /* APIRequest+InstagramImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIRequest+InstagramImport.swift"; sourceTree = "<group>"; };
+		48B0B9D0A31BB4C2A29A289B /* APIRequest+Subscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIRequest+Subscription.swift"; sourceTree = "<group>"; };
+		48B0B9D0A31BB4C2A29A290C /* APIRequest+Metrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIRequest+Metrics.swift"; sourceTree = "<group>"; };
 		4AACF2EE09167A0E03B08E17 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		52211B3F0A951675FC69E087 /* SyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncEngine.swift; sourceTree = "<group>"; };
 		52B1F42262E12F7924C4E82A /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
@@ -226,6 +235,7 @@
 		B912A4D56DF3B08E913590D1 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
 		BB9CF6699899DE56AFE43804 /* InstagramFetchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramFetchService.swift; sourceTree = "<group>"; };
 		BEEBDE6FB2DD1FEC2D49AE8C /* WorkoutDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDetailView.swift; sourceTree = "<group>"; };
+		AB12CD34EF56789012345678 /* WorkoutSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionView.swift; sourceTree = "<group>"; };
 		C3301AB014CB54626DAE3275 /* EmailPasswordAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailPasswordAuthService.swift; sourceTree = "<group>"; };
 		C562C8E59B642958EE17EE7A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		C69E5A94A914A78C005ABBE0 /* ShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareView.swift; sourceTree = "<group>"; };
@@ -393,22 +403,23 @@
 			path = Sync;
 			sourceTree = "<group>";
 		};
-		4CFE96174714DD4B66566E16 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				949BC3BCC78B7C64E0CBE8BC /* AuthModels.swift */,
-				4321971ED635AECEC974AD81 /* BodyMetric.swift */,
-				CB5869D9A823BD46BE4FB619 /* InstagramFetchModels.swift */,
-				D2C9A223E816F231463E51A8 /* InstagramImport.swift */,
-				0994D14EC4D128B33720A18F /* Settings.swift */,
-				D9161EAFD48A6507DA998918 /* TrainingProfile.swift */,
-				D5DBD379AEF6C7237F57BC21 /* User.swift */,
-				20508A2BD41BA405C201B120 /* Workout.swift */,
-				F684B7116C71AF0F6BBAA6C9 /* AI */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
+			4CFE96174714DD4B66566E16 /* Models */ = {
+				isa = PBXGroup;
+				children = (
+					949BC3BCC78B7C64E0CBE8BC /* AuthModels.swift */,
+					4321971ED635AECEC974AD81 /* BodyMetric.swift */,
+					3D4E5F60718293A4B5C6D7E8 /* EditableWorkoutCard.swift */,
+					CB5869D9A823BD46BE4FB619 /* InstagramFetchModels.swift */,
+					D2C9A223E816F231463E51A8 /* InstagramImport.swift */,
+					0994D14EC4D128B33720A18F /* Settings.swift */,
+					D9161EAFD48A6507DA998918 /* TrainingProfile.swift */,
+					D5DBD379AEF6C7237F57BC21 /* User.swift */,
+					20508A2BD41BA405C201B120 /* Workout.swift */,
+					F684B7116C71AF0F6BBAA6C9 /* AI */,
+				);
+				path = Models;
+				sourceTree = "<group>";
+			};
 		5045D1089296E65CC3B5F0CE /* KinexFitTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -421,6 +432,7 @@
 			isa = PBXGroup;
 			children = (
 				BEEBDE6FB2DD1FEC2D49AE8C /* WorkoutDetailView.swift */,
+				AB12CD34EF56789012345678 /* WorkoutSessionView.swift */,
 				9598CFF27DE251970B63899E /* WorkoutFormView.swift */,
 				DD63365294142619EA613B2A /* WorkoutRowView.swift */,
 				E19836D1296E7191534405C9 /* WorkoutsTab.swift */,
@@ -443,6 +455,8 @@
 				58DD7FD8F8122D3500FCA2E7 /* APIClient.swift */,
 				F2EAFB44BCE60B9DDA8F41D2 /* APIRequest.swift */,
 				48B0B9D0A31BB4C2A29A288C /* APIRequest+InstagramImport.swift */,
+				48B0B9D0A31BB4C2A29A289B /* APIRequest+Subscription.swift */,
+				48B0B9D0A31BB4C2A29A290C /* APIRequest+Metrics.swift */,
 				74861895E759A15ECC647EA5 /* JSONCoding.swift */,
 			);
 			path = Networking;
@@ -623,16 +637,17 @@
 			);
 			sourceTree = "<group>";
 		};
-		F559B3317704150F2389F233 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				7DB2B6FE827306A1927D6844 /* AIFeatureCard.swift */,
-				3EEFF07B285A8E85D0F3D5FF /* StatCard.swift */,
-				587B4225A4B723E865D5DDFF /* SyncStatusIndicator.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
+			F559B3317704150F2389F233 /* Components */ = {
+				isa = PBXGroup;
+				children = (
+					7DB2B6FE827306A1927D6844 /* AIFeatureCard.swift */,
+					3EEFF07B285A8E85D0F3D5FF /* StatCard.swift */,
+					587B4225A4B723E865D5DDFF /* SyncStatusIndicator.swift */,
+					4E5F60718293A4B5C6D7E8F9 /* WorkoutCardEditor.swift */,
+				);
+				path = Components;
+				sourceTree = "<group>";
+			};
 		F684B7116C71AF0F6BBAA6C9 /* AI */ = {
 			isa = PBXGroup;
 			children = (
@@ -779,6 +794,8 @@
 				8B94A72C3A14A2058879A2C6 /* AIService.swift in Sources */,
 				155D538F0753B74BC2A9FDB9 /* APIClient.swift in Sources */,
 				66073701149A5485DDF897CB /* APIRequest+InstagramImport.swift in Sources */,
+				66073701149A5485DDF898AB /* APIRequest+Subscription.swift in Sources */,
+				66073701149A5485DDF899BC /* APIRequest+Metrics.swift in Sources */,
 				3C07EA85317E159E624EC4D3 /* APIRequest.swift in Sources */,
 				13DECE3E661DFE7286C712BF /* AddWorkoutTab.swift in Sources */,
 				F0A268DA39C89019FE803BBB /* AppConfig.swift in Sources */,
@@ -792,10 +809,11 @@
 				EE56C7325CA24C545F424F39 /* AuthService.swift in Sources */,
 				2E05F525A0643870A093232E /* AuthSessionEvents.swift in Sources */,
 				FF7DA8E3243524C8D4C1AE41 /* AuthViewModel.swift in Sources */,
-				78B6185CA0DB8536DAE154C4 /* BackgroundSyncTask.swift in Sources */,
-				DAA2A3EB1AF6B42D5B3F7DFE /* BasicProfileStep.swift in Sources */,
-				1F300C392F2383DD0F97879F /* BodyMetric.swift in Sources */,
-				0A74F0F12F28BBBB8A432D84 /* CalendarTab.swift in Sources */,
+					78B6185CA0DB8536DAE154C4 /* BackgroundSyncTask.swift in Sources */,
+					DAA2A3EB1AF6B42D5B3F7DFE /* BasicProfileStep.swift in Sources */,
+					1F300C392F2383DD0F97879F /* BodyMetric.swift in Sources */,
+					1B2C3D4E5F60718293A4B5C6 /* EditableWorkoutCard.swift in Sources */,
+					0A74F0F12F28BBBB8A432D84 /* CalendarTab.swift in Sources */,
 				507258834C91D31553383E7A /* CompleteStep.swift in Sources */,
 				232827D435953630F2808BE8 /* CreateWorkoutView.swift in Sources */,
 				E4AFE44BC09F07D3353549E4 /* DatabaseMigrator.swift in Sources */,
@@ -845,24 +863,26 @@
 				30C2DE10CD6E328B67599FAF /* RootView.swift in Sources */,
 				A9B382E17839AD6AC63F26B8 /* ScanTab.swift in Sources */,
 				525DC6C36AC7F4DA9700BE8D /* ScheduleStep.swift in Sources */,
-				DCC0B696F64B1BF213A814EF /* Settings.swift in Sources */,
-				D71CBDF59D5E08FC6997FD2E /* SettingsView.swift in Sources */,
-				F0C43446F53DB86803508139 /* SignInView.swift in Sources */,
-				54BF1FD514704B26BDA3530E /* StatCard.swift in Sources */,
-				E25C34CAA0895BD42D061D98 /* StoreManager.swift in Sources */,
-				23065E977C328D7B92DE337A /* SubscriptionStatusView.swift in Sources */,
-				71A6698DF6EF0DB7944174F5 /* SyncEngine.swift in Sources */,
-				FB469F435BC04C5C0488F7CF /* SyncPayloadV1.swift in Sources */,
-				B8AF0DF4A0C0DCBB2781D846 /* SyncStatusIndicator.swift in Sources */,
-				EA6484DD566023A8F81B71E1 /* TextExtractionService.swift in Sources */,
-				CA95F1404EF7261F2B97D024 /* Theme.swift in Sources */,
-				EC6EAB0C234A8B2183AD2369 /* TokenStore.swift in Sources */,
-				B88AB658B60E74C7C7EB1CD1 /* TrainingProfile.swift in Sources */,
-				F230668C89DDDFC6CBCB23C4 /* User.swift in Sources */,
-				025966618AE39C994C785DAE /* UserRepository.swift in Sources */,
-				66216D0063BFABD68FDD75FE /* WelcomeStep.swift in Sources */,
-				8DE533AE0302CE90C3DB5D9C /* Workout.swift in Sources */,
-				A32ED93C4AB20B2A21ADB044 /* WorkoutDetailView.swift in Sources */,
+					DCC0B696F64B1BF213A814EF /* Settings.swift in Sources */,
+					D71CBDF59D5E08FC6997FD2E /* SettingsView.swift in Sources */,
+					F0C43446F53DB86803508139 /* SignInView.swift in Sources */,
+					54BF1FD514704B26BDA3530E /* StatCard.swift in Sources */,
+					E25C34CAA0895BD42D061D98 /* StoreManager.swift in Sources */,
+					23065E977C328D7B92DE337A /* SubscriptionStatusView.swift in Sources */,
+					71A6698DF6EF0DB7944174F5 /* SyncEngine.swift in Sources */,
+					FB469F435BC04C5C0488F7CF /* SyncPayloadV1.swift in Sources */,
+					B8AF0DF4A0C0DCBB2781D846 /* SyncStatusIndicator.swift in Sources */,
+					EA6484DD566023A8F81B71E1 /* TextExtractionService.swift in Sources */,
+					CA95F1404EF7261F2B97D024 /* Theme.swift in Sources */,
+					EC6EAB0C234A8B2183AD2369 /* TokenStore.swift in Sources */,
+					B88AB658B60E74C7C7EB1CD1 /* TrainingProfile.swift in Sources */,
+					F230668C89DDDFC6CBCB23C4 /* User.swift in Sources */,
+					025966618AE39C994C785DAE /* UserRepository.swift in Sources */,
+					66216D0063BFABD68FDD75FE /* WelcomeStep.swift in Sources */,
+					8DE533AE0302CE90C3DB5D9C /* Workout.swift in Sources */,
+					2C3D4E5F60718293A4B5C6D7 /* WorkoutCardEditor.swift in Sources */,
+					A32ED93C4AB20B2A21ADB044 /* WorkoutDetailView.swift in Sources */,
+					CD34EF56AB78901234567890 /* WorkoutSessionView.swift in Sources */,
 				0E24B79154ACC72F93D2D62E /* WorkoutDivider.swift in Sources */,
 				7C17B8902507B3F6FEBBCB09 /* WorkoutFormView.swift in Sources */,
 				B49DAC8654002D336AAB2CB5 /* WorkoutGeneratorView.swift in Sources */,

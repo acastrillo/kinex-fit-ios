@@ -42,7 +42,7 @@ struct FetchStateView: View {
                 .fontWeight(.medium)
                 .foregroundStyle(AppTheme.primaryText)
 
-            Text("Enter Instagram URL and click Fetch")
+            Text("Enter a workout URL and tap Fetch")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(AppTheme.secondaryText)
                 .multilineTextAlignment(.center)
@@ -59,7 +59,7 @@ struct FetchStateView: View {
                 .scaleEffect(1.2)
                 .tint(AppTheme.accent)
 
-            Text("Fetching from Instagram...")
+            Text("Fetching workout...")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(AppTheme.primaryText)
 

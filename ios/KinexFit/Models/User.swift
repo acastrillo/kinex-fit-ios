@@ -12,24 +12,11 @@ struct User: Codable, Equatable, Identifiable {
     var subscriptionStatus: SubscriptionStatus?
     var subscriptionExpiresAt: Date?
     var scanQuotaUsed: Int
+    var scanQuotaLimit: Int
     var aiQuotaUsed: Int
+    var aiQuotaLimit: Int
     var onboardingCompleted: Bool
     var updatedAt: Date
-
-    /// Scan quota limit derived from subscription tier
-    var scanQuotaLimit: Int {
-        subscriptionTier.scanLimit
-    }
-
-    /// AI quota limit derived from subscription tier
-    var aiQuotaLimit: Int {
-        switch subscriptionTier {
-        case .free: return 5
-        case .core: return 20
-        case .pro: return 100
-        case .elite: return .max
-        }
-    }
 
     var displayName: String {
         if let firstName, !firstName.isEmpty {
@@ -59,12 +46,23 @@ enum SubscriptionTier: String, Codable, CaseIterable {
         }
     }
 
-    var scanLimit: Int {
+    /// Default scan quota limit per tier (fallback when server hasn't provided limits yet)
+    var defaultScanLimit: Int {
         switch self {
-        case .free: return 8
-        case .core: return 12
-        case .pro: return 60
+        case .free: return 2
+        case .core: return 5
+        case .pro: return 20
         case .elite: return .max
+        }
+    }
+
+    /// Default AI quota limit per tier (fallback when server hasn't provided limits yet)
+    var defaultAILimit: Int {
+        switch self {
+        case .free: return 0
+        case .core: return 10
+        case .pro: return 30
+        case .elite: return 100
         }
     }
 }
@@ -86,7 +84,8 @@ extension User: FetchableRecord, PersistableRecord {
         case subscriptionTier = "tier"
         case subscriptionStatus
         case subscriptionExpiresAt
-        case scanQuotaUsed, aiQuotaUsed
+        case scanQuotaUsed, scanQuotaLimit
+        case aiQuotaUsed, aiQuotaLimit
         case onboardingCompleted
         case updatedAt
     }
@@ -96,11 +95,14 @@ extension User: FetchableRecord, PersistableRecord {
         email = row[Columns.email]
         firstName = row[Columns.firstName]
         lastName = row[Columns.lastName]
-        subscriptionTier = SubscriptionTier(rawValue: row[Columns.subscriptionTier] ?? "free") ?? .free
+        let tier = SubscriptionTier(rawValue: row[Columns.subscriptionTier] ?? "free") ?? .free
+        subscriptionTier = tier
         subscriptionStatus = (row[Columns.subscriptionStatus] as String?).flatMap { SubscriptionStatus(rawValue: $0) }
         subscriptionExpiresAt = row[Columns.subscriptionExpiresAt]
         scanQuotaUsed = row[Columns.scanQuotaUsed]
+        scanQuotaLimit = row[Columns.scanQuotaLimit] ?? tier.defaultScanLimit
         aiQuotaUsed = row[Columns.aiQuotaUsed]
+        aiQuotaLimit = row[Columns.aiQuotaLimit] ?? tier.defaultAILimit
         onboardingCompleted = row[Columns.onboardingCompleted] ?? false
         updatedAt = row[Columns.updatedAt]
     }
@@ -114,7 +116,9 @@ extension User: FetchableRecord, PersistableRecord {
         container[Columns.subscriptionStatus] = subscriptionStatus?.rawValue
         container[Columns.subscriptionExpiresAt] = subscriptionExpiresAt
         container[Columns.scanQuotaUsed] = scanQuotaUsed
+        container[Columns.scanQuotaLimit] = scanQuotaLimit
         container[Columns.aiQuotaUsed] = aiQuotaUsed
+        container[Columns.aiQuotaLimit] = aiQuotaLimit
         container[Columns.onboardingCompleted] = onboardingCompleted
         container[Columns.updatedAt] = updatedAt
     }

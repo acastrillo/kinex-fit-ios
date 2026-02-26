@@ -21,14 +21,6 @@ struct AIQuota: Codable {
         }
         return "\(used)/\(limit) AI requests used"
     }
-
-    /// Tier-based limits from backend
-    static let tierLimits: [String: Int] = [
-        "free": 0,
-        "core": 10,
-        "pro": 30,
-        "elite": 100
-    ]
 }
 
 // MARK: - Timer Suggestion
@@ -176,7 +168,7 @@ struct EnhancedExercise: Codable, Identifiable {
     let name: String
     let sets: Int?
     let reps: StringOrInt?
-    let weight: String?
+    let weight: StringOrInt?
     let restSeconds: Int?
     let notes: String?
     let duration: Int?
@@ -195,7 +187,7 @@ struct EnhancedExercise: Codable, Identifiable {
             parts.append(reps.stringValue)
         }
         if let weight = weight {
-            parts.append("@ \(weight)")
+            parts.append("@ \(weight.stringValue)")
         }
         return parts.joined(separator: " ")
     }
@@ -251,16 +243,16 @@ struct GenerateWorkoutResponse: Codable {
     let alternatives: [String]?
     let timerSuggestion: TimerSuggestion?
     let workoutType: WorkoutType?
-    let quotaUsed: Int?
-    let quotaLimit: Int?
+    let quotaRemaining: Int?
 }
 
 // MARK: - Workout of the Day/Week Response
 
 struct WorkoutRecommendationResponse: Codable {
     let workout: EnhancedWorkoutData?
-    let message: String?
-    let alreadyScheduled: Bool?
+    let isNew: Bool?
+    let rationale: String?
+    let quotaRemaining: Int?
 }
 
 // MARK: - AI Error

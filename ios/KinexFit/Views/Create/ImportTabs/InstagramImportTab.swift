@@ -14,7 +14,7 @@ struct InstagramImportTab: View {
     }
 
     private var isValidURL: Bool {
-        instagramFetchService.isValidInstagramURL(instagramURL)
+        instagramFetchService.isValidSocialURL(instagramURL)
     }
 
     var body: some View {
@@ -25,7 +25,7 @@ struct InstagramImportTab: View {
                     .foregroundStyle(AppTheme.primaryText)
 
                 HStack(spacing: 12) {
-                    TextField("https://www.instagram.com/p/...", text: $instagramURL)
+                    TextField("instagram.com/p/... or tiktok.com/@...", text: $instagramURL)
                         .textContentType(.URL)
                         .keyboardType(.URL)
                         .autocapitalization(.none)

@@ -10,6 +10,9 @@ actor InstagramFetchService {
     // Instagram URL validation pattern
     private static let instagramURLPattern = #"^https?://(www\.)?(instagram\.com|instagr\.am)/(p|reel)/[\w-]+/?.*$"#
 
+    // TikTok URL validation pattern (tiktok.com/@user/video/ID, vm.tiktok.com/CODE, vt.tiktok.com/CODE)
+    private static let tiktokURLPattern = #"^https?://(www\.|vm\.|vt\.)?(tiktok\.com)(/[@\w.]+/video/\d+|/[\w]+)/?.*$"#
+
     init(apiClient: APIClient) {
         self.apiClient = apiClient
     }
@@ -65,15 +68,65 @@ actor InstagramFetchService {
         }
     }
 
-    /// Fetch Instagram post and parse caption in one operation
-    /// - Parameter url: Instagram post or reel URL
+    /// Fetch TikTok post content from backend
+    /// - Parameter url: TikTok video URL
+    /// - Returns: Fetch response with content and parsed workout
+    /// - Throws: InstagramFetchError if fetch fails
+    func fetchTikTokPost(url: String) async throws -> InstagramFetchResponse {
+        guard isValidTikTokURL(url) else {
+            throw InstagramFetchError.invalidURL
+        }
+
+        logger.info("Fetching TikTok post")
+
+        do {
+            let request = try APIRequest.fetchTikTok(url: url)
+            let response: InstagramFetchResponse = try await apiClient.send(request)
+
+            logger.info("Successfully fetched TikTok post")
+            return response
+
+        } catch let error as APIError {
+            // Older backend deployments may not expose /api/tiktok-fetch yet.
+            // Retry through /api/instagram-fetch, which accepts social URLs.
+            if case .httpStatus(404, _) = error {
+                logger.warning("TikTok endpoint unavailable (404), retrying with Instagram endpoint")
+                do {
+                    let fallbackRequest = try APIRequest.fetchInstagram(url: url)
+                    let fallbackResponse: InstagramFetchResponse = try await apiClient.send(fallbackRequest)
+                    logger.info("Successfully fetched TikTok post via fallback endpoint")
+                    return fallbackResponse
+                } catch let fallbackError as APIError {
+                    throw mapAPIError(fallbackError)
+                } catch {
+                    throw InstagramFetchError.networkError(error)
+                }
+            }
+            throw mapAPIError(error)
+        } catch {
+            throw InstagramFetchError.networkError(error)
+        }
+    }
+
+    /// Fetch social media post and parse caption in one operation
+    /// - Parameter url: Instagram or TikTok URL
     /// - Returns: Combined FetchedWorkout model ready for UI
     /// - Throws: InstagramFetchError if either fetch or parse fails
     func fetchAndParse(url: String) async throws -> FetchedWorkout {
         logger.info("Starting fetch and parse")
 
-        // Step 1: Fetch Instagram content
-        let fetchResponse = try await fetchInstagramPost(url: url)
+        // Step 1: Fetch content based on detected platform
+        let platform = SocialPlatform.detect(from: url)
+        let fetchResponse: InstagramFetchResponse
+
+        switch platform {
+        case .instagram:
+            fetchResponse = try await fetchInstagramPost(url: url)
+        case .tiktok:
+            fetchResponse = try await fetchTikTokPost(url: url)
+        case .unknown:
+            throw InstagramFetchError.invalidURL
+        }
 
         // Step 2: Parse caption (or use pre-parsed data if available)
         let ingestResponse: WorkoutIngestResponse
@@ -115,10 +168,27 @@ actor InstagramFetchService {
     /// - Parameter url: URL string to validate
     /// - Returns: true if URL matches Instagram pattern
     nonisolated func isValidInstagramURL(_ url: String) -> Bool {
-        guard let regex = try? NSRegularExpression(pattern: Self.instagramURLPattern, options: .caseInsensitive) else {
+        Self.matchesPattern(url, pattern: Self.instagramURLPattern)
+    }
+
+    /// Validate TikTok URL format
+    /// - Parameter url: URL string to validate
+    /// - Returns: true if URL matches TikTok pattern
+    nonisolated func isValidTikTokURL(_ url: String) -> Bool {
+        Self.matchesPattern(url, pattern: Self.tiktokURLPattern)
+    }
+
+    /// Validate URL against either Instagram or TikTok patterns
+    /// - Parameter url: URL string to validate
+    /// - Returns: true if URL matches any supported social platform
+    nonisolated func isValidSocialURL(_ url: String) -> Bool {
+        isValidInstagramURL(url) || isValidTikTokURL(url)
+    }
+
+    private nonisolated static func matchesPattern(_ url: String, pattern: String) -> Bool {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
             return false
         }
-
         let range = NSRange(location: 0, length: url.utf16.count)
         return regex.firstMatch(in: url, options: [], range: range) != nil
     }

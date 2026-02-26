@@ -208,18 +208,7 @@ final class WorkoutRepository {
         }
 
         let mobileRequest = APIRequest(path: "/api/mobile/workouts", queryItems: queryItems)
-
-        do {
-            return try await apiClient.send(mobileRequest)
-        } catch let apiError as APIError {
-            guard case .httpStatus(let statusCode, _) = apiError, statusCode >= 500 else {
-                throw apiError
-            }
-
-            logger.warning("Mobile workouts fetch failed with status \(statusCode); retrying with web workouts endpoint")
-            let fallbackRequest = APIRequest(path: "/api/workouts", queryItems: queryItems)
-            return try await apiClient.send(fallbackRequest)
-        }
+        return try await apiClient.send(mobileRequest)
     }
 
     private enum SyncOperation: String {
@@ -509,6 +498,8 @@ final class WorkoutRepository {
             return .ocr
         case WorkoutSource.instagram.rawValue:
             return .instagram
+        case WorkoutSource.tiktok.rawValue:
+            return .tiktok
         case WorkoutSource.imported.rawValue, "ai":
             return .imported
         case WorkoutSource.manual.rawValue:

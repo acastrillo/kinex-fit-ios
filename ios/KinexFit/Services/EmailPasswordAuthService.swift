@@ -149,15 +149,18 @@ final class EmailPasswordAuthService {
             try tokenStore.setRefreshToken(response.refreshToken)
 
             // Create User object
+            let tier = SubscriptionTier(rawValue: response.user.subscriptionTier) ?? .free
             let user = User(
                 id: response.user.id,
                 email: response.user.email,
                 firstName: response.user.firstName,
                 lastName: response.user.lastName,
-                subscriptionTier: SubscriptionTier(rawValue: response.user.subscriptionTier) ?? .free,
+                subscriptionTier: tier,
                 subscriptionStatus: .active,
                 scanQuotaUsed: 0,
+                scanQuotaLimit: tier.defaultScanLimit,
                 aiQuotaUsed: 0,
+                aiQuotaLimit: tier.defaultAILimit,
                 onboardingCompleted: response.user.onboardingCompleted,
                 updatedAt: Date()
             )

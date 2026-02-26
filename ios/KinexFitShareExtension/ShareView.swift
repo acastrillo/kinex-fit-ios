@@ -19,6 +19,31 @@ struct ShareView: View {
     @State private var mediaType: String = "unknown"
     @State private var videoSourceURL: URL?
 
+    /// Detect the source platform from the shared URL
+    private var detectedPlatformName: String {
+        guard let url = postURL else { return "Social Import" }
+        let lowered = url.lowercased()
+        if lowered.contains("instagram.com") || lowered.contains("instagr.am") {
+            return "Instagram Import"
+        }
+        if lowered.contains("tiktok.com") {
+            return "TikTok Import"
+        }
+        return "Social Import"
+    }
+
+    private var platformIconColor: Color {
+        guard let url = postURL else { return .blue }
+        let lowered = url.lowercased()
+        if lowered.contains("instagram.com") || lowered.contains("instagr.am") {
+            return .pink
+        }
+        if lowered.contains("tiktok.com") {
+            return .cyan
+        }
+        return .blue
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
@@ -120,8 +145,8 @@ struct ShareView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Image(systemName: "camera.on.rectangle")
-                        .foregroundStyle(.pink)
-                    Text("Instagram Import")
+                        .foregroundStyle(platformIconColor)
+                    Text(detectedPlatformName)
                         .font(.subheadline)
                         .fontWeight(.medium)
                     Spacer()

@@ -130,6 +130,59 @@ struct WorkoutV1: Codable {
     let tags: [String]?
 }
 
+// MARK: - Social Platform Detection
+
+/// Identifies the source social media platform from a URL
+enum SocialPlatform: String, Codable {
+    case instagram
+    case tiktok
+    case unknown
+
+    var displayName: String {
+        switch self {
+        case .instagram: return "Instagram"
+        case .tiktok: return "TikTok"
+        case .unknown: return "Social Media"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .instagram: return "camera.on.rectangle"
+        case .tiktok: return "play.rectangle"
+        case .unknown: return "link"
+        }
+    }
+
+    var iconColor: String {
+        switch self {
+        case .instagram: return "pink"
+        case .tiktok: return "cyan"
+        case .unknown: return "blue"
+        }
+    }
+
+    var workoutSource: WorkoutSource {
+        switch self {
+        case .instagram: return .instagram
+        case .tiktok: return .tiktok
+        case .unknown: return .imported
+        }
+    }
+
+    /// Detect platform from a URL string
+    static func detect(from url: String) -> SocialPlatform {
+        let lowered = url.lowercased()
+        if lowered.contains("instagram.com") || lowered.contains("instagr.am") {
+            return .instagram
+        }
+        if lowered.contains("tiktok.com") {
+            return .tiktok
+        }
+        return .unknown
+    }
+}
+
 // MARK: - Fetched Workout (UI Model)
 
 /// Combined model for UI consumption
@@ -141,11 +194,12 @@ struct FetchedWorkout: Identifiable {
     let imageURL: String?
     let parsedData: WorkoutIngestResponse
     let sourceURL: String
+    let sourcePlatform: SocialPlatform
     let quotaUsed: Int?
     let quotaLimit: Int?
     let timestamp: Date
 
-    /// Create from Instagram fetch response
+    /// Create from fetch response
     init(from fetchResponse: InstagramFetchResponse, ingestResponse: WorkoutIngestResponse) {
         self.title = ingestResponse.title ?? fetchResponse.title
         self.content = fetchResponse.content
@@ -153,6 +207,7 @@ struct FetchedWorkout: Identifiable {
         self.imageURL = fetchResponse.image
         self.parsedData = ingestResponse
         self.sourceURL = fetchResponse.url
+        self.sourcePlatform = SocialPlatform.detect(from: fetchResponse.url)
         self.quotaUsed = fetchResponse.scanQuotaUsed ?? fetchResponse.quotaUsed
         self.quotaLimit = fetchResponse.scanQuotaLimit ?? fetchResponse.quotaLimit
 

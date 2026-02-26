@@ -378,6 +378,210 @@ final class AuthSmokeTests: XCTestCase {
         let workout = try await repository.fetch(id: "workout-fallback-1")
         XCTAssertEqual(workout?.title, "Fallback Workout")
     }
+
+    func testAPIClientInvalidatesSessionOnUnauthorizedMobileEndpointWhenRefreshUnavailable() async throws {
+        let tokenStore = InMemoryTokenStore()
+        try tokenStore.setAccessToken("expired-access-token")
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+
+        let apiClient = APIClient(
+            baseURL: URL(string: "https://kinexfit.com")!,
+            tokenStore: tokenStore,
+            session: session
+        )
+
+        MockURLProtocol.requestHandler = { request in
+            guard let url = request.url else {
+                throw TestFailure("Missing request URL")
+            }
+
+            switch url.path {
+            case "/api/mobile/workouts":
+                XCTAssertEqual(request.httpMethod, "GET")
+                XCTAssertEqual(
+                    request.value(forHTTPHeaderField: "Authorization"),
+                    "Bearer expired-access-token"
+                )
+
+                let response = HTTPURLResponse(
+                    url: url,
+                    statusCode: 401,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+                return (response, Data("{\"error\":\"Unauthorized\"}".utf8))
+
+            default:
+                throw TestFailure("Unexpected path: \(url.path)")
+            }
+        }
+
+        let invalidatedExpectation = expectation(description: "auth session invalidated")
+        let observer = NotificationCenter.default.addObserver(
+            forName: .authSessionInvalidated,
+            object: nil,
+            queue: nil
+        ) { _ in
+            invalidatedExpectation.fulfill()
+        }
+        defer {
+            NotificationCenter.default.removeObserver(observer)
+        }
+
+        let request = APIRequest(path: "/api/mobile/workouts", method: .get)
+
+        do {
+            let _: Data = try await apiClient.send(request)
+            XCTFail("Expected unauthorized error")
+        } catch let error as APIError {
+            guard case .httpStatus(let code, _) = error else {
+                XCTFail("Expected HTTP status error, got \(error)")
+                return
+            }
+            XCTAssertEqual(code, 401)
+        }
+
+        await fulfillment(of: [invalidatedExpectation], timeout: 1.0)
+        XCTAssertNil(tokenStore.accessToken)
+        XCTAssertNil(tokenStore.refreshToken)
+    }
+
+    func testTikTokImportFallsBackToInstagramEndpointWhenTikTokEndpointMissing() async throws {
+        let tokenStore = InMemoryTokenStore()
+        try tokenStore.setAccessToken("access-tiktok")
+        try tokenStore.setRefreshToken("refresh-tiktok")
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+
+        let apiClient = APIClient(
+            baseURL: URL(string: "https://kinexfit.com")!,
+            tokenStore: tokenStore,
+            session: session
+        )
+        let service = InstagramFetchService(apiClient: apiClient)
+
+        var requestPaths: [String] = []
+
+        MockURLProtocol.requestHandler = { request in
+            guard let url = request.url else {
+                throw TestFailure("Missing request URL")
+            }
+
+            requestPaths.append(url.path)
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-tiktok")
+
+            switch url.path {
+            case "/api/tiktok-fetch":
+                let notFound = HTTPURLResponse(
+                    url: url,
+                    statusCode: 404,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+                return (notFound, Data("{\"error\":\"Not found\"}".utf8))
+
+            case "/api/instagram-fetch":
+                let ok = HTTPURLResponse(
+                    url: url,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+                let payload = """
+                {
+                  "url": "https://www.tiktok.com/@coach/video/1234567890123456789",
+                  "title": "Leg Day",
+                  "content": "Squat 5x5",
+                  "timestamp": "2026-02-24T12:00:00Z"
+                }
+                """
+                return (ok, Data(payload.utf8))
+
+            default:
+                throw TestFailure("Unexpected path: \(url.path)")
+            }
+        }
+
+        let response = try await service.fetchTikTokPost(
+            url: "https://www.tiktok.com/@coach/video/1234567890123456789"
+        )
+
+        XCTAssertEqual(response.title, "Leg Day")
+        XCTAssertEqual(
+            requestPaths,
+            ["/api/tiktok-fetch", "/api/instagram-fetch"]
+        )
+    }
+
+    func testAPIClientDoesNotInvalidateSessionOnUnauthorizedSocialImportEndpoint() async throws {
+        let tokenStore = InMemoryTokenStore()
+        try tokenStore.setAccessToken("social-access-token")
+        try tokenStore.setRefreshToken("social-refresh-token")
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+
+        let apiClient = APIClient(
+            baseURL: URL(string: "https://kinexfit.com")!,
+            tokenStore: tokenStore,
+            session: session
+        )
+
+        MockURLProtocol.requestHandler = { request in
+            guard let url = request.url else {
+                throw TestFailure("Missing request URL")
+            }
+            switch url.path {
+            case "/api/instagram-fetch":
+                let response = HTTPURLResponse(
+                    url: url,
+                    statusCode: 401,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+                return (response, Data("{\"error\":\"Unauthorized - Please sign in\"}".utf8))
+            default:
+                throw TestFailure("Unexpected path: \(url.path)")
+            }
+        }
+
+        let invalidatedExpectation = expectation(description: "auth session invalidated")
+        invalidatedExpectation.isInverted = true
+        let observer = NotificationCenter.default.addObserver(
+            forName: .authSessionInvalidated,
+            object: nil,
+            queue: nil
+        ) { _ in
+            invalidatedExpectation.fulfill()
+        }
+        defer {
+            NotificationCenter.default.removeObserver(observer)
+        }
+
+        let request = try APIRequest.fetchInstagram(url: "https://www.instagram.com/p/abc123")
+
+        do {
+            let _: InstagramFetchResponse = try await apiClient.send(request)
+            XCTFail("Expected unauthorized error")
+        } catch let error as APIError {
+            guard case .httpStatus(let code, _) = error else {
+                XCTFail("Expected HTTP status error, got \(error)")
+                return
+            }
+            XCTAssertEqual(code, 401)
+        }
+
+        await fulfillment(of: [invalidatedExpectation], timeout: 0.3)
+        XCTAssertEqual(tokenStore.accessToken, "social-access-token")
+        XCTAssertEqual(tokenStore.refreshToken, "social-refresh-token")
+    }
 }
 
 private final class MockURLProtocol: URLProtocol {

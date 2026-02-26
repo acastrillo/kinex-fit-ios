@@ -48,7 +48,7 @@ struct HelpView: View {
                 FAQItem(
                     id: "scan-limits",
                     question: "What are scan and AI quotas?",
-                    answer: "Each subscription tier has monthly limits:\n\n• Free: 8 scans, 1 AI request\n• Core: 12 scans, 10 AI requests\n• Pro: 60 scans, 30 AI requests\n• Elite: 120 scans, 100 AI requests\n\nScans include both OCR and Instagram imports. Quotas reset monthly. Workout of the Week doesn't count toward AI limits.",
+                    answer: "Each subscription tier has monthly limits for scans (OCR and social imports) and AI requests. Higher tiers unlock more usage. You can view your current quota usage on the Profile tab under your subscription status.\n\nQuotas reset monthly. Workout of the Week doesn't count toward AI limits.",
                     expandedSections: $expandedSections
                 )
             }

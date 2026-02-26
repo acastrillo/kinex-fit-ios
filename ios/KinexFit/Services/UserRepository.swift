@@ -47,6 +47,28 @@ final class UserRepository {
         logger.debug("Scan quota incremented")
     }
 
+    /// Update scan quota from API response (e.g. after instagram-fetch or tiktok-fetch)
+    func updateScanQuota(used: Int, limit: Int) async throws {
+        try await database.dbQueue.write { db in
+            try db.execute(
+                sql: "UPDATE users SET scanQuotaUsed = ?, scanQuotaLimit = ?, updatedAt = ?",
+                arguments: [used, limit, Date()]
+            )
+        }
+        logger.debug("Scan quota updated: \(used)/\(limit)")
+    }
+
+    /// Update AI quota from API response (e.g. after /ai/quota)
+    func updateAIQuota(used: Int, limit: Int) async throws {
+        try await database.dbQueue.write { db in
+            try db.execute(
+                sql: "UPDATE users SET aiQuotaUsed = ?, aiQuotaLimit = ?, updatedAt = ?",
+                arguments: [used, limit, Date()]
+            )
+        }
+        logger.debug("AI quota updated: \(used)/\(limit)")
+    }
+
     /// Update user subscription information
     func updateSubscription(
         tier: SubscriptionTier,
