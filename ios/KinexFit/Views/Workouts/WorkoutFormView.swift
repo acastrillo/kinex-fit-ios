@@ -383,6 +383,9 @@ struct WorkoutFormView: View {
 
         do {
             let response = try await aiService.enhanceWorkout(text: input)
+            if let remaining = response.quotaRemaining {
+                try? await appState.environment.userRepository.updateAIQuotaFromRemaining(remaining)
+            }
             title = response.workout.title
             applyEnhancedResponse(response.workout)
         } catch let error as AIError {

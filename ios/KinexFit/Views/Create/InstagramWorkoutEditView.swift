@@ -451,6 +451,9 @@ struct InstagramWorkoutEditView: View {
 
         do {
             let response = try await aiService.enhanceWorkout(text: input)
+            if let remaining = response.quotaRemaining {
+                try? await appState.environment.userRepository.updateAIQuotaFromRemaining(remaining)
+            }
             title = response.workout.title
 
             if let exercises = response.workout.exercises, !exercises.isEmpty {

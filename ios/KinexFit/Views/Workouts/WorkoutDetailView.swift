@@ -402,6 +402,9 @@ struct WorkoutDetailView: View {
 
         do {
             let response = try await aiService.enhanceWorkout(text: presentation.rawContent)
+            if let remaining = response.quotaRemaining {
+                try? await appState.environment.userRepository.updateAIQuotaFromRemaining(remaining)
+            }
             var updated = workout
             updated.title = response.workout.title
             updated.content = Self.composeEnhancedContent(

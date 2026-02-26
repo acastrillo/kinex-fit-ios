@@ -49,7 +49,10 @@ struct EnhanceWithAIButton: View {
     }
 
     private func loadQuota() async {
-        quota = try? await aiService.getQuota()
+        if let q = try? await aiService.getQuota() {
+            quota = q
+            try? await appState.environment.userRepository.updateAIQuota(used: q.used, limit: q.limit)
+        }
     }
 
     private func enhance() async {
@@ -57,6 +60,9 @@ struct EnhanceWithAIButton: View {
 
         do {
             let response = try await aiService.enhanceWorkout(text: text)
+            if let remaining = response.quotaRemaining {
+                try? await appState.environment.userRepository.updateAIQuotaFromRemaining(remaining)
+            }
             await MainActor.run {
                 onEnhanced(response)
             }
@@ -122,6 +128,9 @@ struct EnhanceWithAIButtonCompact: View {
         do {
             let response = try await AIService(apiClient: appState.environment.apiClient)
                 .enhanceWorkout(text: text)
+            if let remaining = response.quotaRemaining {
+                try? await appState.environment.userRepository.updateAIQuotaFromRemaining(remaining)
+            }
             await MainActor.run {
                 onEnhanced(response)
             }

@@ -69,6 +69,20 @@ final class UserRepository {
         logger.debug("AI quota updated: \(used)/\(limit)")
     }
 
+    /// Update AI quota used count from a `quotaRemaining` value returned by AI endpoints.
+    /// Computes `used = limit - remaining` using the locally stored limit.
+    func updateAIQuotaFromRemaining(_ remaining: Int) async throws {
+        try await database.dbQueue.write { db in
+            if let user = try User.fetchOne(db) {
+                let used = max(user.aiQuotaLimit - remaining, 0)
+                try db.execute(
+                    sql: "UPDATE users SET aiQuotaUsed = ?, updatedAt = ?",
+                    arguments: [used, Date()]
+                )
+            }
+        }
+    }
+
     /// Update user subscription information
     func updateSubscription(
         tier: SubscriptionTier,

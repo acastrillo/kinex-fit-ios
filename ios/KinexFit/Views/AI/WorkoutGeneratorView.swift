@@ -94,7 +94,10 @@ struct WorkoutGeneratorView: View {
             }
         }
         .task {
-            quota = try? await aiService.getQuota()
+            if let q = try? await aiService.getQuota() {
+                quota = q
+                try? await appState.environment.userRepository.updateAIQuota(used: q.used, limit: q.limit)
+            }
         }
     }
 
@@ -263,6 +266,9 @@ struct WorkoutGeneratorView: View {
 
         do {
             let response = try await aiService.generateWorkout(prompt: prompt)
+            if let remaining = response.quotaRemaining {
+                try? await appState.environment.userRepository.updateAIQuotaFromRemaining(remaining)
+            }
             await MainActor.run {
                 generatedResponse = response
             }

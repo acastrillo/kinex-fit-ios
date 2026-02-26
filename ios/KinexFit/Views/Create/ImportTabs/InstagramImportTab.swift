@@ -127,6 +127,12 @@ struct InstagramImportTab: View {
         Task {
             do {
                 let workout = try await instagramFetchService.fetchAndParse(url: instagramURL)
+
+                // Persist server-reported scan quota to local user
+                if let used = workout.quotaUsed, let limit = workout.quotaLimit {
+                    try? await appState.environment.userRepository.updateScanQuota(used: used, limit: limit)
+                }
+
                 await MainActor.run {
                     fetchState = .fetched(workout)
                 }
