@@ -13,6 +13,7 @@ struct InstagramImportReviewView: View {
     @State private var description: String = ""
     @State private var workoutCards: [EditableWorkoutCard] = []
     @State private var rounds: Int? = nil
+    @State private var enhancementSourceText: String = ""
     @State private var mediaImage: UIImage?
     @State private var isProcessing = false
     @State private var isSaving = false
@@ -37,6 +38,14 @@ struct InstagramImportReviewView: View {
 
     private var composedContent: String {
         EditableWorkoutCard.composeContent(notes: description, cards: workoutCards, rounds: rounds)
+    }
+
+    private var enhancementInput: String {
+        let original = enhancementSourceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !original.isEmpty {
+            return original
+        }
+        return composedContent.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var body: some View {
@@ -210,7 +219,7 @@ struct InstagramImportReviewView: View {
                     .foregroundStyle(AppTheme.primaryText)
                 }
                 .buttonStyle(.plain)
-                .disabled(isEnhancing || composedContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(isEnhancing || enhancementInput.isEmpty)
             }
 
             if let text = importItem.extractedText ?? importItem.captionText, !text.isEmpty {
@@ -390,8 +399,11 @@ struct InstagramImportReviewView: View {
             title = "Instagram Workout"
             description = ""
             workoutCards = []
+            enhancementSourceText = ""
             return
         }
+
+        enhancementSourceText = text
 
         let parsed = WorkoutTextParser.parse(text)
         title = parsed.title
@@ -418,7 +430,7 @@ struct InstagramImportReviewView: View {
     // MARK: - Actions
 
     private func enhanceWithAI() async {
-        let input = composedContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        let input = enhancementInput
         guard !input.isEmpty else { return }
 
         isEnhancing = true
@@ -433,22 +445,19 @@ struct InstagramImportReviewView: View {
             }
             title = response.workout.title
 
-            if let exercises = response.workout.exercises, !exercises.isEmpty {
-                workoutCards = EditableWorkoutCard.from(enhancedExercises: exercises)
+            if let exercises = response.workout.exercises {
+                let aiCards = EditableWorkoutCard.from(enhancedExercises: exercises)
+                if !aiCards.isEmpty {
+                    workoutCards = aiCards
+                }
+            }
 
-                var notes: [String] = []
-                if let desc = response.workout.description, !desc.isEmpty {
-                    notes.append(desc)
-                }
-                if let aiNotes = response.workout.aiNotes, !aiNotes.isEmpty {
-                    notes.append("")
-                    notes.append(contentsOf: aiNotes.map { "- \($0)" })
-                }
-                description = notes.joined(separator: "\n")
+            if let desc = response.workout.description?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                description = desc
+            }
 
-                if let structure = response.workout.structure, let r = structure.rounds, r > 0 {
-                    rounds = r
-                }
+            if let structure = response.workout.structure, let r = structure.rounds, r > 0 {
+                rounds = r
             }
         } catch {
             self.error = error

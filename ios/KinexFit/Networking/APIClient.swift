@@ -148,14 +148,11 @@ struct APIClient {
     }
 
     /// Endpoints whose 401 responses should participate in session refresh/invalidation flow.
-    /// Social import endpoints can return 401 due to backend auth-policy mismatch even with a valid mobile session.
+    /// Social import endpoints intentionally do NOT participate; they may return 401 for source-specific reasons.
     private func isSessionManagedEndpoint(path: String) -> Bool {
         path.hasPrefix("/api/mobile/")
             || path.hasPrefix("/api/workouts")
-            || path.hasPrefix("/api/instagram-fetch")
-            || path.hasPrefix("/api/tiktok-fetch")
             || path.hasPrefix("/api/ingest")
-            || path.hasPrefix("/api/stripe/")
             || path.hasPrefix("/api/body-metrics")
             || path.hasPrefix("/api/user/profile")
     }

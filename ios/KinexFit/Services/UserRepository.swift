@@ -104,6 +104,26 @@ final class UserRepository {
         logger.info("Subscription updated: tier=\(tier.rawValue), status=\(status.rawValue)")
     }
 
+    /// Refresh subscription state from backend and persist it locally.
+    @discardableResult
+    func refreshSubscriptionFromServer() async throws -> User? {
+        let request = APIRequest(path: "/api/mobile/subscriptions/status")
+        let response: SubscriptionStatusResponse = try await apiClient.send(request)
+
+        guard var currentUser = try await getCurrentUser() else {
+            return nil
+        }
+
+        currentUser.subscriptionTier = SubscriptionTier(rawValue: response.subscriptionTier) ?? .free
+        currentUser.subscriptionStatus = response.subscriptionStatus.flatMap { mapStatus($0) }
+        currentUser.subscriptionExpiresAt = response.subscriptionExpiresAt
+        currentUser.updatedAt = Date()
+
+        try await save(currentUser)
+        logger.info("Subscription refreshed from backend: tier=\(currentUser.subscriptionTier.rawValue, privacy: .public)")
+        return currentUser
+    }
+
     /// Mark onboarding as complete for the current user
     func markOnboardingComplete() async throws {
         try await database.dbQueue.write { db in
@@ -189,4 +209,17 @@ final class UserRepository {
             }
         }
     }
+
+    private func mapStatus(_ rawStatus: String) -> SubscriptionStatus? {
+        if rawStatus == "inactive" {
+            return .canceled
+        }
+        return SubscriptionStatus(rawValue: rawStatus)
+    }
+}
+
+private struct SubscriptionStatusResponse: Decodable {
+    let subscriptionTier: String
+    let subscriptionStatus: String?
+    let subscriptionExpiresAt: Date?
 }

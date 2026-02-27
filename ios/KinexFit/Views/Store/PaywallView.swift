@@ -1,5 +1,6 @@
 import SwiftUI
 import OSLog
+import StoreKit
 
 private let logger = Logger(subsystem: "com.kinex.fit", category: "PaywallView")
 
@@ -8,16 +9,29 @@ struct PaywallView: View {
 
     @State private var user: User?
     @State private var loadingTier: SubscriptionTier?
-    @State private var isLoadingPortal = false
+    @State private var isManagingSubscriptions = false
+    @State private var isRestoringPurchases = false
+    @State private var isOpeningWebCheckout = false
+    @State private var isSyncingWebSubscription = false
+    @State private var pendingWebCheckoutTier: SubscriptionTier?
     @State private var errorMessage: String?
     @State private var showError = false
 
+    private var storeManager: StoreManager? {
+        AppState.shared?.environment.storeManager
+    }
+
     private var currentTier: SubscriptionTier {
-        user?.subscriptionTier ?? .free
+        user?.subscriptionTier ?? storeManager?.subscriptionTier ?? .free
     }
 
     private var hasPaidPlan: Bool {
         currentTier != .free
+    }
+
+    private var shouldOfferWebCheckoutFallback: Bool {
+        guard let storeManager else { return true }
+        return !storeManager.isLoading && storeManager.products.isEmpty
     }
 
     var body: some View {
@@ -59,6 +73,13 @@ struct PaywallView: View {
         .preferredColorScheme(.dark)
         .task {
             await loadUser()
+            await loadStoreProducts()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .subscriptionDeepLinkReceived)) { notification in
+            guard let url = notification.object as? URL else { return }
+            Task {
+                await handleSubscriptionDeepLink(url)
+            }
         }
     }
 
@@ -91,10 +112,10 @@ struct PaywallView: View {
             Spacer()
 
             Button {
-                Task { await openStripePortal() }
+                Task { await openManageSubscriptions() }
             } label: {
                 HStack(spacing: 4) {
-                    if isLoadingPortal {
+                    if isManagingSubscriptions {
                         ProgressView()
                             .controlSize(.small)
                             .tint(AppTheme.accent)
@@ -109,7 +130,7 @@ struct PaywallView: View {
                 .background(AppTheme.accent.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
-            .disabled(isLoadingPortal)
+            .disabled(isManagingSubscriptions)
         }
         .padding(16)
         .kinexCard(cornerRadius: 16)
@@ -127,6 +148,14 @@ struct PaywallView: View {
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(AppTheme.secondaryText)
                 .multilineTextAlignment(.center)
+
+            if shouldOfferWebCheckoutFallback {
+                Text("App Store checkout is currently unavailable on this device. You can continue securely in web checkout.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(AppTheme.warning)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 4)
+            }
         }
         .padding(.top, 4)
     }
@@ -137,6 +166,7 @@ struct PaywallView: View {
         let isCurrent = tier.tier == currentTier
         let isUpgrade = tier.tier.sortOrder > currentTier.sortOrder
         let isLoading = loadingTier == tier.tier
+        let displayedPrice = displayPrice(for: tier.tier, fallback: tier.monthlyPrice)
 
         return VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top) {
@@ -157,7 +187,7 @@ struct PaywallView: View {
                         }
                     }
 
-                    if let price = tier.monthlyPrice {
+                    if let price = displayedPrice {
                         HStack(alignment: .firstTextBaseline, spacing: 2) {
                             Text(price)
                                 .font(.system(size: 26, weight: .bold))
@@ -221,10 +251,10 @@ struct PaywallView: View {
             if tier.tier != .free {
                 if isCurrent {
                     Button {
-                        Task { await openStripePortal() }
+                        Task { await openManageSubscriptions() }
                     } label: {
                         HStack(spacing: 6) {
-                            if isLoadingPortal {
+                            if isManagingSubscriptions {
                                 ProgressView()
                                     .controlSize(.small)
                                     .tint(AppTheme.primaryText)
@@ -242,32 +272,56 @@ struct PaywallView: View {
                                 .stroke(AppTheme.cardBorder, lineWidth: 1)
                         }
                     }
-                    .disabled(isLoadingPortal)
+                    .disabled(isManagingSubscriptions)
                 } else if isUpgrade {
-                    Button {
-                        Task { await startCheckout(tier: tier.tier) }
-                    } label: {
-                        HStack(spacing: 6) {
-                            if isLoading {
-                                ProgressView()
-                                    .controlSize(.small)
-                                    .tint(.white)
+                    if shouldOfferWebCheckoutFallback {
+                        Button {
+                            Task { await startWebCheckout(for: tier.tier) }
+                        } label: {
+                            HStack(spacing: 6) {
+                                if isLoading || isOpeningWebCheckout || isSyncingWebSubscription {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .tint(.white)
+                                }
+                                Text("Continue in Web Checkout")
                             }
-                            Text("Upgrade to \(tier.name)")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(tier.isPopular ? AppTheme.accent : AppTheme.accent.opacity(0.85))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .shadow(color: tier.isPopular ? AppTheme.accent.opacity(0.3) : .clear,
+                                    radius: tier.isPopular ? 12 : 0, y: 4)
                         }
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(tier.isPopular ? AppTheme.accent : AppTheme.accent.opacity(0.85))
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .shadow(color: tier.isPopular ? AppTheme.accent.opacity(0.3) : .clear,
-                                radius: tier.isPopular ? 12 : 0, y: 4)
+                        .disabled(isLoading || isOpeningWebCheckout || isSyncingWebSubscription)
+                    } else {
+                        Button {
+                            Task { await startPurchase(for: tier.tier) }
+                        } label: {
+                            HStack(spacing: 6) {
+                                if isLoading {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .tint(.white)
+                                }
+                                Text("Upgrade to \(tier.name)")
+                            }
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(tier.isPopular ? AppTheme.accent : AppTheme.accent.opacity(0.85))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .shadow(color: tier.isPopular ? AppTheme.accent.opacity(0.3) : .clear,
+                                    radius: tier.isPopular ? 12 : 0, y: 4)
+                        }
+                        .disabled(isLoading)
                     }
-                    .disabled(isLoading)
                 } else {
                     Button {
-                        Task { await openStripePortal() }
+                        Task { await openManageSubscriptions() }
                     } label: {
                         Text("Change Plan")
                             .font(.system(size: 16, weight: .semibold))
@@ -278,10 +332,10 @@ struct PaywallView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                             .overlay {
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(AppTheme.cardBorder, lineWidth: 1)
+                                .stroke(AppTheme.cardBorder, lineWidth: 1)
                             }
                     }
-                    .disabled(isLoadingPortal)
+                    .disabled(isManagingSubscriptions)
                 }
             }
         }
@@ -302,13 +356,37 @@ struct PaywallView: View {
     private var restoreAndLegalFooter: some View {
         VStack(spacing: 14) {
             Button {
-                if let url = URL(string: "https://kinexfit.com/subscription") {
-                    UIApplication.shared.open(url)
-                }
+                Task { await restorePurchases() }
             } label: {
-                Text("Manage on Web")
+                HStack(spacing: 6) {
+                    if isRestoringPurchases {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(AppTheme.accent)
+                    }
+                    Text("Restore Purchases")
+                }
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(AppTheme.accent)
+            }
+            .disabled(isRestoringPurchases)
+
+            if shouldOfferWebCheckoutFallback && hasPaidPlan {
+                Button {
+                    Task { await openManageSubscriptions() }
+                } label: {
+                    HStack(spacing: 6) {
+                        if isManagingSubscriptions {
+                            ProgressView()
+                                .controlSize(.small)
+                                .tint(AppTheme.accent)
+                        }
+                        Text("Manage Billing on Web")
+                    }
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(AppTheme.accent)
+                }
+                .disabled(isManagingSubscriptions)
             }
 
             HStack(spacing: 16) {
@@ -331,71 +409,250 @@ struct PaywallView: View {
         user = try? await environment.userRepository.getCurrentUser()
     }
 
-    // MARK: - Stripe Actions
+    private func loadStoreProducts() async {
+        guard let storeManager else { return }
+        await storeManager.loadProducts()
+    }
 
-    private func startCheckout(tier: SubscriptionTier) async {
-        guard let apiClient = AppState.shared?.environment.apiClient else { return }
+    // MARK: - StoreKit Actions
+
+    private func startPurchase(for tier: SubscriptionTier) async {
+        guard let productID = tier.productID else { return }
+        guard let storeManager else {
+            errorMessage = "Subscription service is unavailable. Please try again."
+            showError = true
+            return
+        }
+
         loadingTier = tier
         defer { loadingTier = nil }
 
         do {
-            let request = try APIRequest.stripeCheckout(tier: tier.rawValue)
-            let response: StripeSessionResponse = try await apiClient.send(request)
+            if storeManager.products.isEmpty {
+                await storeManager.loadProducts()
+            }
 
-            if let error = response.error {
-                logger.error("Stripe checkout error: \(error, privacy: .public)")
-                errorMessage = error
+            guard let product = storeManager.products.first(where: { $0.id == productID.rawValue }) else {
+                errorMessage = "This subscription is currently unavailable in the App Store."
                 showError = true
                 return
             }
 
-            guard let urlString = response.url, let url = URL(string: urlString) else {
-                errorMessage = "Could not create checkout session. Please try again."
-                showError = true
-                return
+            let transaction = try await storeManager.purchase(product)
+            if transaction == nil {
+                logger.info("Purchase pending approval for tier: \(tier.rawValue, privacy: .public)")
             }
-
-            await MainActor.run {
-                UIApplication.shared.open(url)
-            }
+            await loadUser()
+        } catch StoreError.purchaseCancelled {
+            logger.info("Purchase cancelled for tier: \(tier.rawValue, privacy: .public)")
         } catch {
-            logger.error("Stripe checkout failed: \(error.localizedDescription, privacy: .public)")
+            logger.error("StoreKit purchase failed: \(error.localizedDescription, privacy: .public)")
             errorMessage = error.localizedDescription
             showError = true
         }
     }
 
-    private func openStripePortal() async {
-        guard let apiClient = AppState.shared?.environment.apiClient else { return }
-        isLoadingPortal = true
-        defer { isLoadingPortal = false }
+    private func openManageSubscriptions() async {
+        isManagingSubscriptions = true
+        defer { isManagingSubscriptions = false }
+
+        if shouldOfferWebCheckoutFallback {
+            await openWebBillingPortal()
+            return
+        }
 
         do {
-            let request = APIRequest.stripePortal()
-            let response: StripeSessionResponse = try await apiClient.send(request)
-
-            if let error = response.error {
-                logger.error("Stripe portal error: \(error, privacy: .public)")
-                errorMessage = error
+            guard let scene = activeWindowScene() else {
+                errorMessage = "Could not open subscription management right now."
                 showError = true
                 return
             }
-
-            guard let urlString = response.url, let url = URL(string: urlString) else {
-                errorMessage = "Could not open subscription management. Please try again."
-                showError = true
-                return
-            }
-
-            await MainActor.run {
-                UIApplication.shared.open(url)
-            }
+            try await AppStore.showManageSubscriptions(in: scene)
         } catch {
-            logger.error("Stripe portal failed: \(error.localizedDescription, privacy: .public)")
+            logger.error("Manage subscriptions failed: \(error.localizedDescription, privacy: .public)")
             errorMessage = error.localizedDescription
             showError = true
         }
     }
+
+    private func restorePurchases() async {
+        guard let storeManager else {
+            errorMessage = "Subscription service is unavailable. Please try again."
+            showError = true
+            return
+        }
+
+        isRestoringPurchases = true
+        defer { isRestoringPurchases = false }
+
+        await storeManager.restorePurchases()
+        await loadUser()
+    }
+
+    private func startWebCheckout(for tier: SubscriptionTier) async {
+        guard tier != .free else { return }
+        guard let environment = AppState.shared?.environment else {
+            errorMessage = "Subscription service is unavailable. Please try again."
+            showError = true
+            return
+        }
+
+        isOpeningWebCheckout = true
+        pendingWebCheckoutTier = tier
+        defer { isOpeningWebCheckout = false }
+
+        do {
+            let request = try APIRequest.json(
+                path: "/api/stripe/checkout",
+                method: .post,
+                body: WebCheckoutRequest(
+                    tier: tier.rawValue,
+                    billingPeriod: "monthly",
+                    returnContext: "mobile"
+                )
+            )
+            let response: StripeSessionResponse = try await environment.apiClient.send(request)
+            guard let url = URL(string: response.url) else {
+                errorMessage = "Unable to open checkout. Please try again."
+                showError = true
+                return
+            }
+
+            let opened = await openExternalURL(url)
+            if !opened {
+                errorMessage = "Unable to open checkout in Safari."
+                showError = true
+            }
+        } catch {
+            logger.error("Web checkout failed: \(error.localizedDescription, privacy: .public)")
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func openWebBillingPortal() async {
+        guard let environment = AppState.shared?.environment else {
+            errorMessage = "Subscription service is unavailable. Please try again."
+            showError = true
+            return
+        }
+
+        do {
+            let request = try APIRequest.json(
+                path: "/api/stripe/portal",
+                method: .post,
+                body: WebReturnContextRequest(returnContext: "mobile")
+            )
+            let response: StripeSessionResponse = try await environment.apiClient.send(request)
+            guard let url = URL(string: response.url) else {
+                errorMessage = "Unable to open billing portal. Please try again."
+                showError = true
+                return
+            }
+
+            let opened = await openExternalURL(url)
+            if !opened {
+                errorMessage = "Unable to open billing portal in Safari."
+                showError = true
+            }
+        } catch {
+            logger.error("Web billing portal failed: \(error.localizedDescription, privacy: .public)")
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func handleSubscriptionDeepLink(_ url: URL) async {
+        guard url.scheme?.lowercased() == "kinexfit",
+              url.host?.lowercased() == "subscription" else {
+            return
+        }
+
+        let action = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")).lowercased()
+        switch action {
+        case "success":
+            await syncSubscriptionFromServer(expectedTier: pendingWebCheckoutTier)
+        case "cancel":
+            pendingWebCheckoutTier = nil
+            errorMessage = "Web checkout was canceled."
+            showError = true
+        case "manage-return":
+            await syncSubscriptionFromServer(expectedTier: nil)
+        default:
+            break
+        }
+    }
+
+    private func syncSubscriptionFromServer(expectedTier: SubscriptionTier?) async {
+        guard let environment = AppState.shared?.environment else { return }
+
+        isSyncingWebSubscription = true
+        defer {
+            isSyncingWebSubscription = false
+            pendingWebCheckoutTier = nil
+        }
+
+        // Poll briefly because Stripe webhooks may arrive after redirect.
+        for attempt in 0..<6 {
+            do {
+                if let updatedUser = try await environment.userRepository.refreshSubscriptionFromServer() {
+                    user = updatedUser
+                    if let expectedTier {
+                        if updatedUser.subscriptionTier.sortOrder >= expectedTier.sortOrder {
+                            return
+                        }
+                    } else {
+                        return
+                    }
+                }
+            } catch {
+                logger.error("Subscription refresh failed after web checkout: \(error.localizedDescription, privacy: .public)")
+            }
+
+            if attempt < 5 {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
+    }
+
+    private func openExternalURL(_ url: URL) async -> Bool {
+        await withCheckedContinuation { continuation in
+            UIApplication.shared.open(url, options: [:]) { success in
+                continuation.resume(returning: success)
+            }
+        }
+    }
+
+    private func activeWindowScene() -> UIWindowScene? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+        ?? UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first
+    }
+
+    private func displayPrice(for tier: SubscriptionTier, fallback: String?) -> String? {
+        guard let productID = tier.productID else { return fallback }
+        guard let product = storeManager?.products.first(where: { $0.id == productID.rawValue }) else {
+            return fallback
+        }
+        return product.displayPrice
+    }
+}
+
+private struct WebCheckoutRequest: Encodable {
+    let tier: String
+    let billingPeriod: String
+    let returnContext: String
+}
+
+private struct WebReturnContextRequest: Encodable {
+    let returnContext: String
+}
+
+private struct StripeSessionResponse: Decodable {
+    let url: String
 }
 
 // MARK: - Tier Definitions
@@ -480,6 +737,19 @@ private struct TierDefinition: Identifiable {
 // MARK: - SubscriptionTier Sort Order
 
 private extension SubscriptionTier {
+    var productID: ProductID? {
+        switch self {
+        case .free:
+            return nil
+        case .core:
+            return .coreMonthly
+        case .pro:
+            return .proMonthly
+        case .elite:
+            return .eliteMonthly
+        }
+    }
+
     var sortOrder: Int {
         switch self {
         case .free: return 0

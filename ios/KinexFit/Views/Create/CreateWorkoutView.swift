@@ -135,6 +135,7 @@ struct CreateWorkoutView: View {
         let workout = Workout(
             title: title,
             content: content,
+            enhancementSourceText: content,
             source: .manual  // Generated workouts are saved as manual
         )
         _ = try? await workoutRepository.create(workout)
@@ -142,10 +143,12 @@ struct CreateWorkoutView: View {
 
     private func saveInstagramWorkout(title: String, content: String?) async throws {
         guard let pendingWorkout = appState.pendingInstagramWorkout else { return }
+        let normalizedSourceText = pendingWorkout.content.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let workout = Workout(
             title: title,
             content: content,
+            enhancementSourceText: normalizedSourceText.isEmpty ? content : normalizedSourceText,
             source: pendingWorkout.sourcePlatform.workoutSource,
             durationMinutes: pendingWorkout.parsedData.workoutV1?.totalDuration,
             exerciseCount: pendingWorkout.exerciseCount,
@@ -154,12 +157,13 @@ struct CreateWorkoutView: View {
             sourceURL: pendingWorkout.sourceURL,
             sourceAuthor: pendingWorkout.author?.username
         )
-        try await workoutRepository.create(workout)
+        let savedWorkout = try await workoutRepository.create(workout)
 
         // Clear pending workout
         await MainActor.run {
             appState.pendingInstagramWorkout = nil
             appState.showInstagramEditSheet = false
+            appState.navigateToWorkoutCard(workoutID: savedWorkout.id)
         }
     }
 

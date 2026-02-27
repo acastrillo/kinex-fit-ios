@@ -20,6 +20,8 @@ struct WorkoutsTab: View {
     @State private var failedCount = 0
     @State private var showSyncBanner = false
     @State private var hasPerformedInitialSync = false
+    @State private var navigationPath = NavigationPath()
+    @State private var lastHandledWorkoutNavigationRequestID: UUID?
 
     private var workoutRepository: WorkoutRepository {
         appState.environment.workoutRepository
@@ -39,7 +41,7 @@ struct WorkoutsTab: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ZStack {
                 AppTheme.background
                     .ignoresSafeArea()
@@ -91,6 +93,16 @@ struct WorkoutsTab: View {
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                 if appState.featureFlags.shareExtensionImportEnabled {
                     appState.checkForPendingImports()
+                }
+            }
+            .onAppear {
+                Task {
+                    await routeToPendingWorkoutCardIfNeeded()
+                }
+            }
+            .onChange(of: appState.pendingWorkoutCardNavigation?.requestID) { _, _ in
+                Task {
+                    await routeToPendingWorkoutCardIfNeeded()
                 }
             }
         }
@@ -242,14 +254,21 @@ struct WorkoutsTab: View {
         }
     }
 
-    private func createWorkout(title: String, content: String?) async throws {
+    private func createWorkout(title: String, content: String?, enhancementSourceText: String?) async throws {
+        let normalizedContent = content?.isEmpty == true ? nil : content
+        let normalizedEnhancementSource = enhancementSourceText?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let workout = Workout(
             title: title,
-            content: content?.isEmpty == true ? nil : content,
+            content: normalizedContent,
+            enhancementSourceText: (normalizedEnhancementSource?.isEmpty == false ? normalizedEnhancementSource : normalizedContent),
             source: .manual,
             exerciseCount: estimateExerciseCount(from: content)
         )
-        try await workoutRepository.create(workout)
+        let savedWorkout = try await workoutRepository.create(workout)
+        await MainActor.run {
+            appState.navigateToWorkoutCard(workoutID: savedWorkout.id)
+        }
     }
 
     private func updateWorkout(_ workout: Workout) async throws {
@@ -261,16 +280,45 @@ struct WorkoutsTab: View {
     }
 
     private func saveImportedWorkout(title: String, content: String?) async throws {
+        let sourceText = selectedImport?.extractedText ?? selectedImport?.captionText
+        let normalizedSourceText = sourceText?.trimmingCharacters(in: .whitespacesAndNewlines)
         let workout = Workout(
             title: title,
             content: content,
+            enhancementSourceText: (normalizedSourceText?.isEmpty == false ? normalizedSourceText : content),
             source: .instagram,
             exerciseCount: estimateExerciseCount(from: content),
             difficulty: inferDifficulty(title: title, content: content),
             sourceURL: selectedImport?.postURL
         )
-        try await workoutRepository.create(workout)
-        selectedImport = nil
+        let savedWorkout = try await workoutRepository.create(workout)
+        await MainActor.run {
+            selectedImport = nil
+            appState.navigateToWorkoutCard(workoutID: savedWorkout.id)
+        }
+    }
+
+    private func routeToPendingWorkoutCardIfNeeded() async {
+        guard let request = appState.pendingWorkoutCardNavigation else { return }
+        guard lastHandledWorkoutNavigationRequestID != request.requestID else { return }
+
+        lastHandledWorkoutNavigationRequestID = request.requestID
+
+        let workout: Workout?
+        if let existing = workouts.first(where: { $0.id == request.workoutID }) {
+            workout = existing
+        } else {
+            workout = try? await workoutRepository.fetch(id: request.workoutID)
+        }
+
+        guard let workout else {
+            appState.completeWorkoutCardNavigation(requestID: request.requestID)
+            return
+        }
+
+        navigationPath = NavigationPath()
+        navigationPath.append(workout)
+        appState.completeWorkoutCardNavigation(requestID: request.requestID)
     }
 
     private func estimateExerciseCount(from content: String?) -> Int? {

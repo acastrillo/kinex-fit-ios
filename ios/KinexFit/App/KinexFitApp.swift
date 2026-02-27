@@ -12,8 +12,15 @@ struct KinexFitApp: App {
                 .environmentObject(appState.environment.notificationManager)
                 .appDarkTheme()
                 .onOpenURL { url in
-                    _ = appDelegate.handleOAuthCallback(url: url)
+                    if appDelegate.handleOAuthCallback(url: url) {
+                        return
+                    }
+                    NotificationCenter.default.post(name: .subscriptionDeepLinkReceived, object: url)
                 }
         }
     }
+}
+
+extension Notification.Name {
+    static let subscriptionDeepLinkReceived = Notification.Name("com.kinex.fit.subscriptionDeepLinkReceived")
 }

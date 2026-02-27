@@ -1,12 +1,13 @@
 import SwiftUI
 import OSLog
+import StoreKit
 
 private let logger = Logger(subsystem: "com.kinex.fit", category: "SubscriptionStatusView")
 
 struct SubscriptionStatusView: View {
     @State private var user: User?
     @State private var showPaywall = false
-    @State private var isLoadingPortal = false
+    @State private var isManagingSubscriptions = false
     @State private var errorMessage: String?
     @State private var showError = false
 
@@ -85,10 +86,10 @@ struct SubscriptionStatusView: View {
                     Spacer()
 
                     Button {
-                        Task { await openStripePortal() }
+                        Task { await openManageSubscriptions() }
                     } label: {
                         HStack(spacing: 4) {
-                            if isLoadingPortal {
+                            if isManagingSubscriptions {
                                 ProgressView()
                                     .controlSize(.small)
                                     .tint(AppTheme.accent)
@@ -99,7 +100,7 @@ struct SubscriptionStatusView: View {
                             }
                         }
                     }
-                    .disabled(isLoadingPortal)
+                    .disabled(isManagingSubscriptions)
                 }
             }
 
@@ -193,38 +194,33 @@ struct SubscriptionStatusView: View {
         }
     }
 
-    // MARK: - Stripe Portal
+    // MARK: - Subscription Management
 
-    private func openStripePortal() async {
-        guard let apiClient = AppState.shared?.environment.apiClient else { return }
-        isLoadingPortal = true
-        defer { isLoadingPortal = false }
+    private func openManageSubscriptions() async {
+        isManagingSubscriptions = true
+        defer { isManagingSubscriptions = false }
 
         do {
-            let request = APIRequest.stripePortal()
-            let response: StripeSessionResponse = try await apiClient.send(request)
-
-            if let error = response.error {
-                logger.error("Stripe portal error: \(error, privacy: .public)")
-                errorMessage = error
+            guard let scene = activeWindowScene() else {
+                errorMessage = "Could not open subscription management right now."
                 showError = true
                 return
             }
-
-            guard let urlString = response.url, let url = URL(string: urlString) else {
-                errorMessage = "Could not open subscription management. Please try again."
-                showError = true
-                return
-            }
-
-            await MainActor.run {
-                UIApplication.shared.open(url)
-            }
+            try await AppStore.showManageSubscriptions(in: scene)
         } catch {
-            logger.error("Stripe portal failed: \(error.localizedDescription, privacy: .public)")
+            logger.error("Manage subscriptions failed: \(error.localizedDescription, privacy: .public)")
             errorMessage = error.localizedDescription
             showError = true
         }
+    }
+
+    private func activeWindowScene() -> UIWindowScene? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+        ?? UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first
     }
 }
 

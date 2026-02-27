@@ -5,6 +5,11 @@ import SwiftUI
 final class AppState: ObservableObject {
     static weak var shared: AppState?
 
+    struct WorkoutCardNavigationRequest: Equatable {
+        let requestID = UUID()
+        let workoutID: String
+    }
+
     enum MainTab: String {
         case home
         case library
@@ -29,6 +34,9 @@ final class AppState: ObservableObject {
 
     /// Global tab selection for app-wide routing (e.g., notification actions).
     @Published var selectedMainTab: MainTab = .home
+
+    /// Pending request to open a saved workout in the library card/detail view.
+    @Published var pendingWorkoutCardNavigation: WorkoutCardNavigationRequest?
 
     /// Runtime feature flags fetched from backend app config.
     @Published private(set) var featureFlags: AppFeatureFlags = .default
@@ -69,5 +77,17 @@ final class AppState: ObservableObject {
     /// Navigate to a main tab destination.
     func navigateToTab(_ tab: MainTab) {
         selectedMainTab = tab
+    }
+
+    /// Navigate to the library tab and open the specified workout card/detail view.
+    func navigateToWorkoutCard(workoutID: String) {
+        selectedMainTab = .library
+        pendingWorkoutCardNavigation = WorkoutCardNavigationRequest(workoutID: workoutID)
+    }
+
+    /// Mark a workout card navigation request as handled.
+    func completeWorkoutCardNavigation(requestID: UUID) {
+        guard pendingWorkoutCardNavigation?.requestID == requestID else { return }
+        pendingWorkoutCardNavigation = nil
     }
 }

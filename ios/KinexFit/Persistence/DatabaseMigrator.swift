@@ -64,11 +64,29 @@ struct DatabaseMigratorFactory {
         }
 
         migrator.registerMigration("add-workout-card-metadata") { db in
+            let existingColumns = Set(try db.columns(in: "workouts").map(\.name))
+            let missingColumns = [
+                "durationMinutes",
+                "exerciseCount",
+                "difficulty",
+                "imageURL"
+            ].filter { !existingColumns.contains($0) }
+
+            guard !missingColumns.isEmpty else { return }
+
             try db.alter(table: "workouts") { table in
-                table.add(column: "durationMinutes", .integer)
-                table.add(column: "exerciseCount", .integer)
-                table.add(column: "difficulty", .text)
-                table.add(column: "imageURL", .text)
+                if missingColumns.contains("durationMinutes") {
+                    table.add(column: "durationMinutes", .integer)
+                }
+                if missingColumns.contains("exerciseCount") {
+                    table.add(column: "exerciseCount", .integer)
+                }
+                if missingColumns.contains("difficulty") {
+                    table.add(column: "difficulty", .text)
+                }
+                if missingColumns.contains("imageURL") {
+                    table.add(column: "imageURL", .text)
+                }
             }
         }
 
@@ -76,6 +94,12 @@ struct DatabaseMigratorFactory {
             try db.alter(table: "workouts") { table in
                 table.add(column: "sourceURL", .text)
                 table.add(column: "sourceAuthor", .text)
+            }
+        }
+
+        migrator.registerMigration("add-workout-enhancement-source-text") { db in
+            try db.alter(table: "workouts") { table in
+                table.add(column: "enhancementSourceText", .text)
             }
         }
 

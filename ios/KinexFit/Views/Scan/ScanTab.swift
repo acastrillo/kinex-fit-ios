@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 
 struct ScanTab: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appState: AppState
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
@@ -68,6 +69,17 @@ struct ScanTab: View {
                 .disabled(isProcessing)
             }
             .navigationTitle("Scan")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Label("Back", systemImage: "chevron.backward")
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .disabled(isProcessing)
+                }
+            }
             .overlay {
                 if isProcessing {
                     ProcessingOverlay()
@@ -88,14 +100,20 @@ struct ScanTab: View {
             .fullScreenCover(isPresented: $showingCamera) {
                 CameraView(image: $selectedImage)
             }
-            .sheet(isPresented: $showingOCRResult) {
-                if let result = ocrResult, let image = selectedImage {
-                    OCRResultView(
-                        image: image,
-                        ocrResponse: result,
-                        onSave: saveWorkout,
-                        onDiscard: discardResult
-                    )
+            .sheet(isPresented: $showingOCRResult, onDismiss: discardResult) {
+                if let result = ocrResult {
+                    WorkoutFormView(
+                        mode: .create,
+                        initialTitle: WorkoutTextParser.parse(result.text).title,
+                        initialRawContent: result.text,
+                        initialSource: .ocr
+                    ) { title, content, enhancementSourceText in
+                        try await saveWorkout(
+                            title: title,
+                            content: content,
+                            enhancementSourceText: enhancementSourceText ?? result.text
+                        )
+                    }
                 }
             }
             .alert("Scan Failed", isPresented: $showingError) {
@@ -166,18 +184,25 @@ struct ScanTab: View {
 
     // MARK: - Actions
 
-    private func saveWorkout(title: String, content: String?) async throws {
+    private func saveWorkout(title: String, content: String?, enhancementSourceText: String?) async throws {
+        let normalizedSourceText = enhancementSourceText?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedContent = content?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
         let workout = Workout(
             title: title,
             content: content,
+            enhancementSourceText: (normalizedSourceText?.isEmpty == false ? normalizedSourceText : normalizedContent),
             source: .ocr
         )
-        try await appState.environment.workoutRepository.create(workout)
+        let savedWorkout = try await appState.environment.workoutRepository.create(workout)
 
         await MainActor.run {
             ocrResult = nil
             selectedImage = nil
             showingOCRResult = false
+            appState.navigateToWorkoutCard(workoutID: savedWorkout.id)
         }
     }
 

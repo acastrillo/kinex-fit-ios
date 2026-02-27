@@ -49,12 +49,19 @@ extension EditableWorkoutCard {
 
     /// Create cards from AI-enhanced `EnhancedExercise` array.
     static func from(enhancedExercises: [EnhancedExercise]) -> [EditableWorkoutCard] {
-        enhancedExercises.map { exercise in
-            EditableWorkoutCard(
-                name: exercise.name,
-                sets: exercise.sets.map(String.init) ?? "",
-                reps: exercise.reps?.stringValue ?? "",
-                weight: exercise.weight?.stringValue ?? "",
+        enhancedExercises.compactMap { exercise in
+            guard let normalizedName = normalizeAIExerciseName(exercise.name) else {
+                return nil
+            }
+
+            let reps = normalizedAIReps(for: exercise)
+            let setsText = exercise.sets.map(String.init) ?? (reps.isEmpty ? "" : "1")
+
+            return EditableWorkoutCard(
+                name: normalizedName,
+                sets: setsText,
+                reps: reps,
+                weight: exercise.weight?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
                 restSeconds: exercise.restSeconds.map(String.init) ?? ""
             )
         }
@@ -71,6 +78,82 @@ extension EditableWorkoutCard {
                 restSeconds: exercise.restSeconds.map(String.init) ?? ""
             )
         }
+    }
+
+    private static func normalizedAIReps(for exercise: EnhancedExercise) -> String {
+        if let reps = exercise.reps?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines),
+           !reps.isEmpty {
+            return reps
+        }
+
+        guard let duration = exercise.duration, duration > 0 else {
+            return ""
+        }
+
+        if duration % 60 == 0, duration >= 60 {
+            return "\(duration / 60) min"
+        }
+
+        return "\(duration)s"
+    }
+
+    private static func normalizeAIExerciseName(_ rawName: String) -> String? {
+        var name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if name.range(of: #"(?i)^\s*min(?:ute)?\s*\d+\s*[:\-]\s*"#, options: .regularExpression) != nil {
+            name = name.replacingOccurrences(
+                of: #"(?i)^\s*min(?:ute)?\s*\d+\s*[:\-]\s*"#,
+                with: "",
+                options: .regularExpression
+            )
+        }
+
+        name = name.replacingOccurrences(
+            of: #"^\s*[\d\.\)\-•]+\s*"#,
+            with: "",
+            options: .regularExpression
+        )
+        name = name
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !name.isEmpty else { return nil }
+        guard name.count <= 80 else { return nil }
+        guard name.contains(where: { $0.isLetter }) else { return nil }
+
+        let lowered = name.lowercased()
+
+        let nonExercisePattern = #"(?i)(https?://|www\.|@[\w.]+|#\w+|\b(?:follow|comment|tag|share|subscribe|save this|link in bio|dm)\b)"#
+        if lowered.range(of: nonExercisePattern, options: .regularExpression) != nil {
+            return nil
+        }
+
+        let headerLabels: Set<String> = [
+            "strength",
+            "strength endurance complex",
+            "core",
+            "accessory",
+            "warm up",
+            "cool down",
+            "finisher",
+            "notes",
+            "description",
+            "part a",
+            "part b",
+            "part c",
+            "block 1",
+            "block 2",
+            "block 3"
+        ]
+        if headerLabels.contains(lowered) || lowered.hasSuffix(":") {
+            return nil
+        }
+
+        if lowered.split(separator: " ").count > 12 {
+            return nil
+        }
+
+        return name
     }
 }
 

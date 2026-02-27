@@ -62,7 +62,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         if handledByFacebook {
             logger.info("OAuth callback handled by Facebook SDK")
         } else {
-            logger.warning("OAuth callback was not handled by Google or Facebook")
+            logger.debug("URL callback was not handled by Google or Facebook")
         }
 
         return handledByFacebook

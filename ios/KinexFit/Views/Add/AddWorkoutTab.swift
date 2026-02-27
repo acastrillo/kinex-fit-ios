@@ -85,19 +85,27 @@ struct AddWorkoutTab: View {
 
     // MARK: - Data Operations
 
-    private func createWorkout(title: String, content: String?) async throws {
+    private func createWorkout(title: String, content: String?, enhancementSourceText: String?) async throws {
+        let normalizedContent = content?.isEmpty == true ? nil : content
+        let normalizedEnhancementSource = enhancementSourceText?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let workout = Workout(
             title: title,
-            content: content?.isEmpty == true ? nil : content,
+            content: normalizedContent,
+            enhancementSourceText: (normalizedEnhancementSource?.isEmpty == false ? normalizedEnhancementSource : normalizedContent),
             source: .manual
         )
-        try await workoutRepository.create(workout)
+        let savedWorkout = try await workoutRepository.create(workout)
+        await MainActor.run {
+            appState.navigateToWorkoutCard(workoutID: savedWorkout.id)
+        }
     }
 
     private func saveGeneratedWorkout(title: String, content: String) async {
         let workout = Workout(
             title: title,
             content: content,
+            enhancementSourceText: content,
             source: .manual
         )
         _ = try? await workoutRepository.create(workout)

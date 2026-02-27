@@ -24,6 +24,14 @@ struct WorkoutDetailView: View {
         )
     }
 
+    private var enhancementInput: String {
+        let original = workout.enhancementSourceText?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let original, !original.isEmpty {
+            return original
+        }
+        return presentation.rawContent
+    }
+
     private var displayedDifficulty: String {
         workout.difficulty?.capitalized ?? "Moderate"
     }
@@ -115,10 +123,11 @@ struct WorkoutDetailView: View {
         .sheet(isPresented: $showingEditSheet) {
             WorkoutFormView(
                 mode: .edit(workout),
-                onSave: { title, content in
+                onSave: { title, content, enhancementSourceText in
                     var updated = workout
                     updated.title = title
                     updated.content = content
+                    updated.enhancementSourceText = enhancementSourceText ?? workout.enhancementSourceText
                     try await onUpdate?(updated)
                 }
             )
@@ -173,7 +182,7 @@ struct WorkoutDetailView: View {
                 .kinexCard(cornerRadius: 12, fill: AppTheme.cardBackground)
             }
             .buttonStyle(.plain)
-            .disabled(isEnhancing || presentation.rawContent.isEmpty)
+            .disabled(isEnhancing || enhancementInput.isEmpty)
 
             Button { showingSession = true } label: {
                 Image(systemName: "play.fill")
@@ -393,7 +402,8 @@ struct WorkoutDetailView: View {
     }
 
     private func enhanceWithAI() async {
-        guard !presentation.rawContent.isEmpty else { return }
+        let input = enhancementInput
+        guard !input.isEmpty else { return }
 
         isEnhancing = true
         defer { isEnhancing = false }
@@ -401,17 +411,18 @@ struct WorkoutDetailView: View {
         let aiService = AIService(apiClient: appState.environment.apiClient)
 
         do {
-            let response = try await aiService.enhanceWorkout(text: presentation.rawContent)
+            let response = try await aiService.enhanceWorkout(text: input)
             if let remaining = response.quotaRemaining {
                 try? await appState.environment.userRepository.updateAIQuotaFromRemaining(remaining)
             }
             var updated = workout
             updated.title = response.workout.title
+            updated.enhancementSourceText = workout.enhancementSourceText ?? input
             updated.content = Self.composeEnhancedContent(
                 description: response.workout.description,
                 exercises: response.workout.exercises,
-                aiNotes: response.workout.aiNotes,
-                fallback: response.workout.content
+                rounds: response.workout.structure?.rounds,
+                fallback: workout.content ?? ""
             )
             try await onUpdate?(updated)
         } catch let error as AIError {
@@ -428,47 +439,20 @@ struct WorkoutDetailView: View {
     private static func composeEnhancedContent(
         description: String?,
         exercises: [EnhancedExercise]?,
-        aiNotes: [String]?,
+        rounds: Int?,
         fallback: String
     ) -> String {
-        guard let exercises = exercises, !exercises.isEmpty else {
+        guard let exercises = exercises else {
             return fallback
         }
 
-        var lines: [String] = []
-
-        if let desc = description, !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            lines.append(desc.trimmingCharacters(in: .whitespacesAndNewlines))
-            lines.append("")
+        let cards = EditableWorkoutCard.from(enhancedExercises: exercises)
+        guard !cards.isEmpty else {
+            return fallback
         }
 
-        for exercise in exercises {
-            var line = exercise.name
-            if let sets = exercise.sets, let reps = exercise.reps {
-                line += " \(sets)x\(reps.stringValue)"
-            } else if let sets = exercise.sets {
-                line += " \(sets) sets"
-            } else if let reps = exercise.reps {
-                line += " \(reps.stringValue) reps"
-            }
-            if let weight = exercise.weight {
-                line += " @ \(weight)"
-            }
-            if let rest = exercise.restSeconds {
-                line += " (\(rest)s rest)"
-            }
-            if let notes = exercise.notes, !notes.isEmpty {
-                line += " - \(notes)"
-            }
-            lines.append(line)
-        }
-
-        if let notes = aiNotes, !notes.isEmpty {
-            lines.append("")
-            lines.append(contentsOf: notes.map { "- \($0)" })
-        }
-
-        return lines.joined(separator: "\n")
+        let notes = description?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return EditableWorkoutCard.composeContent(notes: notes, cards: cards, rounds: rounds)
     }
 }
 
@@ -677,7 +661,19 @@ struct WorkoutContentPresentation {
         if lowered.hasPrefix("training:") || lowered.hasPrefix("source:") || lowered.hasPrefix("original caption") {
             return false
         }
+        if lowered.hasPrefix("ai insights") || lowered.hasPrefix("notes:") || lowered.hasPrefix("note:") {
+            return false
+        }
         if lowered.hasPrefix("rest ") || lowered.hasPrefix("rest:") || lowered.hasPrefix("round rest") {
+            return false
+        }
+        if lowered.hasSuffix(":") {
+            return false
+        }
+        if lowered.range(
+            of: #"(?i)\b(?:follow|comment|tag|share|subscribe|link in bio|save this)\b"#,
+            options: .regularExpression
+        ) != nil {
             return false
         }
         if lowered.contains("drop your time") && lowered.contains("round") {
@@ -692,6 +688,15 @@ struct WorkoutContentPresentation {
 
         let words = line.split(separator: " ")
         if words.count > 14 {
+            return false
+        }
+        if (line.contains(".") || line.contains(",")) && words.count >= 6 {
+            return false
+        }
+        if lowered.range(
+            of: #"(?i)\b(?:focus on|maintain|ensure|remember|pace yourself|rest periods)\b"#,
+            options: .regularExpression
+        ) != nil, words.count >= 5 {
             return false
         }
 

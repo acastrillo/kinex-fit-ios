@@ -30,7 +30,10 @@ struct WorkoutFormView: View {
     }
 
     let mode: Mode
-    let onSave: (String, String?) async throws -> Void
+    let onSave: (String, String?, String?) async throws -> Void
+    private let createSource: WorkoutSource
+    private let createDurationMinutes: Int?
+    private let createExerciseCount: Int?
 
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
@@ -52,17 +55,50 @@ struct WorkoutFormView: View {
         case content
     }
 
-    init(mode: Mode, onSave: @escaping (String, String?) async throws -> Void) {
+    init(
+        mode: Mode,
+        initialTitle: String? = nil,
+        initialRawContent: String? = nil,
+        initialSource: WorkoutSource = .manual,
+        initialDurationMinutes: Int? = nil,
+        initialExerciseCount: Int? = nil,
+        onSave: @escaping (String, String?, String?) async throws -> Void
+    ) {
         self.mode = mode
         self.onSave = onSave
+        self.createSource = initialSource
+        self.createDurationMinutes = initialDurationMinutes
+        self.createExerciseCount = initialExerciseCount
+
+        let normalizedInitialTitle = initialTitle?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedInitialContent = initialRawContent?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
 
         switch mode {
         case .create:
-            _title = State(initialValue: "")
-            _content = State(initialValue: "")
-            _originalContent = State(initialValue: "")
-            _workoutCards = State(initialValue: [])
-            _rounds = State(initialValue: nil)
+            guard let rawContent = normalizedInitialContent, !rawContent.isEmpty else {
+                _title = State(initialValue: normalizedInitialTitle ?? "")
+                _content = State(initialValue: "")
+                _originalContent = State(initialValue: "")
+                _workoutCards = State(initialValue: [])
+                _rounds = State(initialValue: nil)
+                return
+            }
+
+            let parsed = WorkoutContentPresentation.from(
+                content: rawContent,
+                source: initialSource,
+                durationMinutes: initialDurationMinutes,
+                fallbackExerciseCount: initialExerciseCount
+            )
+            let fallbackTitle = WorkoutTextParser.parse(rawContent).title
+            let resolvedTitle = (normalizedInitialTitle?.isEmpty == false ? normalizedInitialTitle : fallbackTitle) ?? fallbackTitle
+            _title = State(initialValue: resolvedTitle)
+            _content = State(initialValue: EditableWorkoutCard.extractNotes(from: rawContent, exercises: parsed.exercises))
+            _originalContent = State(initialValue: rawContent)
+            _workoutCards = State(initialValue: EditableWorkoutCard.from(presentation: parsed))
+            _rounds = State(initialValue: parsed.rounds)
         case .edit(let workout):
             let existingContent = workout.content ?? ""
             let initialPresentation = WorkoutContentPresentation.from(
@@ -74,7 +110,7 @@ struct WorkoutFormView: View {
 
             _title = State(initialValue: workout.title)
             _content = State(initialValue: EditableWorkoutCard.extractNotes(from: existingContent, exercises: initialPresentation.exercises))
-            _originalContent = State(initialValue: existingContent)
+            _originalContent = State(initialValue: workout.enhancementSourceText ?? existingContent)
             _workoutCards = State(initialValue: EditableWorkoutCard.from(presentation: initialPresentation))
             _rounds = State(initialValue: initialPresentation.rounds)
         }
@@ -84,25 +120,33 @@ struct WorkoutFormView: View {
         if case .edit(let workout) = mode {
             return workout.source
         }
-        return .manual
+        return createSource
     }
 
     private var parserDuration: Int? {
         if case .edit(let workout) = mode {
             return workout.durationMinutes
         }
-        return nil
+        return createDurationMinutes
     }
 
     private var parserExerciseCount: Int? {
         if case .edit(let workout) = mode {
             return workout.exerciseCount
         }
-        return nil
+        return createExerciseCount
     }
 
     private var composedContent: String {
         EditableWorkoutCard.composeContent(notes: content, cards: workoutCards, rounds: rounds)
+    }
+
+    private var enhancementInput: String {
+        let rawOriginal = originalContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !rawOriginal.isEmpty {
+            return rawOriginal
+        }
+        return composedContent.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var presentation: WorkoutContentPresentation {
@@ -213,19 +257,19 @@ struct WorkoutFormView: View {
                     .foregroundStyle(AppTheme.primaryText)
                 }
                 .buttonStyle(.plain)
-                .disabled(isEnhancing || composedContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(isEnhancing || enhancementInput.isEmpty)
             }
 
             Rectangle()
                 .fill(AppTheme.separator)
                 .frame(height: 1)
 
-            Text("Original Caption:")
+            Text("Original Parsed Input:")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(AppTheme.accent)
 
             ScrollView {
-                Text(originalContent.isEmpty ? "No original caption available." : originalContent)
+                Text(originalContent.isEmpty ? "No original parsed input available." : originalContent)
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(AppTheme.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -360,21 +404,13 @@ struct WorkoutFormView: View {
 
     // MARK: - Actions
 
-    private func applyParsedContent(_ rawContent: String) {
-        let parsed = WorkoutContentPresentation.from(
-            content: rawContent,
-            source: parserSource,
-            durationMinutes: parserDuration,
-            fallbackExerciseCount: parserExerciseCount
-        )
-        content = EditableWorkoutCard.extractNotes(from: rawContent, exercises: parsed.exercises)
-        rounds = parsed.rounds
-        workoutCards = EditableWorkoutCard.from(presentation: parsed)
-    }
-
     private func enhanceWithAI() async {
-        let input = composedContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        let input = enhancementInput
         guard !input.isEmpty else { return }
+
+        if originalContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            originalContent = input
+        }
 
         isEnhancing = true
         defer { isEnhancing = false }
@@ -398,24 +434,19 @@ struct WorkoutFormView: View {
     }
 
     private func applyEnhancedResponse(_ workout: EnhancedWorkoutData) {
-        if let exercises = workout.exercises, !exercises.isEmpty {
-            workoutCards = EditableWorkoutCard.from(enhancedExercises: exercises)
+        if let exercises = workout.exercises {
+            let aiCards = EditableWorkoutCard.from(enhancedExercises: exercises)
+            if !aiCards.isEmpty {
+                workoutCards = aiCards
+            }
+        }
 
-            var notes: [String] = []
-            if let desc = workout.description, !desc.isEmpty {
-                notes.append(desc)
-            }
-            if let aiNotes = workout.aiNotes, !aiNotes.isEmpty {
-                notes.append("")
-                notes.append(contentsOf: aiNotes.map { "- \($0)" })
-            }
-            content = notes.joined(separator: "\n")
+        if let desc = workout.description?.trimmingCharacters(in: .whitespacesAndNewlines) {
+            content = desc
+        }
 
-            if let structure = workout.structure, let r = structure.rounds, r > 0 {
-                rounds = r
-            }
-        } else {
-            applyParsedContent(workout.content)
+        if let structure = workout.structure, let r = structure.rounds, r > 0 {
+            rounds = r
         }
     }
 
@@ -425,9 +456,14 @@ struct WorkoutFormView: View {
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedContent = composedContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedEnhancementSource = enhancementInput.trimmingCharacters(in: .whitespacesAndNewlines)
 
         do {
-            try await onSave(trimmedTitle, trimmedContent.isEmpty ? nil : trimmedContent)
+            try await onSave(
+                trimmedTitle,
+                trimmedContent.isEmpty ? nil : trimmedContent,
+                trimmedEnhancementSource.isEmpty ? nil : trimmedEnhancementSource
+            )
             dismiss()
         } catch {
             errorMessage = error.localizedDescription
@@ -439,7 +475,7 @@ struct WorkoutFormView: View {
 }
 
 #Preview("Create") {
-    WorkoutFormView(mode: .create) { _, _ in }
+    WorkoutFormView(mode: .create) { _, _, _ in }
         .environmentObject(AppState(environment: .preview))
         .appDarkTheme()
 }
@@ -461,7 +497,7 @@ struct WorkoutFormView: View {
                 exerciseCount: 4
             )
         )
-    ) { _, _ in }
+    ) { _, _, _ in }
     .environmentObject(AppState(environment: .preview))
     .appDarkTheme()
 }

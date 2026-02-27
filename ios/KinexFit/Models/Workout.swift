@@ -7,6 +7,8 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
     var id: String
     var title: String
     var content: String?
+    /// Immutable source text used as the canonical AI enhancement input.
+    var enhancementSourceText: String?
     var source: WorkoutSource
     var durationMinutes: Int?
     var exerciseCount: Int?
@@ -21,6 +23,7 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
         id: String = UUID().uuidString,
         title: String,
         content: String? = nil,
+        enhancementSourceText: String? = nil,
         source: WorkoutSource = .manual,
         durationMinutes: Int? = nil,
         exerciseCount: Int? = nil,
@@ -34,6 +37,7 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
         self.id = id
         self.title = title
         self.content = content
+        self.enhancementSourceText = enhancementSourceText
         self.source = source
         self.durationMinutes = durationMinutes
         self.exerciseCount = exerciseCount
@@ -82,13 +86,14 @@ extension Workout: FetchableRecord, PersistableRecord {
     static let databaseTableName = "workouts"
 
     enum Columns: String, ColumnExpression {
-        case id, title, content, source, durationMinutes, exerciseCount, difficulty, imageURL, sourceURL, sourceAuthor, createdAt, updatedAt
+        case id, title, content, enhancementSourceText, source, durationMinutes, exerciseCount, difficulty, imageURL, sourceURL, sourceAuthor, createdAt, updatedAt
     }
 
     init(row: Row) {
         id = row[Columns.id]
         title = row[Columns.title]
         content = row[Columns.content]
+        enhancementSourceText = row[Columns.enhancementSourceText]
         source = WorkoutSource(rawValue: row[Columns.source] ?? "manual") ?? .manual
         durationMinutes = row[Columns.durationMinutes]
         exerciseCount = row[Columns.exerciseCount]
@@ -104,6 +109,7 @@ extension Workout: FetchableRecord, PersistableRecord {
         container[Columns.id] = id
         container[Columns.title] = title
         container[Columns.content] = content
+        container[Columns.enhancementSourceText] = enhancementSourceText
         container[Columns.source] = source.rawValue
         container[Columns.durationMinutes] = durationMinutes
         container[Columns.exerciseCount] = exerciseCount

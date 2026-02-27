@@ -76,6 +76,14 @@
 				<string>fb3758257434481536</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kinexfit</string>
+			</array>
+		</dict>
 	</array>
 	<key>GIDClientID</key>
 	<string>1066753979653-f8fhpmm03v0f14l8atl7eug7nomonea4.apps.googleusercontent.com</string>

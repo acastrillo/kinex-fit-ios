@@ -208,7 +208,16 @@ final class WorkoutRepository {
         }
 
         let mobileRequest = APIRequest(path: "/api/mobile/workouts", queryItems: queryItems)
-        return try await apiClient.send(mobileRequest)
+        do {
+            return try await apiClient.send(mobileRequest)
+        } catch let error as APIError {
+            guard case .httpStatus(let code, _) = error, (500...599).contains(code) else {
+                throw error
+            }
+            logger.warning("Mobile workouts endpoint failed with \(code); falling back to legacy workouts endpoint")
+            let fallbackRequest = APIRequest(path: "/api/workouts")
+            return try await apiClient.send(fallbackRequest)
+        }
     }
 
     private enum SyncOperation: String {
@@ -476,6 +485,7 @@ final class WorkoutRepository {
             id: rawID,
             title: title,
             content: content,
+            enhancementSourceText: content,
             source: mapRemoteSource(remote.source),
             durationMinutes: remote.durationMinutes,
             exerciseCount: remote.exerciseCount,
