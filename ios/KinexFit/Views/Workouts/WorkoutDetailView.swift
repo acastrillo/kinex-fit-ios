@@ -14,6 +14,9 @@ struct WorkoutDetailView: View {
     @State private var enhancementError: String?
     @State private var showingEnhancementError = false
     @State private var showingSession = false
+    @State private var showingTimerSelection = false
+    @State private var selectedTimerConfiguration = WorkoutSessionTimerConfiguration.standard
+    @State private var hasInitializedTimerConfiguration = false
 
     private var presentation: WorkoutContentPresentation {
         WorkoutContentPresentation.from(
@@ -30,6 +33,10 @@ struct WorkoutDetailView: View {
             return original
         }
         return presentation.rawContent
+    }
+
+    private var recommendedTimerConfiguration: WorkoutSessionTimerConfiguration {
+        WorkoutSessionTimerConfiguration.recommended(from: presentation)
     }
 
     private var displayedDifficulty: String {
@@ -102,6 +109,7 @@ struct WorkoutDetailView: View {
                 topActions
                 secondaryActions
                 metadataStrip
+                timerSelectionButton
                 startWorkoutButton
                 exercisesSection
             }
@@ -120,6 +128,11 @@ struct WorkoutDetailView: View {
                 }
             }
         }
+        .onAppear {
+            guard !hasInitializedTimerConfiguration else { return }
+            selectedTimerConfiguration = recommendedTimerConfiguration
+            hasInitializedTimerConfiguration = true
+        }
         .sheet(isPresented: $showingEditSheet) {
             WorkoutFormView(
                 mode: .edit(workout),
@@ -131,6 +144,14 @@ struct WorkoutDetailView: View {
                     try await onUpdate?(updated)
                 }
             )
+        }
+        .sheet(isPresented: $showingTimerSelection) {
+            WorkoutTimerSelectionSheet(
+                current: selectedTimerConfiguration,
+                recommended: recommendedTimerConfiguration
+            ) { updatedConfiguration in
+                selectedTimerConfiguration = updatedConfiguration
+            }
         }
         .alert("Enhancement Failed", isPresented: $showingEnhancementError) {
             Button("OK", role: .cancel) { }
@@ -146,7 +167,10 @@ struct WorkoutDetailView: View {
             Text("This action cannot be undone.")
         }
         .navigationDestination(isPresented: $showingSession) {
-            WorkoutSessionView(workout: workout)
+            WorkoutSessionView(
+                workout: workout,
+                initialTimerConfiguration: selectedTimerConfiguration
+            )
         }
     }
 
@@ -244,6 +268,40 @@ struct WorkoutDetailView: View {
             .padding(.vertical, 1)
         }
         .scrollIndicators(.hidden)
+    }
+
+    private var timerSelectionButton: some View {
+        Button {
+            showingTimerSelection = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: selectedTimerConfiguration.type.iconName)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(AppTheme.accent)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Session Timer")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AppTheme.secondaryText)
+                    Text(selectedTimerConfiguration.selectionLabel)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(AppTheme.primaryText)
+                }
+
+                Spacer()
+
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppTheme.secondaryText)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .kinexCard(cornerRadius: 12, fill: AppTheme.cardBackground)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Session Timer")
+        .accessibilityValue(selectedTimerConfiguration.accessibilityLabel)
+        .accessibilityHint("Choose the timer to use when you start this workout")
     }
 
     @ViewBuilder

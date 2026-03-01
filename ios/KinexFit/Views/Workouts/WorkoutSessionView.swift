@@ -178,6 +178,7 @@ private struct HistoricalExerciseMetric: Decodable {
 
 struct WorkoutSessionView: View {
     let workout: Workout
+    private let recommendedTimerConfiguration: WorkoutSessionTimerConfiguration
 
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
@@ -195,8 +196,34 @@ struct WorkoutSessionView: View {
     @State private var saveError: String?
     @State private var showSaveError = false
     @State private var detectedPRs: [WorkoutPRHighlight] = []
+    @State private var timerConfiguration: WorkoutSessionTimerConfiguration
+    @State private var timerCountdownRemainingSeconds: Int?
+    @State private var showTimerSelection = false
+    @State private var didPresentAutoCompletion = false
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    init(
+        workout: Workout,
+        initialTimerConfiguration: WorkoutSessionTimerConfiguration? = nil
+    ) {
+        self.workout = workout
+        let inferredPresentation = WorkoutContentPresentation.from(
+            content: workout.content,
+            source: workout.source,
+            durationMinutes: workout.durationMinutes,
+            fallbackExerciseCount: workout.exerciseCount
+        )
+        let recommended = WorkoutSessionTimerConfiguration.recommended(from: inferredPresentation)
+        let resolvedConfiguration = (initialTimerConfiguration ?? recommended).normalized()
+        self.recommendedTimerConfiguration = recommended
+        _timerConfiguration = State(initialValue: resolvedConfiguration)
+        _timerCountdownRemainingSeconds = State(
+            initialValue: resolvedConfiguration.usesCountdown
+                ? resolvedConfiguration.clampedDurationMinutes * 60
+                : nil
+        )
+    }
 
     private var presentation: WorkoutContentPresentation {
         WorkoutContentPresentation.from(
@@ -248,6 +275,52 @@ struct WorkoutSessionView: View {
         return workoutCards.first { $0.id == id }
     }
 
+    private var displayedTimerSeconds: Int {
+        if timerConfiguration.usesCountdown {
+            return timerCountdownRemainingSeconds ?? timerConfiguration.clampedDurationMinutes * 60
+        }
+        return sessionDuration
+    }
+
+    private var elapsedForCurrentTimerConfiguration: Int {
+        guard timerConfiguration.usesCountdown else { return sessionDuration }
+        let total = timerConfiguration.clampedDurationMinutes * 60
+        let remaining = timerCountdownRemainingSeconds ?? total
+        return max(total - remaining, 0)
+    }
+
+    private var emomMinuteDisplay: String? {
+        guard timerConfiguration.type == .emom else { return nil }
+        let totalMinutes = timerConfiguration.clampedDurationMinutes
+        if totalMinutes <= 0 {
+            return nil
+        }
+        let elapsed = elapsedForCurrentTimerConfiguration
+        let minute = min(totalMinutes, (elapsed / 60) + 1)
+        return "Minute \(minute) of \(totalMinutes)"
+    }
+
+    private var timerStatusText: String {
+        if timerConfiguration.type == .standard {
+            return "Standard count-up timer"
+        }
+        if displayedTimerSeconds == 0 {
+            return "\(timerConfiguration.type.displayName) timer complete"
+        }
+        if let emomMinuteDisplay {
+            return emomMinuteDisplay
+        }
+        return "\(timerConfiguration.type.displayName) countdown active"
+    }
+
+    private var countdownProgress: Double {
+        guard timerConfiguration.usesCountdown else { return 0 }
+        let total = Double(max(timerConfiguration.clampedDurationMinutes * 60, 1))
+        let remaining = Double(displayedTimerSeconds)
+        let progress = (total - remaining) / total
+        return min(max(progress, 0), 1)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             stickyHeader
@@ -256,9 +329,14 @@ struct WorkoutSessionView: View {
         .background(AppTheme.background.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
-        .onAppear { initializeMetrics() }
+        .onAppear {
+            initializeMetrics()
+            if timerConfiguration.usesCountdown && timerCountdownRemainingSeconds == nil {
+                timerCountdownRemainingSeconds = timerConfiguration.clampedDurationMinutes * 60
+            }
+        }
         .onReceive(timer) { _ in
-            if !isPaused { sessionDuration += 1 }
+            handleSessionTick()
         }
         .alert("End Workout?", isPresented: $showEndDialog) {
             Button("Continue Training", role: .cancel) { }
@@ -274,6 +352,14 @@ struct WorkoutSessionView: View {
         }
         .sheet(isPresented: $showCompletionSheet) {
             completionSheet
+        }
+        .sheet(isPresented: $showTimerSelection) {
+            WorkoutTimerSelectionSheet(
+                current: timerConfiguration,
+                recommended: recommendedTimerConfiguration
+            ) { updatedConfiguration in
+                applyTimerConfiguration(updatedConfiguration)
+            }
         }
         .alert("Save Failed", isPresented: $showSaveError) {
             Button("OK", role: .cancel) { }
@@ -302,14 +388,31 @@ struct WorkoutSessionView: View {
 
                 Spacer()
 
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
                     HStack(spacing: 5) {
-                        Image(systemName: "clock")
+                        Image(systemName: timerConfiguration.type.iconName)
                             .font(.system(size: 13))
-                        Text(formatDuration(sessionDuration))
+                        Text(formatDuration(displayedTimerSeconds))
                             .font(.system(size: 16, weight: .semibold, design: .monospaced))
                     }
                     .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .kinexCard(cornerRadius: 8, fill: AppTheme.cardBackgroundElevated)
+
+                    Button {
+                        showTimerSelection = true
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(AppTheme.secondaryText)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .kinexCard(cornerRadius: 8, fill: AppTheme.cardBackgroundElevated)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Change Timer")
+                    .accessibilityValue(timerConfiguration.accessibilityLabel)
 
                     Button {
                         isPaused.toggle()
@@ -330,9 +433,14 @@ struct WorkoutSessionView: View {
             }
 
             HStack {
-                Text("\(completedCount)/\(workoutCards.count) moves completed")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(AppTheme.secondaryText)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(completedCount)/\(workoutCards.count) moves completed")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                    Text(timerStatusText)
+                        .font(.system(size: 12))
+                        .foregroundStyle(AppTheme.tertiaryText)
+                }
                 Spacer()
                 if isPaused {
                     Text("Paused")
@@ -377,6 +485,8 @@ struct WorkoutSessionView: View {
                         .foregroundStyle(AppTheme.secondaryText)
                 }
 
+                timerStatusCard
+
                 // Exercise Cards
                 ForEach(workoutCards) { card in
                     exerciseCardView(card)
@@ -411,6 +521,72 @@ struct WorkoutSessionView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
             .padding(.bottom, 32)
+        }
+    }
+
+    private var timerStatusCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: timerConfiguration.type.iconName)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(AppTheme.accent)
+                    Text(timerConfiguration.selectionLabel)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                Spacer()
+                Button {
+                    showTimerSelection = true
+                } label: {
+                    Text("Adjust")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(AppTheme.accent)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(AppTheme.accent.opacity(0.14))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(formatDuration(displayedTimerSeconds))
+                    .font(.system(size: 28, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white)
+                if timerConfiguration.usesCountdown {
+                    Text("remaining")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AppTheme.secondaryText)
+                } else {
+                    Text("elapsed")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+            }
+
+            if timerConfiguration.usesCountdown {
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(AppTheme.cardBackgroundElevated)
+                            .frame(height: 6)
+                        Capsule()
+                            .fill(AppTheme.accent)
+                            .frame(
+                                width: geometry.size.width * countdownProgress,
+                                height: 6
+                            )
+                    }
+                }
+                .frame(height: 6)
+            }
+        }
+        .padding(12)
+        .kinexCard(cornerRadius: 14, fill: AppTheme.cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(AppTheme.cardBorder, lineWidth: 1)
         }
     }
 
@@ -756,6 +932,7 @@ struct WorkoutSessionView: View {
             VStack(spacing: 10) {
                 summaryRow(label: "Workout", value: workout.title)
                 summaryRow(label: "Duration", value: formatDuration(sessionDuration))
+                summaryRow(label: "Timer", value: timerConfiguration.selectionLabel)
                 summaryRow(label: "Completed", value: "\(completedCount) of \(workoutCards.count) moves")
             }
             .padding(14)
@@ -875,6 +1052,35 @@ struct WorkoutSessionView: View {
     }
 
     // MARK: - Actions
+
+    private func handleSessionTick() {
+        guard !isPaused else { return }
+        sessionDuration += 1
+
+        guard timerConfiguration.usesCountdown else { return }
+
+        let totalSeconds = timerConfiguration.clampedDurationMinutes * 60
+        guard totalSeconds > 0 else { return }
+
+        let currentRemaining = timerCountdownRemainingSeconds ?? totalSeconds
+        let nextRemaining = max(currentRemaining - 1, 0)
+        timerCountdownRemainingSeconds = nextRemaining
+
+        guard nextRemaining == 0, !didPresentAutoCompletion else { return }
+
+        didPresentAutoCompletion = true
+        isPaused = true
+        showCompletionSheet = true
+    }
+
+    private func applyTimerConfiguration(_ configuration: WorkoutSessionTimerConfiguration) {
+        let normalized = configuration.normalized()
+        timerConfiguration = normalized
+        timerCountdownRemainingSeconds = normalized.usesCountdown
+            ? normalized.clampedDurationMinutes * 60
+            : nil
+        didPresentAutoCompletion = false
+    }
 
     private func initializeMetrics() {
         for card in workoutCards {
