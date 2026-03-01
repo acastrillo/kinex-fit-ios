@@ -154,7 +154,7 @@ struct APIClient {
             || path.hasPrefix("/api/workouts")
             || path.hasPrefix("/api/ingest")
             || path.hasPrefix("/api/body-metrics")
-            || path.hasPrefix("/api/user/profile")
+            || path.hasPrefix("/api/user/")
     }
 
     private func shouldIncludeAuthorizationHeader(path: String) -> Bool {
@@ -175,6 +175,7 @@ struct APIClient {
             || path.hasPrefix("/api/instagram-fetch")
             || path.hasPrefix("/api/tiktok-fetch")
             || path.hasPrefix("/api/ingest")
+            || path.hasPrefix("/api/user/settings")
     }
 
     fileprivate func performTokenRefresh() async -> Bool {

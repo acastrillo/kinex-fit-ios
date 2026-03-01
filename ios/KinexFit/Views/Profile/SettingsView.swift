@@ -254,6 +254,7 @@ struct SettingsView: View {
 
         do {
             try await appState.environment.userRepository.save(existingUser)
+            try await appState.environment.userRepository.syncUserSettings(existingUser)
             user = existingUser
         } catch {
             // No-op fallback for now. Keeping UX stable during visual redesign.

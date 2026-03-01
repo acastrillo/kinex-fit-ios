@@ -197,6 +197,10 @@ final class OnboardingViewModel: ObservableObject {
         )
 
         _ = try await apiClient.send(request)
+
+        if let currentUser = try await userRepository.getCurrentUser() {
+            try await userRepository.syncUserSettings(currentUser, trainingProfile: trainingProfile)
+        }
     }
 
     private func markOnboardingComplete() async throws {

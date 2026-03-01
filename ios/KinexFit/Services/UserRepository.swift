@@ -36,6 +36,14 @@ final class UserRepository {
         logger.debug("User saved: \(user.id)")
     }
 
+    /// Sync editable profile/settings fields to backend.
+    func syncUserSettings(_ user: User, trainingProfile: TrainingProfile? = nil) async throws {
+        let payload = UserSettingsPayload(user: user, trainingProfile: trainingProfile)
+        let request = try APIRequest.updateUserSettings(payload)
+        _ = try await apiClient.send(request)
+        logger.debug("User settings synced: \(user.id)")
+    }
+
     /// Update user quotas after an operation
     func incrementScanQuota() async throws {
         try await database.dbQueue.write { db in

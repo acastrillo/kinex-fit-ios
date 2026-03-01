@@ -64,6 +64,19 @@ extension APIRequest {
     }
 }
 
+// MARK: - User Settings API
+
+extension APIRequest {
+    /// Update user settings/profile fields.
+    static func updateUserSettings(_ payload: UserSettingsPayload) throws -> APIRequest {
+        try json(
+            path: "/api/user/settings",
+            method: .patch,
+            body: payload
+        )
+    }
+}
+
 // MARK: - Payloads
 
 struct BodyMetricPayload: Encodable {
@@ -112,6 +125,85 @@ struct BodyMetricPayload: Encodable {
         self.neck = neck
         self.unit = unit
         self.notes = notes
+    }
+}
+
+struct UserSettingsPayload: Encodable {
+    let firstName: String?
+    let lastName: String?
+
+    let experience: String?
+    let preferredSplit: String?
+    let trainingDays: Int?
+    let sessionDuration: Int?
+    let equipment: [String]?
+    let trainingLocation: String?
+    let goals: [String]?
+    let primaryGoal: String?
+    let constraints: [TrainingConstraint]?
+    let preferences: TrainingPreferences?
+
+    // Legacy aliases retained for compatibility with older backend handling.
+    let experienceLevel: String?
+    let trainingDaysPerWeek: Int?
+
+    init(user: User, trainingProfile: TrainingProfile? = nil) {
+        firstName = user.firstName
+        lastName = user.lastName
+
+        experience = trainingProfile?.experience?.rawValue
+        preferredSplit = trainingProfile?.preferredSplit?.rawValue
+        trainingDays = trainingProfile?.trainingDays
+        sessionDuration = trainingProfile?.sessionDuration
+        equipment = trainingProfile.map { profile in
+            Array(profile.equipment).map(\.rawValue).sorted()
+        }
+        trainingLocation = trainingProfile?.trainingLocation?.rawValue
+        goals = trainingProfile.map { profile in
+            Array(profile.goals).map(\.rawValue).sorted()
+        }
+        primaryGoal = trainingProfile?.primaryGoal?.rawValue
+        constraints = trainingProfile?.constraints
+        preferences = trainingProfile?.preferences
+
+        experienceLevel = trainingProfile?.experience?.rawValue
+        trainingDaysPerWeek = trainingProfile?.trainingDays
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case firstName
+        case lastName
+        case experience
+        case preferredSplit
+        case trainingDays
+        case sessionDuration
+        case equipment
+        case trainingLocation
+        case goals
+        case primaryGoal
+        case constraints
+        case preferences
+        case experienceLevel
+        case trainingDaysPerWeek
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        // Always include name keys so clearing a name syncs as explicit null.
+        try container.encode(firstName, forKey: .firstName)
+        try container.encode(lastName, forKey: .lastName)
+        try container.encodeIfPresent(experience, forKey: .experience)
+        try container.encodeIfPresent(preferredSplit, forKey: .preferredSplit)
+        try container.encodeIfPresent(trainingDays, forKey: .trainingDays)
+        try container.encodeIfPresent(sessionDuration, forKey: .sessionDuration)
+        try container.encodeIfPresent(equipment, forKey: .equipment)
+        try container.encodeIfPresent(trainingLocation, forKey: .trainingLocation)
+        try container.encodeIfPresent(goals, forKey: .goals)
+        try container.encodeIfPresent(primaryGoal, forKey: .primaryGoal)
+        try container.encodeIfPresent(constraints, forKey: .constraints)
+        try container.encodeIfPresent(preferences, forKey: .preferences)
+        try container.encodeIfPresent(experienceLevel, forKey: .experienceLevel)
+        try container.encodeIfPresent(trainingDaysPerWeek, forKey: .trainingDaysPerWeek)
     }
 }
 
