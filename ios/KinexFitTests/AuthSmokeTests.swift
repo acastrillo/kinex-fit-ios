@@ -345,6 +345,8 @@ final class AuthSmokeTests: XCTestCase {
                       "scheduledTime": "07:30",
                       "status": "completed",
                       "completedDate": "2026-03-05",
+                      "completedAt": "2026-03-05T08:05:00Z",
+                      "durationSeconds": 2100,
                       "createdAt": "2026-03-01T10:00:00Z",
                       "updatedAt": "2026-03-01T10:15:00Z"
                     }
@@ -368,7 +370,106 @@ final class AuthSmokeTests: XCTestCase {
         XCTAssertEqual(workout?.scheduledTime, "07:30")
         XCTAssertEqual(workout?.status, .completed)
         XCTAssertEqual(workout?.completedDate, "2026-03-05")
+        XCTAssertEqual(workout?.completedAt, "2026-03-05T08:05:00Z")
+        XCTAssertEqual(workout?.durationSeconds, 2100)
         XCTAssertEqual(workout?.isCompleted, true)
+    }
+
+    func testCompleteWorkoutPersistsCompletionMetadataFromResponse() async throws {
+        let database = try AppDatabase.inMemory()
+        let tokenStore = InMemoryTokenStore()
+        try tokenStore.setAccessToken("access-complete-workout")
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+
+        let apiClient = APIClient(
+            baseURL: URL(string: "https://kinexfit.com")!,
+            tokenStore: tokenStore,
+            session: session
+        )
+        let syncEngine = SyncEngine(database: database, apiClient: apiClient)
+        let repository = WorkoutRepository(
+            database: database,
+            apiClient: apiClient,
+            syncEngine: syncEngine
+        )
+
+        let now = Date(timeIntervalSince1970: 1_709_100_000)
+        try await database.dbQueue.write { db in
+            try Workout(
+                id: "workout-complete-1",
+                title: "Completion Workout",
+                source: .manual,
+                createdAt: now,
+                updatedAt: now
+            ).insert(db)
+        }
+
+        MockURLProtocol.requestHandler = { request in
+            guard let url = request.url else {
+                throw TestFailure("Missing request URL")
+            }
+
+            switch url.path {
+            case "/api/workouts/workout-complete-1/complete":
+                XCTAssertEqual(request.httpMethod, "POST")
+                XCTAssertEqual(
+                    request.value(forHTTPHeaderField: "Authorization"),
+                    "Bearer access-complete-workout"
+                )
+
+                let bodyData = try XCTUnwrap(request.httpBody)
+                let body = try XCTUnwrap(
+                    try JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
+                )
+                XCTAssertEqual(body["completedDate"] as? String, "2026-03-09")
+                XCTAssertEqual(body["completedAt"] as? String, "2026-03-09T18:30:00Z")
+                XCTAssertEqual(body["durationSeconds"] as? Int, 1980)
+
+                let response = HTTPURLResponse(
+                    url: url,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+
+                let payload = """
+                {
+                  "success": true,
+                  "workoutId": "workout-complete-1",
+                  "status": "completed",
+                  "completedDate": "2026-03-09",
+                  "completedAt": "2026-03-09T18:30:00Z",
+                  "durationSeconds": 1980
+                }
+                """
+                return (response, Data(payload.utf8))
+
+            default:
+                throw TestFailure("Unexpected path: \(url.path)")
+            }
+        }
+
+        let updated = try await repository.completeWorkout(
+            id: "workout-complete-1",
+            completedDate: "2026-03-09",
+            completedAt: "2026-03-09T18:30:00Z",
+            durationSeconds: 1980
+        )
+
+        XCTAssertEqual(updated?.status, .completed)
+        XCTAssertEqual(updated?.completedDate, "2026-03-09")
+        XCTAssertEqual(updated?.completedAt, "2026-03-09T18:30:00Z")
+        XCTAssertEqual(updated?.durationSeconds, 1980)
+        XCTAssertEqual(updated?.isCompleted, true)
+
+        let persisted = try await repository.fetch(id: "workout-complete-1")
+        XCTAssertEqual(persisted?.status, .completed)
+        XCTAssertEqual(persisted?.completedDate, "2026-03-09")
+        XCTAssertEqual(persisted?.completedAt, "2026-03-09T18:30:00Z")
+        XCTAssertEqual(persisted?.durationSeconds, 1980)
     }
 
     func testImportFromServerFallsBackToWebEndpointOnMobileServerError() async throws {
@@ -675,7 +776,9 @@ final class AuthSmokeTests: XCTestCase {
             scheduledDate: "2026-03-07",
             scheduledTime: "08:00",
             status: .scheduled,
-            completedDate: nil,
+            completedDate: "2026-03-07",
+            completedAt: "2026-03-07T08:47:00Z",
+            durationSeconds: 2820,
             createdAt: Date(timeIntervalSince1970: 1_709_000_000),
             updatedAt: Date(timeIntervalSince1970: 1_709_003_600)
         )
@@ -706,6 +809,9 @@ final class AuthSmokeTests: XCTestCase {
         XCTAssertEqual(encodedWorkout["scheduledDate"] as? String, "2026-03-07")
         XCTAssertEqual(encodedWorkout["scheduledTime"] as? String, "08:00")
         XCTAssertEqual(encodedWorkout["status"] as? String, "scheduled")
+        XCTAssertEqual(encodedWorkout["completedDate"] as? String, "2026-03-07")
+        XCTAssertEqual(encodedWorkout["completedAt"] as? String, "2026-03-07T08:47:00Z")
+        XCTAssertEqual(encodedWorkout["durationSeconds"] as? Int, 2820)
         XCTAssertNotNil(encodedWorkout["createdAt"] as? String)
         XCTAssertNotNil(encodedWorkout["updatedAt"] as? String)
     }

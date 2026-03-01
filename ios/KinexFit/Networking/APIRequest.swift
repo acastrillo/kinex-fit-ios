@@ -135,8 +135,104 @@ struct WorkoutScheduleActionResponse: Decodable {
     let success: Bool?
     let workoutId: String?
     let scheduledDate: String?
+    let scheduledTime: String?
     let status: WorkoutScheduleStatus?
     let completedDate: String?
     let completedAt: String?
     let durationSeconds: Int?
+    let isCompleted: Bool?
+
+    private enum CodingKeys: String, CodingKey {
+        case success
+        case workoutId
+        case workout_id
+        case scheduledDate
+        case scheduled_date
+        case scheduledTime
+        case scheduled_time
+        case status
+        case completedDate
+        case completed_date
+        case completedAt
+        case completed_at
+        case durationSeconds
+        case duration_seconds
+        case isCompleted
+        case is_completed
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        success = Self.decodeFirstBool(in: container, keys: [.success])
+        workoutId = Self.decodeFirstString(in: container, keys: [.workoutId, .workout_id])
+        scheduledDate = Self.decodeFirstString(in: container, keys: [.scheduledDate, .scheduled_date])
+        scheduledTime = Self.decodeFirstString(in: container, keys: [.scheduledTime, .scheduled_time])
+        if let rawStatus = Self.decodeFirstString(in: container, keys: [.status])?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() {
+            status = WorkoutScheduleStatus(rawValue: rawStatus)
+        } else {
+            status = nil
+        }
+        completedDate = Self.decodeFirstString(in: container, keys: [.completedDate, .completed_date])
+        completedAt = Self.decodeFirstString(in: container, keys: [.completedAt, .completed_at])
+        durationSeconds = Self.decodeFirstInt(in: container, keys: [.durationSeconds, .duration_seconds])
+        isCompleted = Self.decodeFirstBool(in: container, keys: [.isCompleted, .is_completed])
+    }
+
+    private static func decodeFirstString(
+        in container: KeyedDecodingContainer<CodingKeys>,
+        keys: [CodingKeys]
+    ) -> String? {
+        for key in keys {
+            if let value: String = try? container.decodeIfPresent(String.self, forKey: key) {
+                return value
+            }
+            if let value: Int = try? container.decodeIfPresent(Int.self, forKey: key) {
+                return String(value)
+            }
+        }
+        return nil
+    }
+
+    private static func decodeFirstInt(
+        in container: KeyedDecodingContainer<CodingKeys>,
+        keys: [CodingKeys]
+    ) -> Int? {
+        for key in keys {
+            if let value: Int = try? container.decodeIfPresent(Int.self, forKey: key) {
+                return value
+            }
+            if let value: String = try? container.decodeIfPresent(String.self, forKey: key),
+               let parsed = Int(value.trimmingCharacters(in: .whitespacesAndNewlines)) {
+                return parsed
+            }
+        }
+        return nil
+    }
+
+    private static func decodeFirstBool(
+        in container: KeyedDecodingContainer<CodingKeys>,
+        keys: [CodingKeys]
+    ) -> Bool? {
+        for key in keys {
+            if let value: Bool = try? container.decodeIfPresent(Bool.self, forKey: key) {
+                return value
+            }
+            if let value: Int = try? container.decodeIfPresent(Int.self, forKey: key) {
+                return value != 0
+            }
+            if let value: String = try? container.decodeIfPresent(String.self, forKey: key) {
+                switch value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+                case "1", "true", "yes", "y":
+                    return true
+                case "0", "false", "no", "n":
+                    return false
+                default:
+                    continue
+                }
+            }
+        }
+        return nil
+    }
 }

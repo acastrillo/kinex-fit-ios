@@ -184,16 +184,31 @@ final class WorkoutRepository {
             scheduledDate: scheduledDate,
             status: status
         )
-        let _: WorkoutScheduleActionResponse = try await apiClient.send(request)
+        let response: WorkoutScheduleActionResponse = try await apiClient.send(request)
 
         return try await database.dbQueue.write { db in
             guard var workout = try Workout.fetchOne(db, key: workoutId) else {
                 return nil
             }
-            workout.scheduledDate = scheduledDate
-            workout.status = status
-            if status != .completed {
+            workout.scheduledDate = Self.normalizedScheduleDate(response.scheduledDate) ?? scheduledDate
+            workout.scheduledTime = Self.normalizedScheduledTime(response.scheduledTime)
+                ?? workout.scheduledTime
+
+            let resolvedStatus = response.status
+                ?? (response.isCompleted == true ? .completed : status)
+            workout.status = resolvedStatus
+
+            if resolvedStatus == .completed {
+                workout.completedDate = Self.normalizedScheduleDate(response.completedDate)
+                    ?? workout.completedDate
+                workout.completedAt = Self.normalizedCompletionTimestamp(response.completedAt)
+                    ?? workout.completedAt
+                workout.durationSeconds = response.durationSeconds
+                    ?? workout.durationSeconds
+            } else {
                 workout.completedDate = nil
+                workout.completedAt = nil
+                workout.durationSeconds = nil
             }
             workout.updatedAt = Date()
             try workout.update(db)
@@ -215,6 +230,8 @@ final class WorkoutRepository {
             workout.scheduledTime = nil
             workout.status = nil
             workout.completedDate = nil
+            workout.completedAt = nil
+            workout.durationSeconds = nil
             workout.updatedAt = Date()
             try workout.update(db)
             return workout
@@ -241,8 +258,16 @@ final class WorkoutRepository {
             guard var workout = try Workout.fetchOne(db, key: workoutId) else {
                 return nil
             }
-            workout.status = .completed
-            workout.completedDate = response.completedDate ?? completedDate ?? workout.completedDate
+            workout.status = response.status ?? .completed
+            workout.completedDate = Self.normalizedScheduleDate(response.completedDate)
+                ?? Self.normalizedScheduleDate(completedDate)
+                ?? workout.completedDate
+            workout.completedAt = Self.normalizedCompletionTimestamp(response.completedAt)
+                ?? Self.normalizedCompletionTimestamp(completedAt)
+                ?? workout.completedAt
+            workout.durationSeconds = response.durationSeconds
+                ?? durationSeconds
+                ?? workout.durationSeconds
             workout.updatedAt = Date()
             try workout.update(db)
             return workout
@@ -417,6 +442,7 @@ final class WorkoutRepository {
         let status: String?
         let completedDate: String?
         let completedAt: String?
+        let durationSeconds: Int?
         let isCompleted: Bool?
         let createdAt: String?
         let updatedAt: String?
@@ -461,6 +487,8 @@ final class WorkoutRepository {
             case completed_date
             case completedAt
             case completed_at
+            case durationSeconds
+            case duration_seconds
             case isCompleted
             case is_completed
             case createdAt
@@ -509,6 +537,10 @@ final class WorkoutRepository {
             completedAt = Self.decodeFirstString(
                 in: container,
                 keys: [.completedAt, .completed_at]
+            )
+            durationSeconds = Self.decodeFirstInt(
+                in: container,
+                keys: [.durationSeconds, .duration_seconds]
             )
             isCompleted = Self.decodeFirstBool(
                 in: container,
@@ -657,7 +689,8 @@ final class WorkoutRepository {
         let content = (normalizedContent?.isEmpty == false ? normalizedContent : normalizedDescription)
         let scheduledDate = normalizedScheduleDate(remote.scheduledDate)
         let scheduledTime = normalizedScheduledTime(remote.scheduledTime)
-        let completedDate = normalizedScheduleDate(remote.completedDate) ?? normalizedScheduleDate(remote.completedAt)
+        let completedAt = normalizedCompletionTimestamp(remote.completedAt)
+        let completedDate = normalizedScheduleDate(remote.completedDate) ?? normalizedScheduleDate(completedAt)
         let status = mapRemoteStatus(
             rawStatus: remote.status,
             isCompleted: remote.isCompleted,
@@ -681,6 +714,8 @@ final class WorkoutRepository {
             scheduledTime: scheduledTime,
             status: status,
             completedDate: completedDate,
+            completedAt: completedAt,
+            durationSeconds: remote.durationSeconds,
             createdAt: createdAt,
             updatedAt: updatedAt
         )
@@ -751,6 +786,14 @@ final class WorkoutRepository {
             return nil
         }
         return rawTime
+    }
+
+    private static func normalizedCompletionTimestamp(_ rawTimestamp: String?) -> String? {
+        guard let rawTimestamp = rawTimestamp?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !rawTimestamp.isEmpty else {
+            return nil
+        }
+        return rawTimestamp
     }
 
     private static func mapRemoteStatus(

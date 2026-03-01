@@ -32,6 +32,8 @@ struct DatabaseMigratorFactory {
                 table.column("scheduledTime", .text)
                 table.column("status", .text)
                 table.column("completedDate", .text)
+                table.column("completedAt", .text)
+                table.column("durationSeconds", .integer)
                 table.column("createdAt", .datetime).notNull()
                 table.column("updatedAt", .datetime).notNull()
             }
@@ -130,6 +132,25 @@ struct DatabaseMigratorFactory {
                 }
                 if missingColumns.contains("completedDate") {
                     table.add(column: "completedDate", .text)
+                }
+            }
+        }
+
+        migrator.registerMigration("add-workout-completion-metadata-fields") { db in
+            let existingColumns = Set(try db.columns(in: "workouts").map(\.name))
+            let missingColumns = [
+                "completedAt",
+                "durationSeconds"
+            ].filter { !existingColumns.contains($0) }
+
+            guard !missingColumns.isEmpty else { return }
+
+            try db.alter(table: "workouts") { table in
+                if missingColumns.contains("completedAt") {
+                    table.add(column: "completedAt", .text)
+                }
+                if missingColumns.contains("durationSeconds") {
+                    table.add(column: "durationSeconds", .integer)
                 }
             }
         }
