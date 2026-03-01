@@ -34,6 +34,146 @@ struct ExerciseMetric {
     var notes: String = ""
 }
 
+private enum WorkoutPRCategory: String {
+    case weightReps = "WEIGHT_REPS"
+    case longestRunDistance = "LONGEST_RUN_DISTANCE"
+    case fastestRun = "FASTEST_RUN"
+}
+
+private struct WorkoutPRHighlight: Identifiable {
+    let exerciseName: String
+    let category: WorkoutPRCategory
+    let message: String
+    let value: String
+
+    var id: String {
+        "\(exerciseName)-\(category.rawValue)-\(message)-\(value)"
+    }
+
+    var payload: [String: String] {
+        [
+            "exerciseName": exerciseName,
+            "category": category.rawValue,
+            "message": message,
+            "value": value,
+        ]
+    }
+}
+
+private struct SessionMetricSnapshot {
+    let exerciseName: String
+    let completed: Bool
+    let isRun: Bool
+    let reps: Int?
+    let weight: Double?
+    let weightUnit: String?
+    let distance: Double?
+    let distanceUnit: String?
+    let timeSeconds: Int?
+}
+
+private struct WorkoutCompletionHistoryResponse: Decodable {
+    let completions: [WorkoutCompletionHistoryItem]?
+}
+
+private struct WorkoutCompletionHistoryItem: Decodable {
+    let exerciseMetrics: [HistoricalExerciseMetric]?
+}
+
+private struct HistoricalExerciseMetric: Decodable {
+    let exerciseName: String
+    let completed: Bool
+    let isRun: Bool
+    let reps: Int?
+    let weight: Double?
+    let weightUnit: String?
+    let distance: Double?
+    let distanceUnit: String?
+    let timeSeconds: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case exerciseName
+        case completed
+        case isRun
+        case reps
+        case weight
+        case weightUnit
+        case distance
+        case distanceUnit
+        case timeSeconds
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        exerciseName = (try? container.decode(String.self, forKey: .exerciseName)) ?? ""
+        completed = Self.decodeBool(from: container, forKey: .completed) ?? false
+        isRun = Self.decodeBool(from: container, forKey: .isRun) ?? false
+        reps = Self.decodeInt(from: container, forKey: .reps)
+        weight = Self.decodeDouble(from: container, forKey: .weight)
+        weightUnit = try? container.decodeIfPresent(String.self, forKey: .weightUnit)
+        distance = Self.decodeDouble(from: container, forKey: .distance)
+        distanceUnit = try? container.decodeIfPresent(String.self, forKey: .distanceUnit)
+        timeSeconds = Self.decodeInt(from: container, forKey: .timeSeconds)
+    }
+
+    private static func decodeBool(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> Bool? {
+        if let value = try? container.decodeIfPresent(Bool.self, forKey: key) {
+            return value
+        }
+        if let value = try? container.decodeIfPresent(Int.self, forKey: key) {
+            return value != 0
+        }
+        if let value = try? container.decodeIfPresent(String.self, forKey: key) {
+            switch value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            case "1", "true", "yes", "y":
+                return true
+            case "0", "false", "no", "n":
+                return false
+            default:
+                return nil
+            }
+        }
+        return nil
+    }
+
+    private static func decodeInt(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> Int? {
+        if let value = try? container.decodeIfPresent(Int.self, forKey: key) {
+            return value
+        }
+        if let value = try? container.decodeIfPresent(Double.self, forKey: key) {
+            return Int(value.rounded())
+        }
+        if let value = try? container.decodeIfPresent(String.self, forKey: key),
+           let parsed = Int(value.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            return parsed
+        }
+        return nil
+    }
+
+    private static func decodeDouble(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> Double? {
+        if let value = try? container.decodeIfPresent(Double.self, forKey: key) {
+            return value
+        }
+        if let value = try? container.decodeIfPresent(Int.self, forKey: key) {
+            return Double(value)
+        }
+        if let value = try? container.decodeIfPresent(String.self, forKey: key),
+           let parsed = Double(value.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            return parsed
+        }
+        return nil
+    }
+}
+
 // MARK: - WorkoutSessionView
 
 struct WorkoutSessionView: View {
@@ -54,6 +194,7 @@ struct WorkoutSessionView: View {
     @State private var showMetricSheet = false
     @State private var saveError: String?
     @State private var showSaveError = false
+    @State private var detectedPRs: [WorkoutPRHighlight] = []
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -678,10 +819,45 @@ struct WorkoutSessionView: View {
                 .font(.system(size: 16))
                 .foregroundStyle(AppTheme.secondaryText)
 
-            Text("Great effort. Keep stacking sessions.")
-                .font(.system(size: 14))
-                .foregroundStyle(AppTheme.tertiaryText)
+            if detectedPRs.isEmpty {
+                Text("Great effort. Keep stacking sessions.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppTheme.tertiaryText)
+                    .padding(.top, 4)
+            } else {
+                VStack(spacing: 10) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "trophy.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("\(detectedPRs.count) new PR\(detectedPRs.count == 1 ? "" : "s")!")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundStyle(Color(red: 0.98, green: 0.84, blue: 0.40))
+
+                    VStack(spacing: 8) {
+                        ForEach(detectedPRs) { pr in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(pr.message)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Color(red: 1.0, green: 0.90, blue: 0.72))
+                                Text(pr.value)
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Color(red: 1.0, green: 0.93, blue: 0.82))
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(Color.orange.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Color.orange.opacity(0.35), lineWidth: 1)
+                            }
+                        }
+                    }
+                }
                 .padding(.top, 4)
+            }
         }
     }
 
@@ -727,9 +903,23 @@ struct WorkoutSessionView: View {
         let durationSeconds = sessionDuration
         let durationMinutes = sessionDuration / 60
         let notes = workoutNotes.trimmingCharacters(in: .whitespacesAndNewlines)
+        var currentMetrics: [SessionMetricSnapshot] = []
 
         let metricsPayload: [[String: Any]] = workoutCards.compactMap { card in
             guard let metric = exerciseMetrics[card.id] else { return nil }
+            currentMetrics.append(
+                SessionMetricSnapshot(
+                    exerciseName: card.exerciseName,
+                    completed: metric.completed,
+                    isRun: metric.isRun,
+                    reps: metric.reps,
+                    weight: metric.weight,
+                    weightUnit: metric.weightUnit,
+                    distance: metric.distance,
+                    distanceUnit: metric.distanceUnit,
+                    timeSeconds: metric.timeSeconds
+                )
+            )
             var dict: [String: Any] = [
                 "cardId": card.id,
                 "exerciseId": card.exerciseId,
@@ -750,6 +940,12 @@ struct WorkoutSessionView: View {
             if !metric.notes.isEmpty { dict["notes"] = metric.notes }
             return dict
         }
+        let historicalMetrics = await fetchHistoricalExerciseMetrics(limit: 200)
+        let prHighlights = detectSessionPRs(
+            currentMetrics: currentMetrics,
+            historicalMetrics: historicalMetrics
+        )
+        detectedPRs = prHighlights
 
         // Build completion payload
         var completionBody: [String: Any] = [
@@ -759,6 +955,7 @@ struct WorkoutSessionView: View {
             "durationSeconds": durationSeconds,
             "durationMinutes": durationMinutes,
             "exerciseMetrics": metricsPayload,
+            "prHighlights": prHighlights.map(\.payload),
         ]
         if !notes.isEmpty { completionBody["notes"] = notes }
 
@@ -803,6 +1000,182 @@ struct WorkoutSessionView: View {
 
     // MARK: - Helpers
 
+    private func fetchHistoricalExerciseMetrics(limit: Int) async -> [HistoricalExerciseMetric] {
+        do {
+            let request = APIRequest(
+                path: "/api/workouts/completions",
+                method: .get,
+                queryItems: [URLQueryItem(name: "limit", value: "\(limit)")]
+            )
+            let response: WorkoutCompletionHistoryResponse = try await appState.environment.apiClient.send(request)
+            return (response.completions ?? []).flatMap { $0.exerciseMetrics ?? [] }
+        } catch {
+            logger.warning("Unable to load completion history for PR detection: \(error.localizedDescription)")
+            return []
+        }
+    }
+
+    private func detectSessionPRs(
+        currentMetrics: [SessionMetricSnapshot],
+        historicalMetrics: [HistoricalExerciseMetric]
+    ) -> [WorkoutPRHighlight] {
+        var highlights: [WorkoutPRHighlight] = []
+
+        for metric in currentMetrics where metric.completed {
+            let exerciseKey = normalizeExerciseName(metric.exerciseName)
+            let exerciseHistory = historicalMetrics.filter {
+                normalizeExerciseName($0.exerciseName) == exerciseKey
+            }
+
+            if !metric.isRun {
+                guard let weight = metric.weight, weight > 0,
+                      let reps = metric.reps, reps > 0 else {
+                    continue
+                }
+
+                let unit = normalizeWeightUnit(metric.weightUnit)
+                let candidateOneRM = calculateOneRepMax(
+                    weight: normalizeWeight(weight, unit: unit),
+                    reps: reps
+                )
+                let previousBest = exerciseHistory.reduce(0.0) { best, item in
+                    guard let itemWeight = item.weight, itemWeight > 0,
+                          let itemReps = item.reps, itemReps > 0 else {
+                        return best
+                    }
+                    let itemUnit = normalizeWeightUnit(item.weightUnit)
+                    let itemOneRM = calculateOneRepMax(
+                        weight: normalizeWeight(itemWeight, unit: itemUnit),
+                        reps: itemReps
+                    )
+                    return max(best, itemOneRM)
+                }
+
+                if candidateOneRM > previousBest + 0.5 {
+                    highlights.append(
+                        WorkoutPRHighlight(
+                            exerciseName: metric.exerciseName,
+                            category: .weightReps,
+                            message: "New strength PR on \(metric.exerciseName)!",
+                            value: "\(Int(weight.rounded())) \(unit) x \(reps) (~\(Int(candidateOneRM.rounded())) 1RM)"
+                        )
+                    )
+                }
+                continue
+            }
+
+            guard let distance = metric.distance, distance > 0 else {
+                continue
+            }
+
+            let distanceUnit = normalizeDistanceUnit(metric.distanceUnit)
+            let candidateMeters = toMeters(distance, unit: distanceUnit)
+            let bestMeters = exerciseHistory.reduce(0.0) { best, item in
+                guard item.isRun, let itemDistance = item.distance, itemDistance > 0 else {
+                    return best
+                }
+                return max(best, toMeters(itemDistance, unit: normalizeDistanceUnit(item.distanceUnit)))
+            }
+
+            if candidateMeters > bestMeters + 0.5 {
+                highlights.append(
+                    WorkoutPRHighlight(
+                        exerciseName: metric.exerciseName,
+                        category: .longestRunDistance,
+                        message: "Longest distance PR for \(metric.exerciseName)!",
+                        value: formatDistanceValue(distance, unit: distanceUnit)
+                    )
+                )
+            }
+
+            if let timeSeconds = metric.timeSeconds, timeSeconds > 0 {
+                let similarDistanceHistory = exerciseHistory.filter { item in
+                    guard item.isRun,
+                          let itemDistance = item.distance,
+                          itemDistance > 0,
+                          let itemTime = item.timeSeconds,
+                          itemTime > 0 else {
+                        return false
+                    }
+                    let itemMeters = toMeters(itemDistance, unit: normalizeDistanceUnit(item.distanceUnit))
+                    return abs(itemMeters - candidateMeters) <= 1
+                }
+
+                let bestTime = similarDistanceHistory.reduce(Int.max) { best, item in
+                    min(best, item.timeSeconds ?? Int.max)
+                }
+
+                if bestTime == Int.max || timeSeconds < bestTime {
+                    highlights.append(
+                        WorkoutPRHighlight(
+                            exerciseName: metric.exerciseName,
+                            category: .fastestRun,
+                            message: "Fastest time PR for \(metric.exerciseName)!",
+                            value: "\(formatDuration(timeSeconds)) for \(formatDistanceValue(distance, unit: distanceUnit))"
+                        )
+                    )
+                }
+            }
+        }
+
+        return highlights
+    }
+
+    private func calculateOneRepMax(weight: Double, reps: Int) -> Double {
+        guard reps > 1 else { return weight }
+        let brzycki = reps > 12 ? weight : weight / (1.0278 - (0.0278 * Double(reps)))
+        let epley = weight * (1 + (Double(reps) / 30))
+        return ((brzycki + epley) / 2).rounded()
+    }
+
+    private func normalizeWeight(_ weight: Double, unit: String) -> Double {
+        if unit == "kg" {
+            return weight * 2.20462
+        }
+        return weight
+    }
+
+    private func normalizeWeightUnit(_ unit: String?) -> String {
+        let normalized = unit?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? "lbs"
+        if normalized == "kg" || normalized == "kgs" || normalized.hasPrefix("kilo") {
+            return "kg"
+        }
+        return "lbs"
+    }
+
+    private func normalizeDistanceUnit(_ unit: String?) -> String {
+        let normalized = unit?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? "m"
+        if normalized == "km" {
+            return "km"
+        }
+        if normalized == "mi" || normalized.hasPrefix("mile") {
+            return "mi"
+        }
+        return "m"
+    }
+
+    private func toMeters(_ distance: Double, unit: String) -> Double {
+        switch unit {
+        case "km":
+            return distance * 1000
+        case "mi":
+            return distance * 1609.34
+        default:
+            return distance
+        }
+    }
+
+    private func formatDistanceValue(_ distance: Double, unit: String) -> String {
+        let isWholeNumber = abs(distance.rounded() - distance) < 0.0001
+        let decimals: Int
+        if unit == "m" {
+            decimals = isWholeNumber ? 0 : 1
+        } else {
+            decimals = isWholeNumber ? 0 : 2
+        }
+        return "\(String(format: "%.\(decimals)f", distance)) \(unit)"
+    }
+
     private func formatDuration(_ seconds: Int) -> String {
         let h = seconds / 3600
         let m = (seconds % 3600) / 60
@@ -813,8 +1186,14 @@ struct WorkoutSessionView: View {
         return String(format: "%02d:%02d", m, s)
     }
 
+    private func normalizeExerciseName(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+    }
+
     private func isRunExercise(_ name: String) -> Bool {
-        let pattern = #"\b(run|running|jog|jogging|sprint|mile|miles|km|kilometer|5k|10k)\b"#
+        let pattern = #"\b(run|running|jog|jogging|sprint|mile|miles|km|kilometer|kilometre|5k|10k)\b"#
         return name.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
     }
 }
