@@ -16,8 +16,20 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
     var imageURL: String?
     var sourceURL: String?
     var sourceAuthor: String?
+    /// ISO date (YYYY-MM-DD) used by web scheduling schema.
+    var scheduledDate: String?
+    /// Optional local-facing schedule time string (legacy/future-safe compatibility).
+    var scheduledTime: String?
+    /// Web scheduling status (`scheduled`, `completed`, `skipped`).
+    var status: WorkoutScheduleStatus?
+    /// ISO date (YYYY-MM-DD) when workout was completed.
+    var completedDate: String?
     var createdAt: Date
     var updatedAt: Date
+
+    var isCompleted: Bool {
+        status == .completed || completedDate != nil
+    }
 
     init(
         id: String = UUID().uuidString,
@@ -31,6 +43,10 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
         imageURL: String? = nil,
         sourceURL: String? = nil,
         sourceAuthor: String? = nil,
+        scheduledDate: String? = nil,
+        scheduledTime: String? = nil,
+        status: WorkoutScheduleStatus? = nil,
+        completedDate: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -45,9 +61,19 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
         self.imageURL = imageURL
         self.sourceURL = sourceURL
         self.sourceAuthor = sourceAuthor
+        self.scheduledDate = scheduledDate
+        self.scheduledTime = scheduledTime
+        self.status = status
+        self.completedDate = completedDate
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
+}
+
+enum WorkoutScheduleStatus: String, Codable, CaseIterable {
+    case scheduled
+    case completed
+    case skipped
 }
 
 // MARK: - Workout Source
@@ -86,7 +112,7 @@ extension Workout: FetchableRecord, PersistableRecord {
     static let databaseTableName = "workouts"
 
     enum Columns: String, ColumnExpression {
-        case id, title, content, enhancementSourceText, source, durationMinutes, exerciseCount, difficulty, imageURL, sourceURL, sourceAuthor, createdAt, updatedAt
+        case id, title, content, enhancementSourceText, source, durationMinutes, exerciseCount, difficulty, imageURL, sourceURL, sourceAuthor, scheduledDate, scheduledTime, status, completedDate, createdAt, updatedAt
     }
 
     init(row: Row) {
@@ -101,6 +127,11 @@ extension Workout: FetchableRecord, PersistableRecord {
         imageURL = row[Columns.imageURL]
         sourceURL = row[Columns.sourceURL]
         sourceAuthor = row[Columns.sourceAuthor]
+        scheduledDate = row[Columns.scheduledDate]
+        scheduledTime = row[Columns.scheduledTime]
+        let rawStatus: String? = row[Columns.status]
+        status = rawStatus.flatMap(WorkoutScheduleStatus.init(rawValue:))
+        completedDate = row[Columns.completedDate]
         createdAt = row[Columns.createdAt]
         updatedAt = row[Columns.updatedAt]
     }
@@ -117,6 +148,10 @@ extension Workout: FetchableRecord, PersistableRecord {
         container[Columns.imageURL] = imageURL
         container[Columns.sourceURL] = sourceURL
         container[Columns.sourceAuthor] = sourceAuthor
+        container[Columns.scheduledDate] = scheduledDate
+        container[Columns.scheduledTime] = scheduledTime
+        container[Columns.status] = status?.rawValue
+        container[Columns.completedDate] = completedDate
         container[Columns.createdAt] = createdAt
         container[Columns.updatedAt] = updatedAt
     }

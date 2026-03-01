@@ -19,17 +19,28 @@ struct SyncPayloadV1: Codable {
 /// Keep this schema backward compatible with server expectations.
 struct SyncWorkout: Codable {
     let id: String
+    /// Kept for backend compatibility where `workoutId` is expected.
+    let workoutId: String
     let title: String
     let content: String?
     let source: WorkoutSource
+    let scheduledDate: String?
+    let scheduledTime: String?
+    let status: WorkoutScheduleStatus?
+    let completedDate: String?
     let createdAt: Date
     let updatedAt: Date
 
     init(workout: Workout) {
         id = workout.id
+        workoutId = workout.id
         title = workout.title
         content = workout.content
         source = workout.source
+        scheduledDate = workout.scheduledDate
+        scheduledTime = workout.scheduledTime
+        status = workout.status
+        completedDate = workout.completedDate
         createdAt = workout.createdAt
         updatedAt = workout.updatedAt
     }

@@ -28,6 +28,10 @@ struct DatabaseMigratorFactory {
                 table.column("exerciseCount", .integer)
                 table.column("difficulty", .text)
                 table.column("imageURL", .text)
+                table.column("scheduledDate", .text)
+                table.column("scheduledTime", .text)
+                table.column("status", .text)
+                table.column("completedDate", .text)
                 table.column("createdAt", .datetime).notNull()
                 table.column("updatedAt", .datetime).notNull()
             }
@@ -100,6 +104,33 @@ struct DatabaseMigratorFactory {
         migrator.registerMigration("add-workout-enhancement-source-text") { db in
             try db.alter(table: "workouts") { table in
                 table.add(column: "enhancementSourceText", .text)
+            }
+        }
+
+        migrator.registerMigration("add-workout-scheduling-fields") { db in
+            let existingColumns = Set(try db.columns(in: "workouts").map(\.name))
+            let missingColumns = [
+                "scheduledDate",
+                "scheduledTime",
+                "status",
+                "completedDate"
+            ].filter { !existingColumns.contains($0) }
+
+            guard !missingColumns.isEmpty else { return }
+
+            try db.alter(table: "workouts") { table in
+                if missingColumns.contains("scheduledDate") {
+                    table.add(column: "scheduledDate", .text)
+                }
+                if missingColumns.contains("scheduledTime") {
+                    table.add(column: "scheduledTime", .text)
+                }
+                if missingColumns.contains("status") {
+                    table.add(column: "status", .text)
+                }
+                if missingColumns.contains("completedDate") {
+                    table.add(column: "completedDate", .text)
+                }
             }
         }
 

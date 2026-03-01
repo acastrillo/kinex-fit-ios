@@ -75,6 +75,26 @@ final class WorkoutRepository {
         }
     }
 
+    /// Fetch scheduled workouts from backend and upsert into local storage.
+    /// If `date` is provided, backend filters scheduled workouts by YYYY-MM-DD.
+    @discardableResult
+    func fetchScheduled(date: String? = nil) async throws -> [Workout] {
+        let request = APIRequest.getScheduledWorkouts(date: date)
+        let response: MobileWorkoutListResponse = try await apiClient.send(request)
+        let mappedWorkouts = response.workouts.compactMap(Self.mapRemoteWorkout)
+        guard !mappedWorkouts.isEmpty else { return [] }
+
+        try await database.dbQueue.write { db in
+            for workout in mappedWorkouts {
+                try workout.save(db)
+            }
+        }
+
+        return mappedWorkouts.sorted { lhs, rhs in
+            lhs.updatedAt > rhs.updatedAt
+        }
+    }
+
     // MARK: - Write Operations
 
     /// Create a new workout
@@ -149,6 +169,83 @@ final class WorkoutRepository {
                 try queueSync(workoutId: id, operation: .delete)
                 logger.info("Deleted workout: \(id)")
             }
+        }
+    }
+
+    /// Schedule a workout for a specific date via web scheduling endpoint.
+    @discardableResult
+    func scheduleWorkout(
+        id workoutId: String,
+        scheduledDate: String,
+        status: WorkoutScheduleStatus = .scheduled
+    ) async throws -> Workout? {
+        let request = try APIRequest.scheduleWorkout(
+            workoutId: workoutId,
+            scheduledDate: scheduledDate,
+            status: status
+        )
+        let _: WorkoutScheduleActionResponse = try await apiClient.send(request)
+
+        return try await database.dbQueue.write { db in
+            guard var workout = try Workout.fetchOne(db, key: workoutId) else {
+                return nil
+            }
+            workout.scheduledDate = scheduledDate
+            workout.status = status
+            if status != .completed {
+                workout.completedDate = nil
+            }
+            workout.updatedAt = Date()
+            try workout.update(db)
+            return workout
+        }
+    }
+
+    /// Unschedule a workout and clear local scheduling metadata.
+    @discardableResult
+    func unscheduleWorkout(id workoutId: String) async throws -> Workout? {
+        let request = APIRequest.unscheduleWorkout(workoutId: workoutId)
+        let _: WorkoutScheduleActionResponse = try await apiClient.send(request)
+
+        return try await database.dbQueue.write { db in
+            guard var workout = try Workout.fetchOne(db, key: workoutId) else {
+                return nil
+            }
+            workout.scheduledDate = nil
+            workout.scheduledTime = nil
+            workout.status = nil
+            workout.completedDate = nil
+            workout.updatedAt = Date()
+            try workout.update(db)
+            return workout
+        }
+    }
+
+    /// Mark a workout completed via backend completion endpoint and update local scheduling state.
+    @discardableResult
+    func completeWorkout(
+        id workoutId: String,
+        completedDate: String? = nil,
+        completedAt: String? = nil,
+        durationSeconds: Int? = nil
+    ) async throws -> Workout? {
+        let request = try APIRequest.completeWorkout(
+            workoutId: workoutId,
+            completedDate: completedDate,
+            completedAt: completedAt,
+            durationSeconds: durationSeconds
+        )
+        let response: WorkoutScheduleActionResponse = try await apiClient.send(request)
+
+        return try await database.dbQueue.write { db in
+            guard var workout = try Workout.fetchOne(db, key: workoutId) else {
+                return nil
+            }
+            workout.status = .completed
+            workout.completedDate = response.completedDate ?? completedDate ?? workout.completedDate
+            workout.updatedAt = Date()
+            try workout.update(db)
+            return workout
         }
     }
 
@@ -315,6 +412,12 @@ final class WorkoutRepository {
         let exerciseCount: Int?
         let difficulty: String?
         let imageURL: String?
+        let scheduledDate: String?
+        let scheduledTime: String?
+        let status: String?
+        let completedDate: String?
+        let completedAt: String?
+        let isCompleted: Bool?
         let createdAt: String?
         let updatedAt: String?
 
@@ -347,6 +450,19 @@ final class WorkoutRepository {
             case thumbnail_url
             case coverImage
             case cover_image
+            case scheduledDate
+            case scheduled_date
+            case scheduledFor
+            case scheduled_for
+            case scheduledTime
+            case scheduled_time
+            case status
+            case completedDate
+            case completed_date
+            case completedAt
+            case completed_at
+            case isCompleted
+            case is_completed
             case createdAt
             case created_at
             case updatedAt
@@ -376,6 +492,27 @@ final class WorkoutRepository {
             imageURL = Self.decodeFirstString(
                 in: container,
                 keys: [.imageURL, .imageUrl, .image_url, .image, .thumbnailUrl, .thumbnail_url, .thumbnail, .coverImage, .cover_image]
+            )
+            scheduledDate = Self.decodeFirstString(
+                in: container,
+                keys: [.scheduledDate, .scheduled_date, .scheduledFor, .scheduled_for]
+            )
+            scheduledTime = Self.decodeFirstString(
+                in: container,
+                keys: [.scheduledTime, .scheduled_time]
+            )
+            status = Self.decodeFirstString(in: container, keys: [.status])
+            completedDate = Self.decodeFirstString(
+                in: container,
+                keys: [.completedDate, .completed_date]
+            )
+            completedAt = Self.decodeFirstString(
+                in: container,
+                keys: [.completedAt, .completed_at]
+            )
+            isCompleted = Self.decodeFirstBool(
+                in: container,
+                keys: [.isCompleted, .is_completed]
             )
             createdAt = Self.decodeFirstString(in: container, keys: [.createdAt, .created_at])
             updatedAt = Self.decodeFirstString(in: container, keys: [.updatedAt, .updated_at])
@@ -448,6 +585,47 @@ final class WorkoutRepository {
 
             return nil
         }
+
+        private static func decodeFirstBool(
+            in container: KeyedDecodingContainer<CodingKeys>,
+            keys: [CodingKeys]
+        ) -> Bool? {
+            for key in keys {
+                if let value = decodeLossyBool(in: container, key: key) {
+                    return value
+                }
+            }
+            return nil
+        }
+
+        private static func decodeLossyBool(
+            in container: KeyedDecodingContainer<CodingKeys>,
+            key: CodingKeys
+        ) -> Bool? {
+            let boolValue: Bool? = try? container.decodeIfPresent(Bool.self, forKey: key)
+            if let boolValue {
+                return boolValue
+            }
+
+            let intValue: Int? = try? container.decodeIfPresent(Int.self, forKey: key)
+            if let intValue {
+                return intValue != 0
+            }
+
+            let stringValue: String? = try? container.decodeIfPresent(String.self, forKey: key)
+            guard let normalized = stringValue?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+                  !normalized.isEmpty else {
+                return nil
+            }
+            switch normalized {
+            case "1", "true", "yes", "y":
+                return true
+            case "0", "false", "no", "n":
+                return false
+            default:
+                return nil
+            }
+        }
     }
 
     private static let iso8601WithFractionalSeconds: ISO8601DateFormatter = {
@@ -477,6 +655,14 @@ final class WorkoutRepository {
         let normalizedDescription = remote.description?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let content = (normalizedContent?.isEmpty == false ? normalizedContent : normalizedDescription)
+        let scheduledDate = normalizedScheduleDate(remote.scheduledDate)
+        let scheduledTime = normalizedScheduledTime(remote.scheduledTime)
+        let completedDate = normalizedScheduleDate(remote.completedDate) ?? normalizedScheduleDate(remote.completedAt)
+        let status = mapRemoteStatus(
+            rawStatus: remote.status,
+            isCompleted: remote.isCompleted,
+            completedDate: completedDate
+        )
 
         let createdAt = parseISO8601(remote.createdAt) ?? Date()
         let updatedAt = parseISO8601(remote.updatedAt) ?? createdAt
@@ -491,6 +677,10 @@ final class WorkoutRepository {
             exerciseCount: remote.exerciseCount,
             difficulty: normalizedDifficulty(remote.difficulty),
             imageURL: normalizedImageURL(remote.imageURL),
+            scheduledDate: scheduledDate,
+            scheduledTime: scheduledTime,
+            status: status,
+            completedDate: completedDate,
             createdAt: createdAt,
             updatedAt: updatedAt
         )
@@ -534,6 +724,72 @@ final class WorkoutRepository {
         }
         return rawURL
     }
+
+    private static func normalizedScheduleDate(_ rawDate: String?) -> String? {
+        guard let rawDate = rawDate?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !rawDate.isEmpty else {
+            return nil
+        }
+
+        if rawDate.count >= 10 {
+            let candidate = String(rawDate.prefix(10))
+            if isISODateOnly(candidate) {
+                return candidate
+            }
+        }
+
+        if let parsedDate = parseISO8601(rawDate) {
+            return isoDateOnlyFormatter.string(from: parsedDate)
+        }
+
+        return nil
+    }
+
+    private static func normalizedScheduledTime(_ rawTime: String?) -> String? {
+        guard let rawTime = rawTime?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !rawTime.isEmpty else {
+            return nil
+        }
+        return rawTime
+    }
+
+    private static func mapRemoteStatus(
+        rawStatus: String?,
+        isCompleted: Bool?,
+        completedDate: String?
+    ) -> WorkoutScheduleStatus? {
+        if let normalized = rawStatus?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+           let status = WorkoutScheduleStatus(rawValue: normalized) {
+            return status
+        }
+
+        if isCompleted == true || completedDate != nil {
+            return .completed
+        }
+
+        return nil
+    }
+
+    private static func isISODateOnly(_ value: String) -> Bool {
+        guard value.count == 10 else { return false }
+        let scalars = Array(value.unicodeScalars)
+        guard scalars.count == 10 else { return false }
+        let hyphen = UnicodeScalar(45)!
+        return scalars[4] == hyphen
+            && scalars[7] == hyphen
+            && scalars[0...3].allSatisfy(CharacterSet.decimalDigits.contains)
+            && scalars[5...6].allSatisfy(CharacterSet.decimalDigits.contains)
+            && scalars[8...9].allSatisfy(CharacterSet.decimalDigits.contains)
+    }
+
+    private static let isoDateOnlyFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 }
 
 // MARK: - Observation Support

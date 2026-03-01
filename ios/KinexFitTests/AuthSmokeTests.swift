@@ -295,6 +295,82 @@ final class AuthSmokeTests: XCTestCase {
         XCTAssertEqual(workout?.source, .instagram)
     }
 
+    func testImportFromServerMapsSchedulingFields() async throws {
+        let database = try AppDatabase.inMemory()
+        let tokenStore = InMemoryTokenStore()
+        try tokenStore.setAccessToken("access-import-scheduled")
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+
+        let apiClient = APIClient(
+            baseURL: URL(string: "https://kinexfit.com")!,
+            tokenStore: tokenStore,
+            session: session
+        )
+        let syncEngine = SyncEngine(database: database, apiClient: apiClient)
+        let repository = WorkoutRepository(
+            database: database,
+            apiClient: apiClient,
+            syncEngine: syncEngine
+        )
+
+        MockURLProtocol.requestHandler = { request in
+            guard let url = request.url else {
+                throw TestFailure("Missing request URL")
+            }
+
+            switch url.path {
+            case "/api/mobile/workouts":
+                XCTAssertEqual(request.httpMethod, "GET")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-import-scheduled")
+
+                let response = HTTPURLResponse(
+                    url: url,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+
+                let payload = """
+                {
+                  "workouts": [
+                    {
+                      "id": "workout-scheduled-1",
+                      "title": "Scheduled Workout",
+                      "content": "Leg day",
+                      "source": "manual",
+                      "scheduledDate": "2026-03-05",
+                      "scheduledTime": "07:30",
+                      "status": "completed",
+                      "completedDate": "2026-03-05",
+                      "createdAt": "2026-03-01T10:00:00Z",
+                      "updatedAt": "2026-03-01T10:15:00Z"
+                    }
+                  ],
+                  "nextCursor": null
+                }
+                """
+
+                return (response, Data(payload.utf8))
+
+            default:
+                throw TestFailure("Unexpected path: \(url.path)")
+            }
+        }
+
+        let imported = try await repository.importFromServer()
+        XCTAssertEqual(imported, 1)
+
+        let workout = try await repository.fetch(id: "workout-scheduled-1")
+        XCTAssertEqual(workout?.scheduledDate, "2026-03-05")
+        XCTAssertEqual(workout?.scheduledTime, "07:30")
+        XCTAssertEqual(workout?.status, .completed)
+        XCTAssertEqual(workout?.completedDate, "2026-03-05")
+        XCTAssertEqual(workout?.isCompleted, true)
+    }
+
     func testImportFromServerFallsBackToWebEndpointOnMobileServerError() async throws {
         let database = try AppDatabase.inMemory()
         let tokenStore = InMemoryTokenStore()
