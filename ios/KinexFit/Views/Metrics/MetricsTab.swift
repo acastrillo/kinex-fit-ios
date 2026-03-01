@@ -1,9 +1,14 @@
 import SwiftUI
+import Charts
 
 private enum StatsDestination: Hashable {
     case bodyWeight
     case bodyMeasurements
     case personalRecords
+}
+
+private struct ExerciseDrillDownDestination: Hashable {
+    let exerciseName: String
 }
 
 struct MetricsTab: View {
@@ -628,23 +633,44 @@ private struct AddBodyMetricSheet: View {
 private struct PersonalRecordsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var personalRecords: [(exercise: String, pr: APIPersonalRecord)] = []
+    @State private var progressionEntries: [ExerciseProgressEntry] = []
     @State private var isLoading = true
     @State private var showingAddSheet = false
     @State private var selectedTab = 0
+    @State private var selectedProgressionExercise: String?
+
+    private enum Tab: Int {
+        case all = 0
+        case recent = 1
+        case progression = 2
+    }
 
     private var totalPRs: Int { personalRecords.count }
     private var totalExercises: Int { Set(personalRecords.map(\.exercise)).count }
+    private var allPRs: [(exercise: String, pr: APIPersonalRecord)] {
+        personalRecords.sorted { lhs, rhs in
+            let lhs1RM = lhs.pr.estimated1RM ?? lhs.pr.weight
+            let rhs1RM = rhs.pr.estimated1RM ?? rhs.pr.weight
+            if lhs1RM != rhs1RM { return lhs1RM > rhs1RM }
+            return lhs.exercise.localizedCaseInsensitiveCompare(rhs.exercise) == .orderedAscending
+        }
+    }
 
     private var recentPRs: [(exercise: String, pr: APIPersonalRecord)] {
         let twoWeeksAgo = Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
         return personalRecords.filter { item in
             guard let dateStr = item.pr.date,
-                  let date = formatter.date(from: dateStr) else { return false }
+                  let date = Self.parseDate(dateStr) else { return false }
             return date >= twoWeeksAgo
         }
+    }
+
+    private var progressionExercises: [String] {
+        Self.exerciseNames(from: progressionEntries)
+    }
+
+    private var currentTab: Tab {
+        Tab(rawValue: selectedTab) ?? .all
     }
 
     var body: some View {
@@ -664,53 +690,33 @@ private struct PersonalRecordsView: View {
                     Text("Progression").tag(2)
                 }
                 .pickerStyle(.segmented)
+                .onChange(of: selectedTab) { _, newValue in
+                    guard Tab(rawValue: newValue) == .progression, selectedProgressionExercise == nil else { return }
+                    selectedProgressionExercise = progressionExercises.first
+                }
 
                 if isLoading {
                     ProgressView()
                         .tint(AppTheme.accent)
                         .frame(maxWidth: .infinity, minHeight: 200)
                 } else {
-                    let displayRecords = selectedTab == 1 ? recentPRs : personalRecords
-                    if displayRecords.isEmpty {
-                        VStack(spacing: 12) {
-                            Image(systemName: "trophy")
-                                .font(.system(size: 40))
-                                .foregroundStyle(AppTheme.tertiaryText)
-                            Text("No personal records yet")
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(AppTheme.primaryText)
-                            Text(selectedTab == 1
-                                 ? "No PRs set in the last 2 weeks"
-                                 : "Add your first PR to start tracking your strength gains")
-                                .font(.system(size: 14))
-                                .foregroundStyle(AppTheme.secondaryText)
-                                .multilineTextAlignment(.center)
-
-                            if selectedTab == 0 {
-                                Button {
-                                    showingAddSheet = true
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "plus")
-                                        Text("Add First PR")
-                                    }
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 10)
-                                    .background(AppTheme.accent)
-                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 40)
-                    } else {
-                        ForEach(Array(displayRecords.enumerated()), id: \.offset) { _, item in
-                            PersonalRecordRow(exercise: item.exercise, pr: item.pr) {
-                                await deletePR(exercise: item.exercise)
-                            }
-                        }
+                    switch currentTab {
+                    case .all:
+                        recordsList(
+                            allPRs,
+                            emptyTitle: "No personal records yet",
+                            emptySubtitle: "Add your first PR to start tracking your strength gains",
+                            showAddButton: true
+                        )
+                    case .recent:
+                        recordsList(
+                            recentPRs,
+                            emptyTitle: "No recent PRs",
+                            emptySubtitle: "No PRs set in the last 2 weeks. Keep pushing.",
+                            showAddButton: false
+                        )
+                    case .progression:
+                        progressionTab
                     }
                 }
             }
@@ -735,29 +741,273 @@ private struct PersonalRecordsView: View {
                 await savePR(exercise: exercise, pr: pr)
             }
         }
+        .navigationDestination(for: ExerciseDrillDownDestination.self) { destination in
+            ExerciseDrillDownView(
+                exerciseName: destination.exerciseName,
+                history: history(for: destination.exerciseName)
+            )
+        }
         .task { await loadPRs() }
+    }
+
+    @ViewBuilder
+    private func recordsList(
+        _ records: [(exercise: String, pr: APIPersonalRecord)],
+        emptyTitle: String,
+        emptySubtitle: String,
+        showAddButton: Bool
+    ) -> some View {
+        if records.isEmpty {
+            VStack(spacing: 12) {
+                Image(systemName: "trophy")
+                    .font(.system(size: 40))
+                    .foregroundStyle(AppTheme.tertiaryText)
+                Text(emptyTitle)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(AppTheme.primaryText)
+                Text(emptySubtitle)
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+
+                if showAddButton {
+                    Button {
+                        showingAddSheet = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "plus")
+                            Text("Add First PR")
+                        }
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(AppTheme.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
+        } else {
+            ForEach(Array(records.enumerated()), id: \.offset) { _, item in
+                NavigationLink(value: ExerciseDrillDownDestination(exerciseName: item.exercise)) {
+                    PersonalRecordRow(exercise: item.exercise, pr: item.pr)
+                }
+                .buttonStyle(.plain)
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        Task { await deletePR(exercise: item.exercise) }
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var progressionTab: some View {
+        if progressionExercises.isEmpty {
+            VStack(spacing: 12) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 40))
+                    .foregroundStyle(AppTheme.tertiaryText)
+                Text("No progression data yet")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(AppTheme.primaryText)
+                Text("Log workouts with weights and reps to unlock progression charts.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
+        } else {
+            VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Select Exercise")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(AppTheme.primaryText)
+                    Text("View strength progression over time")
+                        .font(.system(size: 14))
+                        .foregroundStyle(AppTheme.secondaryText)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 8)], spacing: 8) {
+                        ForEach(progressionExercises, id: \.self) { exercise in
+                            let selected = selectedProgressionExercise == exercise
+                            Button {
+                                selectedProgressionExercise = exercise
+                            } label: {
+                                Text(exercise)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(selected ? Color.white : AppTheme.primaryText)
+                                    .lineLimit(1)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 8)
+                                    .background(selected ? AppTheme.accent : AppTheme.cardBackground)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .padding(16)
+                .kinexCard(cornerRadius: 16, fill: AppTheme.cardBackgroundElevated)
+
+                if let selectedExercise = selectedProgressionExercise {
+                    let history = history(for: selectedExercise)
+                    if history.isEmpty {
+                        Text("No progression data available for this exercise")
+                            .font(.system(size: 14))
+                            .foregroundStyle(AppTheme.secondaryText)
+                            .frame(maxWidth: .infinity, minHeight: 120)
+                            .kinexCard(cornerRadius: 16, fill: AppTheme.cardBackgroundElevated)
+                    } else {
+                        progressionCard(for: selectedExercise, history: history)
+                    }
+                }
+            }
+        }
+    }
+
+    private func progressionCard(for exercise: String, history: [ExerciseProgressEntry]) -> some View {
+        let displayUnit = ExerciseProgressEntry.preferredUnit(for: history)
+        let chartData = Array(history.suffix(20))
+        let historyRows = history.sorted { $0.date > $1.date }
+
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(exercise) Progression")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(AppTheme.primaryText)
+                    Text("Estimated 1RM over time")
+                        .font(.system(size: 13))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+                Spacer()
+                NavigationLink(value: ExerciseDrillDownDestination(exerciseName: exercise)) {
+                    Text("Drill Down")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AppTheme.accent)
+                }
+            }
+
+            Chart(chartData) { entry in
+                LineMark(
+                    x: .value("Date", entry.date),
+                    y: .value("1RM", entry.oneRepMax(in: displayUnit))
+                )
+                .interpolationMethod(.monotone)
+                .foregroundStyle(AppTheme.statClock)
+                .lineStyle(StrokeStyle(lineWidth: 2.5))
+
+                PointMark(
+                    x: .value("Date", entry.date),
+                    y: .value("1RM", entry.oneRepMax(in: displayUnit))
+                )
+                .foregroundStyle(AppTheme.statClock)
+            }
+            .frame(height: 220)
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                    AxisGridLine().foregroundStyle(AppTheme.separator)
+                    AxisTick().foregroundStyle(AppTheme.separator)
+                    AxisValueLabel {
+                        if let date = value.as(Date.self) {
+                            Text(date, format: .dateTime.month(.abbreviated).day())
+                                .foregroundStyle(AppTheme.secondaryText)
+                        }
+                    }
+                }
+            }
+            .chartYAxis {
+                AxisMarks { value in
+                    AxisGridLine().foregroundStyle(AppTheme.separator)
+                    AxisTick().foregroundStyle(AppTheme.separator)
+                    AxisValueLabel {
+                        if let numeric = value.as(Double.self) {
+                            Text("\(Int(numeric))")
+                                .foregroundStyle(AppTheme.secondaryText)
+                        }
+                    }
+                }
+            }
+            .chartOverlay { _ in
+                EmptyView()
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("PR History")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(AppTheme.primaryText)
+
+                ForEach(historyRows) { entry in
+                    HStack {
+                        Text(entry.date, format: .dateTime.month(.abbreviated).day())
+                            .font(.system(size: 13))
+                            .foregroundStyle(AppTheme.secondaryText)
+                        Spacer()
+                        Text("\(entry.formattedWeight(in: displayUnit)) × \(entry.reps)")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(AppTheme.primaryText)
+                        Text("1RM \(entry.formattedOneRepMax(in: displayUnit))")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(AppTheme.statClock)
+                    }
+                    .padding(.vertical, 6)
+
+                    if entry.id != historyRows.last?.id {
+                        Divider().background(AppTheme.separator)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .kinexCard(cornerRadius: 16, fill: AppTheme.cardBackgroundElevated)
     }
 
     private func loadPRs() async {
         isLoading = true
+        var fetchedRecords: [(exercise: String, pr: APIPersonalRecord)] = []
+
         do {
             let response: TrainingProfileResponse = try await appState.environment.apiClient.send(
                 .getTrainingProfile()
             )
             if let records = response.profile?.personalRecords {
-                personalRecords = records.map { (exercise: $0.key, pr: $0.value) }
+                fetchedRecords = records.map { (exercise: $0.key, pr: $0.value) }
                     .sorted { a, b in
                         let dateA = a.pr.date ?? ""
                         let dateB = b.pr.date ?? ""
                         if dateA != dateB { return dateA > dateB }
                         return a.exercise < b.exercise
                     }
-            } else {
-                personalRecords = []
             }
         } catch {
-            personalRecords = []
+            fetchedRecords = []
         }
+
+        do {
+            _ = try await appState.environment.workoutRepository.importFromServer(limit: 200, maxPages: 4)
+        } catch { }
+
+        let workouts = (try? await appState.environment.workoutRepository.fetchAll()) ?? []
+        let parsedProgression = Self.buildProgressionEntries(from: workouts, fallbackRecords: fetchedRecords)
+
+        personalRecords = fetchedRecords
+        progressionEntries = parsedProgression
+
+        let availableExercises = Self.exerciseNames(from: parsedProgression)
+        if let current = selectedProgressionExercise,
+           availableExercises.contains(current) {
+            selectedProgressionExercise = current
+        } else {
+            selectedProgressionExercise = availableExercises.first
+        }
+
         isLoading = false
     }
 
@@ -777,6 +1027,119 @@ private struct PersonalRecordsView: View {
             )
             await loadPRs()
         } catch { }
+    }
+
+    private func history(for exercise: String) -> [ExerciseProgressEntry] {
+        let normalized = Self.normalizeExerciseName(exercise)
+        return progressionEntries
+            .filter { Self.normalizeExerciseName($0.exercise) == normalized }
+            .sorted { $0.date < $1.date }
+    }
+
+    private static func buildProgressionEntries(
+        from workouts: [Workout],
+        fallbackRecords: [(exercise: String, pr: APIPersonalRecord)]
+    ) -> [ExerciseProgressEntry] {
+        var entries: [ExerciseProgressEntry] = []
+        var seenKeys: Set<String> = []
+
+        for workout in workouts {
+            let presentation = WorkoutContentPresentation.from(
+                content: workout.content,
+                source: workout.source,
+                durationMinutes: workout.durationMinutes,
+                fallbackExerciseCount: workout.exerciseCount
+            )
+
+            for exercise in presentation.exercises {
+                guard let reps = exercise.reps, reps > 0,
+                      let weightText = exercise.weight,
+                      let parsedWeight = parseWeight(weightText) else { continue }
+
+                let entry = ExerciseProgressEntry(
+                    exercise: exercise.name,
+                    date: workout.createdAt,
+                    weight: parsedWeight.value,
+                    reps: reps,
+                    sets: max(exercise.sets ?? 1, 1),
+                    unit: parsedWeight.unit,
+                    workoutID: workout.id
+                )
+
+                if seenKeys.insert(entry.dedupeKey).inserted {
+                    entries.append(entry)
+                }
+            }
+        }
+
+        for item in fallbackRecords {
+            let reps = max(item.pr.reps ?? 1, 1)
+            let unit = StrengthUnit(rawUnit: item.pr.unit)
+            let entry = ExerciseProgressEntry(
+                exercise: item.exercise,
+                date: parseDate(item.pr.date) ?? Date(),
+                weight: item.pr.weight,
+                reps: reps,
+                sets: 1,
+                unit: unit,
+                workoutID: nil
+            )
+            if seenKeys.insert(entry.dedupeKey).inserted {
+                entries.append(entry)
+            }
+        }
+
+        return entries.sorted { $0.date < $1.date }
+    }
+
+    private static func exerciseNames(from entries: [ExerciseProgressEntry]) -> [String] {
+        var displayByKey: [String: String] = [:]
+        for entry in entries {
+            let key = normalizeExerciseName(entry.exercise)
+            if displayByKey[key] == nil {
+                displayByKey[key] = entry.exercise
+            }
+        }
+        return displayByKey.values.sorted { lhs, rhs in
+            lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+        }
+    }
+
+    private static func parseWeight(_ raw: String) -> (value: Double, unit: StrengthUnit)? {
+        guard let regex = try? NSRegularExpression(
+            pattern: #"(?i)(\d+(?:\.\d+)?)\s*(lb|lbs|kg|kgs)?"#
+        ) else {
+            return nil
+        }
+        let range = NSRange(raw.startIndex..<raw.endIndex, in: raw)
+        guard let match = regex.firstMatch(in: raw, options: [], range: range),
+              let valueRange = Range(match.range(at: 1), in: raw),
+              let value = Double(raw[valueRange]) else {
+            return nil
+        }
+
+        let unit: StrengthUnit
+        if let unitRange = Range(match.range(at: 2), in: raw) {
+            unit = StrengthUnit(rawUnit: String(raw[unitRange]))
+        } else {
+            unit = .lbs
+        }
+        return (value, unit)
+    }
+
+    private static func parseDate(_ raw: String?) -> Date? {
+        guard let raw else { return nil }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter.date(from: raw)
+    }
+
+    private static func normalizeExerciseName(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
     }
 }
 
@@ -811,9 +1174,6 @@ private struct PRStatBadge: View {
 private struct PersonalRecordRow: View {
     let exercise: String
     let pr: APIPersonalRecord
-    let onDelete: () async -> Void
-
-    @State private var showingDeleteConfirm = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -822,11 +1182,9 @@ private struct PersonalRecordRow: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(AppTheme.primaryText)
                 Spacer()
-                Button { showingDeleteConfirm = true } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14))
-                        .foregroundStyle(AppTheme.tertiaryText)
-                }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppTheme.tertiaryText)
             }
 
             if let dateStr = pr.date {
@@ -860,13 +1218,409 @@ private struct PersonalRecordRow: View {
         }
         .padding(16)
         .kinexCard(cornerRadius: 12, fill: AppTheme.cardBackgroundElevated)
-        .confirmationDialog("Delete PR", isPresented: $showingDeleteConfirm) {
-            Button("Delete", role: .destructive) {
-                Task { await onDelete() }
-            }
-        } message: {
-            Text("Remove \(exercise) personal record?")
+    }
+}
+
+private enum StrengthUnit: String, Hashable {
+    case lbs
+    case kg
+
+    init(rawUnit: String) {
+        let normalized = rawUnit.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalized.hasPrefix("kg") || normalized.hasPrefix("kilo") {
+            self = .kg
+        } else {
+            self = .lbs
         }
+    }
+
+    func toLbs(_ value: Double) -> Double {
+        switch self {
+        case .lbs:
+            value
+        case .kg:
+            value * 2.20462
+        }
+    }
+
+    func fromLbs(_ value: Double) -> Double {
+        switch self {
+        case .lbs:
+            value
+        case .kg:
+            value / 2.20462
+        }
+    }
+}
+
+private struct ExerciseProgressEntry: Identifiable, Hashable {
+    let id: String
+    let dedupeKey: String
+    let exercise: String
+    let date: Date
+    let weight: Double
+    let reps: Int
+    let sets: Int
+    let unit: StrengthUnit
+    let oneRepMaxLbs: Double
+    let workoutID: String?
+
+    init(
+        exercise: String,
+        date: Date,
+        weight: Double,
+        reps: Int,
+        sets: Int,
+        unit: StrengthUnit,
+        workoutID: String?
+    ) {
+        let clampedReps = max(reps, 1)
+        let clampedSets = max(sets, 1)
+        let normalizedExercise = exercise.trimmingCharacters(in: .whitespacesAndNewlines)
+        let weightLbs = unit.toLbs(weight)
+
+        self.exercise = normalizedExercise
+        self.date = date
+        self.weight = weight
+        self.reps = clampedReps
+        self.sets = clampedSets
+        self.unit = unit
+        self.oneRepMaxLbs = Self.calculateOneRepMax(weightLbs: weightLbs, reps: clampedReps)
+        self.workoutID = workoutID
+
+        let timestamp = Int(date.timeIntervalSince1970)
+        self.dedupeKey = "\(normalizedExercise.lowercased())|\(timestamp)|\(Int(weightLbs.rounded()))|\(clampedReps)|\(clampedSets)"
+        self.id = "\(self.dedupeKey)|\(workoutID ?? "manual")"
+    }
+
+    func weight(in unit: StrengthUnit) -> Double {
+        unit.fromLbs(self.unit.toLbs(weight))
+    }
+
+    func volume(in unit: StrengthUnit) -> Double {
+        let convertedWeight = weight(in: unit)
+        return convertedWeight * Double(reps * sets)
+    }
+
+    func oneRepMax(in unit: StrengthUnit) -> Double {
+        unit.fromLbs(oneRepMaxLbs)
+    }
+
+    func formattedWeight(in unit: StrengthUnit) -> String {
+        String(format: "%.0f %@", weight(in: unit), unit.rawValue)
+    }
+
+    func formattedOneRepMax(in unit: StrengthUnit) -> String {
+        String(format: "%.0f %@", oneRepMax(in: unit), unit.rawValue)
+    }
+
+    static func preferredUnit(for entries: [ExerciseProgressEntry]) -> StrengthUnit {
+        let kgCount = entries.filter { $0.unit == .kg }.count
+        return kgCount > entries.count / 2 ? .kg : .lbs
+    }
+
+    private static func calculateOneRepMax(weightLbs: Double, reps: Int) -> Double {
+        guard weightLbs > 0 else { return 0 }
+        if reps <= 1 { return weightLbs }
+
+        let repCount = Double(max(reps, 1))
+        let brzycki: Double
+        if reps > 12 {
+            brzycki = weightLbs
+        } else {
+            brzycki = weightLbs / (1.0278 - 0.0278 * repCount)
+        }
+        let epley = weightLbs * (1.0 + repCount / 30.0)
+        return ((brzycki + epley) / 2.0).rounded()
+    }
+}
+
+private struct ExerciseDrillDownView: View {
+    let exerciseName: String
+    let history: [ExerciseProgressEntry]
+
+    private var orderedHistory: [ExerciseProgressEntry] {
+        history.sorted { $0.date < $1.date }
+    }
+
+    private var recentHistory: [ExerciseProgressEntry] {
+        orderedHistory.sorted { $0.date > $1.date }
+    }
+
+    private var displayUnit: StrengthUnit {
+        ExerciseProgressEntry.preferredUnit(for: orderedHistory)
+    }
+
+    private var prMilestones: [ExerciseProgressEntry] {
+        var best1RM: Double = 0
+        var milestones: [ExerciseProgressEntry] = []
+
+        for entry in orderedHistory {
+            if entry.oneRepMaxLbs > best1RM {
+                best1RM = entry.oneRepMaxLbs
+                milestones.append(entry)
+            }
+        }
+
+        return milestones.sorted { $0.date > $1.date }
+    }
+
+    private var averageWeight: Double {
+        guard !orderedHistory.isEmpty else { return 0 }
+        let total = orderedHistory.reduce(0.0) { partial, entry in
+            partial + entry.weight(in: displayUnit)
+        }
+        return total / Double(orderedHistory.count)
+    }
+
+    private var averageReps: Double {
+        guard !orderedHistory.isEmpty else { return 0 }
+        let total = orderedHistory.reduce(0) { partial, entry in
+            partial + entry.reps
+        }
+        return Double(total) / Double(orderedHistory.count)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                if orderedHistory.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 40))
+                            .foregroundStyle(AppTheme.tertiaryText)
+                        Text("No data for \(exerciseName)")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(AppTheme.primaryText)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 180)
+                    .kinexCard(cornerRadius: 16, fill: AppTheme.cardBackgroundElevated)
+                } else {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        ExerciseDetailStatCard(
+                            label: "Times Performed",
+                            value: "\(orderedHistory.count)",
+                            icon: "calendar",
+                            color: AppTheme.accent
+                        )
+                        ExerciseDetailStatCard(
+                            label: "Average Weight",
+                            value: String(format: "%.0f %@", averageWeight, displayUnit.rawValue),
+                            icon: "dumbbell.fill",
+                            color: AppTheme.statClock
+                        )
+                        ExerciseDetailStatCard(
+                            label: "Average Reps",
+                            value: String(format: "%.0f", averageReps),
+                            icon: "repeat",
+                            color: AppTheme.statStreak
+                        )
+                        ExerciseDetailStatCard(
+                            label: "PR Milestones",
+                            value: "\(prMilestones.count)",
+                            icon: "trophy.fill",
+                            color: AppTheme.accent
+                        )
+                    }
+
+                    if !prMilestones.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Personal Records")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundStyle(AppTheme.primaryText)
+
+                            ForEach(prMilestones.prefix(5)) { entry in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("\(entry.formattedWeight(in: displayUnit)) × \(entry.reps)")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundStyle(AppTheme.primaryText)
+                                        Text("1RM \(entry.formattedOneRepMax(in: displayUnit))")
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(AppTheme.statClock)
+                                    }
+                                    Spacer()
+                                    Text(entry.date, format: .dateTime.month(.abbreviated).day().year())
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(AppTheme.secondaryText)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+                        .padding(16)
+                        .kinexCard(cornerRadius: 16, fill: AppTheme.cardBackgroundElevated)
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Weight Progression")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(AppTheme.primaryText)
+
+                        Chart(Array(orderedHistory.suffix(20))) { entry in
+                            LineMark(
+                                x: .value("Date", entry.date),
+                                y: .value("Weight", entry.weight(in: displayUnit))
+                            )
+                            .interpolationMethod(.monotone)
+                            .foregroundStyle(AppTheme.accent)
+                            .lineStyle(StrokeStyle(lineWidth: 2.5))
+
+                            LineMark(
+                                x: .value("Date", entry.date),
+                                y: .value("1RM", entry.oneRepMax(in: displayUnit))
+                            )
+                            .interpolationMethod(.monotone)
+                            .foregroundStyle(AppTheme.statClock)
+                            .lineStyle(StrokeStyle(lineWidth: 2.5, dash: [6, 4]))
+
+                            PointMark(
+                                x: .value("Date", entry.date),
+                                y: .value("Weight", entry.weight(in: displayUnit))
+                            )
+                            .foregroundStyle(AppTheme.accent)
+                        }
+                        .frame(height: 230)
+                        .chartXAxis {
+                            AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                                AxisGridLine().foregroundStyle(AppTheme.separator)
+                                AxisTick().foregroundStyle(AppTheme.separator)
+                                AxisValueLabel {
+                                    if let date = value.as(Date.self) {
+                                        Text(date, format: .dateTime.month(.abbreviated).day())
+                                            .foregroundStyle(AppTheme.secondaryText)
+                                    }
+                                }
+                            }
+                        }
+                        .chartYAxis {
+                            AxisMarks { value in
+                                AxisGridLine().foregroundStyle(AppTheme.separator)
+                                AxisTick().foregroundStyle(AppTheme.separator)
+                                AxisValueLabel {
+                                    if let numeric = value.as(Double.self) {
+                                        Text("\(Int(numeric))")
+                                            .foregroundStyle(AppTheme.secondaryText)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(16)
+                    .kinexCard(cornerRadius: 16, fill: AppTheme.cardBackgroundElevated)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Volume Progression")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(AppTheme.primaryText)
+
+                        Chart(Array(orderedHistory.suffix(20))) { entry in
+                            BarMark(
+                                x: .value("Date", entry.date),
+                                y: .value("Volume", entry.volume(in: displayUnit))
+                            )
+                            .foregroundStyle(AppTheme.accent)
+                        }
+                        .frame(height: 220)
+                        .chartXAxis {
+                            AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                                AxisGridLine().foregroundStyle(AppTheme.separator)
+                                AxisTick().foregroundStyle(AppTheme.separator)
+                                AxisValueLabel {
+                                    if let date = value.as(Date.self) {
+                                        Text(date, format: .dateTime.month(.abbreviated).day())
+                                            .foregroundStyle(AppTheme.secondaryText)
+                                    }
+                                }
+                            }
+                        }
+                        .chartYAxis {
+                            AxisMarks { value in
+                                AxisGridLine().foregroundStyle(AppTheme.separator)
+                                AxisTick().foregroundStyle(AppTheme.separator)
+                                AxisValueLabel {
+                                    if let numeric = value.as(Double.self) {
+                                        Text("\(Int(numeric))")
+                                            .foregroundStyle(AppTheme.secondaryText)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(16)
+                    .kinexCard(cornerRadius: 16, fill: AppTheme.cardBackgroundElevated)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Workout History")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(AppTheme.primaryText)
+
+                        ForEach(recentHistory.prefix(10)) { entry in
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text(entry.date, format: .dateTime.weekday(.abbreviated).month(.abbreviated).day().year())
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(AppTheme.secondaryText)
+                                    Spacer()
+                                    Text("1RM \(entry.formattedOneRepMax(in: displayUnit))")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(AppTheme.statClock)
+                                }
+
+                                Text("\(entry.formattedWeight(in: displayUnit)) × \(entry.reps) reps")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(AppTheme.primaryText)
+
+                                Text("Volume \(Int(entry.volume(in: displayUnit))) \(displayUnit.rawValue)·reps")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(AppTheme.tertiaryText)
+                            }
+                            .padding(12)
+                            .background(AppTheme.cardBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        }
+                    }
+                    .padding(16)
+                    .kinexCard(cornerRadius: 16, fill: AppTheme.cardBackgroundElevated)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 28)
+        }
+        .background(AppTheme.background.ignoresSafeArea())
+        .navigationTitle(exerciseName)
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+    }
+}
+
+private struct ExerciseDetailStatCard: View {
+    let label: String
+    let value: String
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(color)
+                Spacer()
+            }
+            Text(value)
+                .font(.system(size: 21, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundStyle(AppTheme.secondaryText)
+        }
+        .frame(maxWidth: .infinity, minHeight: 95, alignment: .leading)
+        .padding(12)
+        .kinexCard(cornerRadius: 12, fill: AppTheme.cardBackgroundElevated)
     }
 }
 
