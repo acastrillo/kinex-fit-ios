@@ -10,6 +10,27 @@ final class WorkoutRepository {
     private let database: AppDatabase
     private let apiClient: APIClient
     private let syncEngine: SyncEngine
+    private static let workoutOfTheWeekCacheKey = "workout_of_the_week_cache_v1"
+
+    struct WorkoutOfTheWeekCacheEntry: Codable, Equatable {
+        let backendWorkoutID: String?
+        var localWorkoutID: String?
+        let title: String
+        let content: String
+        let difficulty: String?
+        let rationale: String?
+        let isNew: Bool
+        let fetchedAt: Date
+        let expiresAt: Date
+
+        var preferredWorkoutID: String? {
+            localWorkoutID ?? backendWorkoutID
+        }
+
+        var isExpired: Bool {
+            Date() >= expiresAt
+        }
+    }
 
     init(database: AppDatabase, apiClient: APIClient, syncEngine: SyncEngine) {
         self.database = database
@@ -72,6 +93,69 @@ final class WorkoutRepository {
                 .order(Workout.Columns.createdAt.desc)
                 .fetchAll(db)
             return workouts.map(\.createdAt)
+        }
+    }
+
+    /// Fetch Workout of the Week from backend with local cache + expiration fallback.
+    /// Uses the settings table so recommendation metadata survives app restarts.
+    func fetchWorkoutOfTheWeek(forceRefresh: Bool = false) async throws -> WorkoutOfTheWeekCacheEntry? {
+        let now = Date()
+        let cached = try await loadWorkoutOfTheWeekCache()
+        if !forceRefresh, let cached, !cached.isExpired {
+            return cached
+        }
+
+        do {
+            let request = APIRequest(path: "/api/mobile/ai/workout-of-the-week", method: .post)
+            let response: WorkoutRecommendationResponse = try await apiClient.send(request)
+            guard let recommendedWorkout = response.workout else {
+                try await clearWorkoutOfTheWeekCache()
+                return nil
+            }
+
+            let normalizedTitle = Self.normalizedRecommendationText(recommendedWorkout.title)
+            let normalizedContent = Self.normalizedRecommendationText(recommendedWorkout.content)
+            let fallbackTitle = "Workout of the Week"
+
+            var entry = WorkoutOfTheWeekCacheEntry(
+                backendWorkoutID: Self.normalizedWorkoutID(recommendedWorkout.workoutId),
+                localWorkoutID: nil,
+                title: normalizedTitle.isEmpty ? fallbackTitle : normalizedTitle,
+                content: normalizedContent,
+                difficulty: Self.normalizedDifficulty(recommendedWorkout.difficulty),
+                rationale: Self.normalizedRecommendationText(response.rationale),
+                isNew: response.isNew ?? false,
+                fetchedAt: now,
+                expiresAt: Self.nextWorkoutOfTheWeekExpiration(after: now)
+            )
+
+            if let cached,
+               cached.backendWorkoutID == entry.backendWorkoutID,
+               cached.title == entry.title,
+               cached.content == entry.content {
+                entry.localWorkoutID = cached.localWorkoutID
+            }
+
+            try await saveWorkoutOfTheWeekCache(entry)
+            return entry
+        } catch {
+            if let cached, !cached.isExpired {
+                logger.warning("Workout of the week fetch failed, falling back to valid cache")
+                return cached
+            }
+            throw error
+        }
+    }
+
+    /// Persist local workout ID for current Workout of the Week cache entry.
+    /// This allows one-tap reopening into workout detail if user already saved it.
+    func setWorkoutOfTheWeekLocalWorkoutID(_ workoutID: String) async {
+        do {
+            guard var cached = try await loadWorkoutOfTheWeekCache() else { return }
+            cached.localWorkoutID = workoutID
+            try await saveWorkoutOfTheWeekCache(cached)
+        } catch {
+            logger.warning("Failed to persist local workout id for workout of the week cache")
         }
     }
 
@@ -883,6 +967,79 @@ final class WorkoutRepository {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
+
+    private static func normalizedRecommendationText(_ rawText: String?) -> String {
+        guard let rawText else { return "" }
+        return rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func normalizedWorkoutID(_ rawID: String?) -> String? {
+        let normalized = rawID?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return normalized.isEmpty ? nil : normalized
+    }
+
+    private static func nextWorkoutOfTheWeekExpiration(after date: Date) -> Date {
+        var calendar = Calendar(identifier: .iso8601)
+        calendar.timeZone = .current
+        guard let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: date)?.start,
+              let expiration = calendar.date(byAdding: .weekOfYear, value: 1, to: startOfWeek) else {
+            return date.addingTimeInterval(7 * 24 * 60 * 60)
+        }
+        return expiration
+    }
+
+    private func loadWorkoutOfTheWeekCache() async throws -> WorkoutOfTheWeekCacheEntry? {
+        let payload: String? = try await database.dbQueue.read { db in
+            try String.fetchOne(
+                db,
+                sql: "SELECT value FROM settings WHERE key = ?",
+                arguments: [Self.workoutOfTheWeekCacheKey]
+            )
+        }
+
+        guard let payload,
+              let data = payload.data(using: .utf8) else {
+            return nil
+        }
+
+        do {
+            return try JSONCoding.apiDecoder().decode(WorkoutOfTheWeekCacheEntry.self, from: data)
+        } catch {
+            logger.warning("Failed to decode workout of the week cache. Clearing invalid cache entry.")
+            try await clearWorkoutOfTheWeekCache()
+            return nil
+        }
+    }
+
+    private func saveWorkoutOfTheWeekCache(_ entry: WorkoutOfTheWeekCacheEntry) async throws {
+        let encoded = try JSONCoding.apiEncoder().encode(entry)
+        guard let payload = String(data: encoded, encoding: .utf8) else {
+            throw NSError(
+                domain: "com.kinex.fit.workout-cache",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to serialize workout of the week cache as UTF-8"]
+            )
+        }
+
+        try await database.dbQueue.write { db in
+            try db.execute(
+                sql: """
+                INSERT OR REPLACE INTO settings (key, value)
+                VALUES (?, ?)
+                """,
+                arguments: [Self.workoutOfTheWeekCacheKey, payload]
+            )
+        }
+    }
+
+    private func clearWorkoutOfTheWeekCache() async throws {
+        try await database.dbQueue.write { db in
+            try db.execute(
+                sql: "DELETE FROM settings WHERE key = ?",
+                arguments: [Self.workoutOfTheWeekCacheKey]
+            )
+        }
+    }
 }
 
 // MARK: - Observation Support
