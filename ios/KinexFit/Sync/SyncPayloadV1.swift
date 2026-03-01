@@ -37,6 +37,8 @@ struct SyncWorkout: Codable {
     let completedDate: String?
     let completedAt: String?
     let durationSeconds: Int?
+    let completionCount: Int?
+    let isCompleted: Bool
     let createdAt: Date
     let updatedAt: Date
 
@@ -59,6 +61,8 @@ struct SyncWorkout: Codable {
         completedDate = workout.completedDate
         completedAt = workout.completedAt
         durationSeconds = workout.durationSeconds
+        completionCount = workout.completionCount
+        isCompleted = workout.isCompleted
         createdAt = workout.createdAt
         updatedAt = workout.updatedAt
     }

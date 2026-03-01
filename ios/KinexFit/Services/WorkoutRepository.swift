@@ -265,11 +265,13 @@ final class WorkoutRepository {
     func scheduleWorkout(
         id workoutId: String,
         scheduledDate: String,
+        scheduledTime: String? = nil,
         status: WorkoutScheduleStatus = .scheduled
     ) async throws -> Workout? {
         let request = try APIRequest.scheduleWorkout(
             workoutId: workoutId,
             scheduledDate: scheduledDate,
+            scheduledTime: scheduledTime,
             status: status
         )
         let response: WorkoutScheduleActionResponse = try await apiClient.send(request)
@@ -280,6 +282,7 @@ final class WorkoutRepository {
             }
             workout.scheduledDate = Self.normalizedScheduleDate(response.scheduledDate) ?? scheduledDate
             workout.scheduledTime = Self.normalizedScheduledTime(response.scheduledTime)
+                ?? Self.normalizedScheduledTime(scheduledTime)
                 ?? workout.scheduledTime
 
             let resolvedStatus = response.status

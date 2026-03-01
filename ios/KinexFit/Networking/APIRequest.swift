@@ -87,12 +87,17 @@ extension APIRequest {
     static func scheduleWorkout(
         workoutId: String,
         scheduledDate: String,
+        scheduledTime: String? = nil,
         status: WorkoutScheduleStatus = .scheduled
     ) throws -> APIRequest {
         try json(
             path: "/api/workouts/\(workoutId)/schedule",
             method: .patch,
-            body: WorkoutScheduleRequest(scheduledDate: scheduledDate, status: status)
+            body: WorkoutScheduleRequest(
+                scheduledDate: scheduledDate,
+                scheduledTime: scheduledTime,
+                status: status
+            )
         )
     }
 
@@ -122,6 +127,7 @@ extension APIRequest {
 
 struct WorkoutScheduleRequest: Encodable {
     let scheduledDate: String
+    let scheduledTime: String?
     let status: WorkoutScheduleStatus?
 }
 
