@@ -80,17 +80,18 @@ final class AIService {
     // MARK: - Generate Workout
 
     /// Generate a new workout from a natural language prompt
-    func generateWorkout(prompt: String) async throws -> GenerateWorkoutResponse {
+    func generateWorkout(prompt: String, trainingProfile: TrainingProfile?) async throws -> GenerateWorkoutResponse {
         logger.info("Generating workout from prompt (length: \(prompt.count))")
 
         struct GenerateRequest: Encodable {
             let prompt: String
+            let trainingProfile: TrainingProfile?
         }
 
         let request = try APIRequest.json(
             path: "/api/mobile/ai/generate-workout",
             method: .post,
-            body: GenerateRequest(prompt: prompt)
+            body: GenerateRequest(prompt: prompt, trainingProfile: trainingProfile)
         )
 
         do {

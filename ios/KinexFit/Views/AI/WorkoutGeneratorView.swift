@@ -265,7 +265,10 @@ struct WorkoutGeneratorView: View {
         isGenerating = true
 
         do {
-            let response = try await aiService.generateWorkout(prompt: prompt)
+            let response = try await aiService.generateWorkout(
+                prompt: prompt,
+                trainingProfile: nil
+            )
             if let remaining = response.quotaRemaining {
                 try? await appState.environment.userRepository.updateAIQuotaFromRemaining(remaining)
             }

@@ -103,11 +103,24 @@ final class OnboardingViewModel: ObservableObject {
 
     private func submitOnboardingData() async throws {
         struct OnboardingRequest: Encodable {
-            let experienceLevel: String?
-            let trainingDaysPerWeek: Int?
+            // Canonical web schema
+            let experience: String?
+            let preferredSplit: String?
+            let trainingDays: Int?
             let sessionDuration: Int?
             let equipment: [String]
+            let trainingLocation: String?
             let goals: [String]
+            let primaryGoal: String?
+            let constraints: [ConstraintData]
+            let preferences: PreferencesData?
+            let personalRecordsByExercise: [String: PRData]
+            let updatedAt: String?
+            let createdAt: String?
+
+            // Legacy mobile onboarding payload keys (still used by backend route)
+            let experienceLevel: String?
+            let trainingDaysPerWeek: Int?
             let personalRecords: [PRData]
 
             struct PRData: Encodable {
@@ -115,26 +128,71 @@ final class OnboardingViewModel: ObservableObject {
                 let weight: Double
                 let unit: String
                 let reps: Int?
+                let date: String
+                let notes: String?
+            }
+
+            struct ConstraintData: Encodable {
+                let id: String
+                let description: String
+                let affectedExercises: [String]?
+                let createdAt: String
+            }
+
+            struct PreferencesData: Encodable {
+                let favoriteExercises: [String]?
+                let dislikedExercises: [String]?
+                let warmupRequired: Bool?
+                let cooldownRequired: Bool?
             }
         }
+
+        let personalRecords = trainingProfile.personalRecords.map { pr in
+            OnboardingRequest.PRData(
+                exerciseName: pr.exerciseName,
+                weight: pr.weight,
+                unit: pr.unit.rawValue,
+                reps: pr.reps,
+                date: pr.date,
+                notes: pr.notes
+            )
+        }
+        let personalRecordsMap = Dictionary(uniqueKeysWithValues: personalRecords.map { ($0.exerciseName, $0) })
 
         let request = try APIRequest.json(
             path: "/api/mobile/user/onboarding",
             method: .post,
             body: OnboardingRequest(
-                experienceLevel: trainingProfile.experienceLevel?.rawValue,
-                trainingDaysPerWeek: trainingProfile.trainingDaysPerWeek,
+                experience: trainingProfile.experience?.rawValue,
+                preferredSplit: trainingProfile.preferredSplit?.rawValue,
+                trainingDays: trainingProfile.trainingDays,
                 sessionDuration: trainingProfile.sessionDuration,
-                equipment: trainingProfile.equipment.map(\.rawValue),
-                goals: trainingProfile.goals.map(\.rawValue),
-                personalRecords: trainingProfile.personalRecords.map { pr in
-                    OnboardingRequest.PRData(
-                        exerciseName: pr.exerciseName,
-                        weight: pr.weight,
-                        unit: pr.unit.rawValue,
-                        reps: pr.reps
+                equipment: trainingProfile.equipment.map(\.rawValue).sorted(),
+                trainingLocation: trainingProfile.trainingLocation?.rawValue,
+                goals: trainingProfile.goals.map(\.rawValue).sorted(),
+                primaryGoal: trainingProfile.primaryGoal?.rawValue,
+                constraints: trainingProfile.constraints.map { constraint in
+                    OnboardingRequest.ConstraintData(
+                        id: constraint.id,
+                        description: constraint.description,
+                        affectedExercises: constraint.affectedExercises,
+                        createdAt: constraint.createdAt
                     )
-                }
+                },
+                preferences: trainingProfile.preferences.map { preferences in
+                    OnboardingRequest.PreferencesData(
+                        favoriteExercises: preferences.favoriteExercises,
+                        dislikedExercises: preferences.dislikedExercises,
+                        warmupRequired: preferences.warmupRequired,
+                        cooldownRequired: preferences.cooldownRequired
+                    )
+                },
+                personalRecordsByExercise: personalRecordsMap,
+                updatedAt: trainingProfile.updatedAt,
+                createdAt: trainingProfile.createdAt,
+                experienceLevel: trainingProfile.experience?.rawValue,
+                trainingDaysPerWeek: trainingProfile.trainingDays,
+                personalRecords: personalRecords
             )
         )
 
@@ -227,12 +285,12 @@ struct OnboardingCoordinator: View {
                         BasicProfileStep(onContinue: viewModel.goToNext)
                     case .experience:
                         ExperienceStep(
-                            selection: $viewModel.trainingProfile.experienceLevel,
+                            selection: $viewModel.trainingProfile.experience,
                             onContinue: viewModel.goToNext
                         )
                     case .schedule:
                         ScheduleStep(
-                            daysPerWeek: $viewModel.trainingProfile.trainingDaysPerWeek,
+                            daysPerWeek: $viewModel.trainingProfile.trainingDays,
                             sessionDuration: $viewModel.trainingProfile.sessionDuration,
                             onContinue: viewModel.goToNext
                         )
