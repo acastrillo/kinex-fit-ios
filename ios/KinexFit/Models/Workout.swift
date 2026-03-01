@@ -28,6 +28,8 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
     var completedAt: String?
     /// Completion duration in seconds, if tracked by backend.
     var durationSeconds: Int?
+    /// Total number of times this workout has been completed.
+    var completionCount: Int?
     var createdAt: Date
     var updatedAt: Date
 
@@ -53,6 +55,7 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
         completedDate: String? = nil,
         completedAt: String? = nil,
         durationSeconds: Int? = nil,
+        completionCount: Int? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -73,6 +76,7 @@ struct Workout: Codable, Equatable, Identifiable, Hashable {
         self.completedDate = completedDate
         self.completedAt = completedAt
         self.durationSeconds = durationSeconds
+        self.completionCount = completionCount
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -137,6 +141,7 @@ extension Workout: FetchableRecord, PersistableRecord {
         case completedDate
         case completedAt
         case durationSeconds
+        case completionCount
         case createdAt
         case updatedAt
     }
@@ -160,6 +165,7 @@ extension Workout: FetchableRecord, PersistableRecord {
         completedDate = row[Columns.completedDate]
         completedAt = row[Columns.completedAt]
         durationSeconds = row[Columns.durationSeconds]
+        completionCount = row[Columns.completionCount]
         createdAt = row[Columns.createdAt]
         updatedAt = row[Columns.updatedAt]
     }
@@ -182,6 +188,7 @@ extension Workout: FetchableRecord, PersistableRecord {
         container[Columns.completedDate] = completedDate
         container[Columns.completedAt] = completedAt
         container[Columns.durationSeconds] = durationSeconds
+        container[Columns.completionCount] = completionCount
         container[Columns.createdAt] = createdAt
         container[Columns.updatedAt] = updatedAt
     }

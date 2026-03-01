@@ -85,7 +85,11 @@ final class WorkoutRepository {
         guard !mappedWorkouts.isEmpty else { return [] }
 
         try await database.dbQueue.write { db in
-            for workout in mappedWorkouts {
+            for var workout in mappedWorkouts {
+                if workout.completionCount == nil,
+                   let existing = try Workout.fetchOne(db, key: workout.id) {
+                    workout.completionCount = existing.completionCount
+                }
                 try workout.save(db)
             }
         }
@@ -197,6 +201,11 @@ final class WorkoutRepository {
             let resolvedStatus = response.status
                 ?? (response.isCompleted == true ? .completed : status)
             workout.status = resolvedStatus
+            if let completionCount = Self.normalizedCompletionCount(response.completionCount) {
+                workout.completionCount = completionCount
+            } else if resolvedStatus == .completed {
+                workout.completionCount = max(workout.completionCount ?? 0, 1)
+            }
 
             if resolvedStatus == .completed {
                 workout.completedDate = Self.normalizedScheduleDate(response.completedDate)
@@ -268,6 +277,11 @@ final class WorkoutRepository {
             workout.durationSeconds = response.durationSeconds
                 ?? durationSeconds
                 ?? workout.durationSeconds
+            if let completionCount = Self.normalizedCompletionCount(response.completionCount) {
+                workout.completionCount = completionCount
+            } else {
+                workout.completionCount = max(workout.completionCount ?? 0, 1)
+            }
             workout.updatedAt = Date()
             try workout.update(db)
             return workout
@@ -314,7 +328,11 @@ final class WorkoutRepository {
         }
 
         try await database.dbQueue.write { db in
-            for workout in workoutsToUpsert {
+            for var workout in workoutsToUpsert {
+                if workout.completionCount == nil,
+                   let existing = try Workout.fetchOne(db, key: workout.id) {
+                    workout.completionCount = existing.completionCount
+                }
                 try workout.save(db)
             }
         }
@@ -443,6 +461,7 @@ final class WorkoutRepository {
         let completedDate: String?
         let completedAt: String?
         let durationSeconds: Int?
+        let completionCount: Int?
         let isCompleted: Bool?
         let createdAt: String?
         let updatedAt: String?
@@ -489,6 +508,14 @@ final class WorkoutRepository {
             case completed_at
             case durationSeconds
             case duration_seconds
+            case completionCount
+            case completion_count
+            case completionsCount
+            case completions_count
+            case totalCompletions
+            case total_completions
+            case timesCompleted
+            case times_completed
             case isCompleted
             case is_completed
             case createdAt
@@ -541,6 +568,19 @@ final class WorkoutRepository {
             durationSeconds = Self.decodeFirstInt(
                 in: container,
                 keys: [.durationSeconds, .duration_seconds]
+            )
+            completionCount = Self.decodeFirstInt(
+                in: container,
+                keys: [
+                    .completionCount,
+                    .completion_count,
+                    .completionsCount,
+                    .completions_count,
+                    .totalCompletions,
+                    .total_completions,
+                    .timesCompleted,
+                    .times_completed
+                ]
             )
             isCompleted = Self.decodeFirstBool(
                 in: container,
@@ -696,6 +736,10 @@ final class WorkoutRepository {
             isCompleted: remote.isCompleted,
             completedDate: completedDate
         )
+        let remoteCompletionCount = normalizedCompletionCount(remote.completionCount)
+        let hasCompletionMetadata = status == .completed || completedDate != nil || completedAt != nil
+        let completionCount = remoteCompletionCount
+            ?? (hasCompletionMetadata ? 1 : nil)
 
         let createdAt = parseISO8601(remote.createdAt) ?? Date()
         let updatedAt = parseISO8601(remote.updatedAt) ?? createdAt
@@ -716,6 +760,7 @@ final class WorkoutRepository {
             completedDate: completedDate,
             completedAt: completedAt,
             durationSeconds: remote.durationSeconds,
+            completionCount: completionCount,
             createdAt: createdAt,
             updatedAt: updatedAt
         )
@@ -794,6 +839,11 @@ final class WorkoutRepository {
             return nil
         }
         return rawTimestamp
+    }
+
+    private static func normalizedCompletionCount(_ rawCount: Int?) -> Int? {
+        guard let rawCount, rawCount > 0 else { return nil }
+        return rawCount
     }
 
     private static func mapRemoteStatus(

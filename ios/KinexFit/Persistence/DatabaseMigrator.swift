@@ -34,6 +34,7 @@ struct DatabaseMigratorFactory {
                 table.column("completedDate", .text)
                 table.column("completedAt", .text)
                 table.column("durationSeconds", .integer)
+                table.column("completionCount", .integer)
                 table.column("createdAt", .datetime).notNull()
                 table.column("updatedAt", .datetime).notNull()
             }
@@ -152,6 +153,15 @@ struct DatabaseMigratorFactory {
                 if missingColumns.contains("durationSeconds") {
                     table.add(column: "durationSeconds", .integer)
                 }
+            }
+        }
+
+        migrator.registerMigration("add-workout-completion-count-field") { db in
+            let existingColumns = Set(try db.columns(in: "workouts").map(\.name))
+            guard !existingColumns.contains("completionCount") else { return }
+
+            try db.alter(table: "workouts") { table in
+                table.add(column: "completionCount", .integer)
             }
         }
 

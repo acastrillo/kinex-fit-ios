@@ -65,6 +65,13 @@ struct WorkoutRowView: View {
         return nil
     }
 
+    private var resolvedCompletionCount: Int? {
+        if let completionCount = workout.completionCount, completionCount > 0 {
+            return completionCount
+        }
+        return workout.isCompleted ? 1 : nil
+    }
+
     private var displayImageURL: URL? {
         guard let rawImageURL = workout.imageURL?.trimmingCharacters(in: .whitespacesAndNewlines),
               !rawImageURL.isEmpty else {
@@ -101,11 +108,18 @@ struct WorkoutRowView: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                Text(workout.title)
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppTheme.primaryText)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.88)
+                HStack(alignment: .top, spacing: 10) {
+                    Text(workout.title)
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppTheme.primaryText)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.88)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    if let resolvedCompletionCount {
+                        completionCountBadge(count: resolvedCompletionCount)
+                    }
+                }
 
                 if let summaryText {
                     Text(summaryText)
@@ -176,6 +190,27 @@ struct WorkoutRowView: View {
             }
     }
 
+    private func completionCountBadge(count: Int) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 11, weight: .semibold))
+            Text("\(count)x")
+                .font(.system(size: 12, weight: .bold))
+            Text("completed")
+                .font(.system(size: 11, weight: .semibold))
+        }
+        .foregroundStyle(Color(red: 0.60, green: 0.95, blue: 0.73))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(Color(red: 0.11, green: 0.21, blue: 0.15))
+        .clipShape(Capsule())
+        .overlay {
+            Capsule()
+                .stroke(Color(red: 0.35, green: 0.78, blue: 0.54).opacity(0.5), lineWidth: 1)
+        }
+        .accessibilityLabel("\(count) completion\(count == 1 ? "" : "s")")
+    }
+
     private func firstMatchedNumber(pattern: String, in source: String) -> Int? {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
             return nil
@@ -202,7 +237,8 @@ struct WorkoutRowView: View {
                 source: .manual,
                 durationMinutes: 55,
                 exerciseCount: 9,
-                difficulty: "advanced"
+                difficulty: "advanced",
+                completionCount: 3
             ))
 
             WorkoutRowView(workout: Workout(

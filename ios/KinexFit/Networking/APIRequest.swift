@@ -140,6 +140,7 @@ struct WorkoutScheduleActionResponse: Decodable {
     let completedDate: String?
     let completedAt: String?
     let durationSeconds: Int?
+    let completionCount: Int?
     let isCompleted: Bool?
 
     private enum CodingKeys: String, CodingKey {
@@ -157,6 +158,14 @@ struct WorkoutScheduleActionResponse: Decodable {
         case completed_at
         case durationSeconds
         case duration_seconds
+        case completionCount
+        case completion_count
+        case completionsCount
+        case completions_count
+        case totalCompletions
+        case total_completions
+        case timesCompleted
+        case times_completed
         case isCompleted
         case is_completed
     }
@@ -177,6 +186,19 @@ struct WorkoutScheduleActionResponse: Decodable {
         completedDate = Self.decodeFirstString(in: container, keys: [.completedDate, .completed_date])
         completedAt = Self.decodeFirstString(in: container, keys: [.completedAt, .completed_at])
         durationSeconds = Self.decodeFirstInt(in: container, keys: [.durationSeconds, .duration_seconds])
+        completionCount = Self.decodeFirstInt(
+            in: container,
+            keys: [
+                .completionCount,
+                .completion_count,
+                .completionsCount,
+                .completions_count,
+                .totalCompletions,
+                .total_completions,
+                .timesCompleted,
+                .times_completed
+            ]
+        )
         isCompleted = Self.decodeFirstBool(in: container, keys: [.isCompleted, .is_completed])
     }
 

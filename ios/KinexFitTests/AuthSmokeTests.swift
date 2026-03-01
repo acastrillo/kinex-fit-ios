@@ -347,6 +347,7 @@ final class AuthSmokeTests: XCTestCase {
                       "completedDate": "2026-03-05",
                       "completedAt": "2026-03-05T08:05:00Z",
                       "durationSeconds": 2100,
+                      "completionCount": 4,
                       "createdAt": "2026-03-01T10:00:00Z",
                       "updatedAt": "2026-03-01T10:15:00Z"
                     }
@@ -372,6 +373,7 @@ final class AuthSmokeTests: XCTestCase {
         XCTAssertEqual(workout?.completedDate, "2026-03-05")
         XCTAssertEqual(workout?.completedAt, "2026-03-05T08:05:00Z")
         XCTAssertEqual(workout?.durationSeconds, 2100)
+        XCTAssertEqual(workout?.completionCount, 4)
         XCTAssertEqual(workout?.isCompleted, true)
     }
 
@@ -442,7 +444,8 @@ final class AuthSmokeTests: XCTestCase {
                   "status": "completed",
                   "completedDate": "2026-03-09",
                   "completedAt": "2026-03-09T18:30:00Z",
-                  "durationSeconds": 1980
+                  "durationSeconds": 1980,
+                  "completionCount": 7
                 }
                 """
                 return (response, Data(payload.utf8))
@@ -463,6 +466,7 @@ final class AuthSmokeTests: XCTestCase {
         XCTAssertEqual(updated?.completedDate, "2026-03-09")
         XCTAssertEqual(updated?.completedAt, "2026-03-09T18:30:00Z")
         XCTAssertEqual(updated?.durationSeconds, 1980)
+        XCTAssertEqual(updated?.completionCount, 7)
         XCTAssertEqual(updated?.isCompleted, true)
 
         let persisted = try await repository.fetch(id: "workout-complete-1")
@@ -470,6 +474,7 @@ final class AuthSmokeTests: XCTestCase {
         XCTAssertEqual(persisted?.completedDate, "2026-03-09")
         XCTAssertEqual(persisted?.completedAt, "2026-03-09T18:30:00Z")
         XCTAssertEqual(persisted?.durationSeconds, 1980)
+        XCTAssertEqual(persisted?.completionCount, 7)
     }
 
     func testImportFromServerFallsBackToWebEndpointOnMobileServerError() async throws {
