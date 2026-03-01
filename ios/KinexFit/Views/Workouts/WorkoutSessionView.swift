@@ -1,7 +1,23 @@
 import SwiftUI
 import OSLog
+import AudioToolbox
+import UIKit
 
 private let logger = Logger(subsystem: "com.kinex.fit", category: "WorkoutSession")
+
+private enum WorkoutIntervalPhase {
+    case work
+    case rest
+    case completed
+
+    var label: String {
+        switch self {
+        case .work: return "Work"
+        case .rest: return "Rest"
+        case .completed: return "Complete"
+        }
+    }
+}
 
 // MARK: - Session Models
 
@@ -197,7 +213,10 @@ struct WorkoutSessionView: View {
     @State private var showSaveError = false
     @State private var detectedPRs: [WorkoutPRHighlight] = []
     @State private var timerConfiguration: WorkoutSessionTimerConfiguration
-    @State private var timerCountdownRemainingSeconds: Int?
+    @State private var intervalPhase: WorkoutIntervalPhase
+    @State private var intervalRound: Int
+    @State private var intervalPhaseRemainingSeconds: Int
+    @State private var intervalElapsedSeconds: Int
     @State private var showTimerSelection = false
     @State private var didPresentAutoCompletion = false
 
@@ -218,11 +237,12 @@ struct WorkoutSessionView: View {
         let resolvedConfiguration = (initialTimerConfiguration ?? recommended).normalized()
         self.recommendedTimerConfiguration = recommended
         _timerConfiguration = State(initialValue: resolvedConfiguration)
-        _timerCountdownRemainingSeconds = State(
-            initialValue: resolvedConfiguration.usesCountdown
-                ? resolvedConfiguration.clampedDurationMinutes * 60
-                : nil
+        _intervalPhase = State(initialValue: resolvedConfiguration.usesCountdown ? .work : .completed)
+        _intervalRound = State(initialValue: 1)
+        _intervalPhaseRemainingSeconds = State(
+            initialValue: resolvedConfiguration.usesCountdown ? resolvedConfiguration.clampedWorkSeconds : 0
         )
+        _intervalElapsedSeconds = State(initialValue: 0)
     }
 
     private var presentation: WorkoutContentPresentation {
@@ -277,47 +297,25 @@ struct WorkoutSessionView: View {
 
     private var displayedTimerSeconds: Int {
         if timerConfiguration.usesCountdown {
-            return timerCountdownRemainingSeconds ?? timerConfiguration.clampedDurationMinutes * 60
+            return max(intervalPhaseRemainingSeconds, 0)
         }
         return sessionDuration
-    }
-
-    private var elapsedForCurrentTimerConfiguration: Int {
-        guard timerConfiguration.usesCountdown else { return sessionDuration }
-        let total = timerConfiguration.clampedDurationMinutes * 60
-        let remaining = timerCountdownRemainingSeconds ?? total
-        return max(total - remaining, 0)
-    }
-
-    private var emomMinuteDisplay: String? {
-        guard timerConfiguration.type == .emom else { return nil }
-        let totalMinutes = timerConfiguration.clampedDurationMinutes
-        if totalMinutes <= 0 {
-            return nil
-        }
-        let elapsed = elapsedForCurrentTimerConfiguration
-        let minute = min(totalMinutes, (elapsed / 60) + 1)
-        return "Minute \(minute) of \(totalMinutes)"
     }
 
     private var timerStatusText: String {
         if timerConfiguration.type == .standard {
             return "Standard count-up timer"
         }
-        if displayedTimerSeconds == 0 {
+        if intervalPhase == .completed {
             return "\(timerConfiguration.type.displayName) timer complete"
         }
-        if let emomMinuteDisplay {
-            return emomMinuteDisplay
-        }
-        return "\(timerConfiguration.type.displayName) countdown active"
+        return "\(intervalPhase.label) • Round \(min(intervalRound, timerConfiguration.clampedRounds))/\(timerConfiguration.clampedRounds)"
     }
 
     private var countdownProgress: Double {
         guard timerConfiguration.usesCountdown else { return 0 }
-        let total = Double(max(timerConfiguration.clampedDurationMinutes * 60, 1))
-        let remaining = Double(displayedTimerSeconds)
-        let progress = (total - remaining) / total
+        let total = Double(max(timerConfiguration.totalDurationSeconds, 1))
+        let progress = Double(intervalElapsedSeconds) / total
         return min(max(progress, 0), 1)
     }
 
@@ -331,8 +329,8 @@ struct WorkoutSessionView: View {
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             initializeMetrics()
-            if timerConfiguration.usesCountdown && timerCountdownRemainingSeconds == nil {
-                timerCountdownRemainingSeconds = timerConfiguration.clampedDurationMinutes * 60
+            if timerConfiguration.usesCountdown {
+                resetIntervalState(for: timerConfiguration)
             }
         }
         .onReceive(timer) { _ in
@@ -442,7 +440,11 @@ struct WorkoutSessionView: View {
                         .foregroundStyle(AppTheme.tertiaryText)
                 }
                 Spacer()
-                if isPaused {
+                if timerConfiguration.usesCountdown && intervalPhase == .completed {
+                    Text("Complete")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.green)
+                } else if isPaused {
                     Text("Paused")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.orange)
@@ -561,6 +563,24 @@ struct WorkoutSessionView: View {
                 } else {
                     Text("elapsed")
                         .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+            }
+
+            if timerConfiguration.usesCountdown {
+                HStack(spacing: 8) {
+                    Text(intervalPhase.label)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(intervalPhase == .rest ? .orange : AppTheme.accent)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            (intervalPhase == .rest ? Color.orange : AppTheme.accent).opacity(0.16)
+                        )
+                        .clipShape(Capsule())
+
+                    Text("Round \(min(intervalRound, timerConfiguration.clampedRounds))/\(timerConfiguration.clampedRounds)")
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(AppTheme.secondaryText)
                 }
             }
@@ -1058,27 +1078,101 @@ struct WorkoutSessionView: View {
         sessionDuration += 1
 
         guard timerConfiguration.usesCountdown else { return }
+        guard intervalPhase != .completed else { return }
 
-        let totalSeconds = timerConfiguration.clampedDurationMinutes * 60
-        guard totalSeconds > 0 else { return }
+        if intervalPhaseRemainingSeconds > 0 {
+            intervalPhaseRemainingSeconds -= 1
+            intervalElapsedSeconds += 1
+        }
 
-        let currentRemaining = timerCountdownRemainingSeconds ?? totalSeconds
-        let nextRemaining = max(currentRemaining - 1, 0)
-        timerCountdownRemainingSeconds = nextRemaining
+        if intervalPhaseRemainingSeconds == 0 {
+            advanceIntervalPhase()
+        }
+    }
 
-        guard nextRemaining == 0, !didPresentAutoCompletion else { return }
+    private func resetIntervalState(for configuration: WorkoutSessionTimerConfiguration) {
+        guard configuration.usesCountdown else {
+            intervalPhase = .completed
+            intervalRound = 1
+            intervalPhaseRemainingSeconds = 0
+            intervalElapsedSeconds = 0
+            return
+        }
 
+        intervalPhase = .work
+        intervalRound = 1
+        intervalPhaseRemainingSeconds = configuration.clampedWorkSeconds
+        intervalElapsedSeconds = 0
+    }
+
+    private func advanceIntervalPhase() {
+        switch intervalPhase {
+        case .work:
+            let hasAnotherRound = intervalRound < timerConfiguration.clampedRounds
+            guard hasAnotherRound else {
+                finishIntervalTimer()
+                return
+            }
+
+            if timerConfiguration.clampedRestSeconds > 0 {
+                intervalPhase = .rest
+                intervalPhaseRemainingSeconds = timerConfiguration.clampedRestSeconds
+                triggerTransitionAlert(for: .rest)
+            } else {
+                intervalRound += 1
+                intervalPhase = .work
+                intervalPhaseRemainingSeconds = timerConfiguration.clampedWorkSeconds
+                triggerTransitionAlert(for: .work)
+            }
+        case .rest:
+            let hasAnotherRound = intervalRound < timerConfiguration.clampedRounds
+            guard hasAnotherRound else {
+                finishIntervalTimer()
+                return
+            }
+            intervalRound += 1
+            intervalPhase = .work
+            intervalPhaseRemainingSeconds = timerConfiguration.clampedWorkSeconds
+            triggerTransitionAlert(for: .work)
+        case .completed:
+            break
+        }
+    }
+
+    private func finishIntervalTimer() {
+        guard intervalPhase != .completed else { return }
+        intervalPhase = .completed
+        intervalPhaseRemainingSeconds = 0
+
+        AudioServicesPlaySystemSound(SystemSoundID(1005))
+        let feedback = UINotificationFeedbackGenerator()
+        feedback.prepare()
+        feedback.notificationOccurred(.success)
+
+        guard !didPresentAutoCompletion else { return }
         didPresentAutoCompletion = true
         isPaused = true
         showCompletionSheet = true
     }
 
+    private func triggerTransitionAlert(for phase: WorkoutIntervalPhase) {
+        AudioServicesPlaySystemSound(SystemSoundID(1113))
+        let feedback = UINotificationFeedbackGenerator()
+        feedback.prepare()
+        switch phase {
+        case .work:
+            feedback.notificationOccurred(.success)
+        case .rest:
+            feedback.notificationOccurred(.warning)
+        case .completed:
+            feedback.notificationOccurred(.success)
+        }
+    }
+
     private func applyTimerConfiguration(_ configuration: WorkoutSessionTimerConfiguration) {
         let normalized = configuration.normalized()
         timerConfiguration = normalized
-        timerCountdownRemainingSeconds = normalized.usesCountdown
-            ? normalized.clampedDurationMinutes * 60
-            : nil
+        resetIntervalState(for: normalized)
         didPresentAutoCompletion = false
     }
 
