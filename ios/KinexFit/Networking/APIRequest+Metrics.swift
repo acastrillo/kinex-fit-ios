@@ -36,6 +36,15 @@ extension APIRequest {
         APIRequest(path: "/api/user/profile", method: .get)
     }
 
+    /// Replace the user training profile with a full payload.
+    static func updateTrainingProfile(_ profile: TrainingProfile) throws -> APIRequest {
+        try json(
+            path: "/api/user/profile",
+            method: .put,
+            body: profile
+        )
+    }
+
     /// Add or update a personal record
     static func upsertPersonalRecord(exercise: String, pr: PersonalRecordPayload) throws -> APIRequest {
         try json(
