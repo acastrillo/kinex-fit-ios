@@ -218,7 +218,13 @@ struct FetchedWorkout: Identifiable {
 
     /// Convenience computed properties
     var exerciseCount: Int {
-        parsedData.exercises.count
+        let amrapCount = parsedData.amrapBlocks?.reduce(0) { $0 + $1.exercises.count } ?? 0
+        let emomCount = parsedData.emomBlocks?.reduce(0) { $0 + $1.exercises.count } ?? 0
+        let blockCount = amrapCount + emomCount
+        if blockCount > 0 {
+            return blockCount
+        }
+        return parsedData.exercises.count
     }
 
     var workoutType: String {

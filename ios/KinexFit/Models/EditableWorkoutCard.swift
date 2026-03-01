@@ -1,5 +1,53 @@
 import Foundation
 
+enum WorkoutBlockType: String, Codable, CaseIterable, Hashable {
+    case amrap
+    case emom
+
+    var displayName: String {
+        switch self {
+        case .amrap: return "AMRAP"
+        case .emom: return "EMOM"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .amrap: return "flame"
+        case .emom: return "clock.badge.checkmark"
+        }
+    }
+}
+
+struct WorkoutBlockContext: Equatable, Hashable {
+    var id: String
+    var type: WorkoutBlockType
+    var value: String?
+
+    init(id: String = UUID().uuidString, type: WorkoutBlockType, value: String? = nil) {
+        self.id = id
+        self.type = type
+        self.value = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var normalizedValue: String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    var title: String {
+        if let normalizedValue {
+            return "\(type.displayName) \(normalizedValue)"
+        }
+        return type.displayName
+    }
+
+    var identityKey: String {
+        "\(type.rawValue)|\(normalizedValue?.lowercased() ?? "")"
+    }
+}
+
 /// A single editable exercise card used across workout creation/edit flows.
 /// Shared between WorkoutFormView, InstagramWorkoutEditView, and InstagramImportReviewView.
 struct EditableWorkoutCard: Identifiable, Equatable {
@@ -9,6 +57,7 @@ struct EditableWorkoutCard: Identifiable, Equatable {
     var reps: String
     var weight: String
     var restSeconds: String
+    var block: WorkoutBlockContext?
 
     init(
         id: UUID = UUID(),
@@ -16,7 +65,8 @@ struct EditableWorkoutCard: Identifiable, Equatable {
         sets: String,
         reps: String,
         weight: String,
-        restSeconds: String
+        restSeconds: String,
+        block: WorkoutBlockContext? = nil
     ) {
         self.id = id
         self.name = name
@@ -24,6 +74,7 @@ struct EditableWorkoutCard: Identifiable, Equatable {
         self.reps = reps
         self.weight = weight
         self.restSeconds = restSeconds
+        self.block = block
     }
 
     var trimmedName: String {
@@ -36,15 +87,61 @@ struct EditableWorkoutCard: Identifiable, Equatable {
 extension EditableWorkoutCard {
     /// Create cards from backend-parsed `ExerciseData` array (Instagram/ingest response).
     static func from(exercises: [ExerciseData], rounds: Int? = nil) -> [EditableWorkoutCard] {
-        exercises.map { exercise in
-            EditableWorkoutCard(
-                name: exercise.name,
-                sets: exercise.sets.map(String.init) ?? (rounds.map(String.init) ?? ""),
-                reps: exercise.reps ?? "",
-                weight: exercise.weight ?? "",
-                restSeconds: exercise.restSeconds.map(String.init) ?? ""
-            )
+        cards(from: exercises, rounds: rounds, block: nil)
+    }
+
+    /// Create cards from backend ingest response, preserving AMRAP/EMOM block groupings when available.
+    static func from(ingestResponse: WorkoutIngestResponse) -> [EditableWorkoutCard] {
+        var blockAwareCards: [EditableWorkoutCard] = []
+
+        if let amrapBlocks = ingestResponse.amrapBlocks {
+            for (index, block) in amrapBlocks.enumerated() {
+                let context = WorkoutBlockContext(
+                    id: block.id ?? "amrap-\(index + 1)",
+                    type: .amrap,
+                    value: normalizedBlockValue(block.timeLimit)
+                )
+                blockAwareCards.append(contentsOf: cards(from: block.exercises, rounds: nil, block: context))
+            }
         }
+
+        if let emomBlocks = ingestResponse.emomBlocks {
+            for (index, block) in emomBlocks.enumerated() {
+                let context = WorkoutBlockContext(
+                    id: block.id ?? "emom-\(index + 1)",
+                    type: .emom,
+                    value: normalizedBlockValue(block.interval)
+                )
+                blockAwareCards.append(contentsOf: cards(from: block.exercises, rounds: nil, block: context))
+            }
+        }
+
+        if !blockAwareCards.isEmpty {
+            return blockAwareCards
+        }
+
+        if let structureType = ingestResponse.structure?.type?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            switch structureType {
+            case WorkoutBlockType.amrap.rawValue:
+                let context = WorkoutBlockContext(
+                    id: "amrap-1",
+                    type: .amrap,
+                    value: normalizedBlockValue(ingestResponse.structure?.timeLimit)
+                )
+                return cards(from: ingestResponse.exercises, rounds: nil, block: context)
+            case WorkoutBlockType.emom.rawValue:
+                let context = WorkoutBlockContext(
+                    id: "emom-1",
+                    type: .emom,
+                    value: normalizedBlockValue(ingestResponse.structure?.interval)
+                )
+                return cards(from: ingestResponse.exercises, rounds: nil, block: context)
+            default:
+                break
+            }
+        }
+
+        return from(exercises: ingestResponse.exercises, rounds: ingestResponse.structure?.rounds)
     }
 
     /// Create cards from AI-enhanced `EnhancedExercise` array.
@@ -75,9 +172,33 @@ extension EditableWorkoutCard {
                 sets: exercise.sets.map(String.init) ?? "",
                 reps: exercise.reps.map(String.init) ?? "",
                 weight: exercise.weight ?? "",
-                restSeconds: exercise.restSeconds.map(String.init) ?? ""
+                restSeconds: exercise.restSeconds.map(String.init) ?? "",
+                block: exercise.block
             )
         }
+    }
+
+    private static func cards(
+        from exercises: [ExerciseData],
+        rounds: Int?,
+        block: WorkoutBlockContext?
+    ) -> [EditableWorkoutCard] {
+        exercises.map { exercise in
+            EditableWorkoutCard(
+                name: exercise.name,
+                sets: exercise.sets.map(String.init) ?? (rounds.map(String.init) ?? ""),
+                reps: exercise.reps ?? "",
+                weight: exercise.weight ?? "",
+                restSeconds: exercise.restSeconds.map(String.init) ?? "",
+                block: block
+            )
+        }
+    }
+
+    private static func normalizedBlockValue(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private static func normalizedAIReps(for exercise: EnhancedExercise) -> String {
@@ -173,11 +294,19 @@ extension EditableWorkoutCard {
             return lines.joined(separator: "\n\n")
         }
 
-        if let rounds, rounds > 0 {
+        let hasBlockSections = usableCards.contains { $0.block != nil }
+        if let rounds, rounds > 0, !hasBlockSections {
             lines.append("\(rounds) Rounds")
         }
 
+        var lastBlockIdentity: String?
         for card in usableCards {
+            let blockIdentity = card.block?.identityKey
+            if let block = card.block, blockIdentity != lastBlockIdentity {
+                lines.append(block.title)
+            }
+            lastBlockIdentity = blockIdentity
+
             var lineComponents: [String] = []
             if !card.reps.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 lineComponents.append(card.reps.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -214,6 +343,12 @@ extension EditableWorkoutCard {
             let lowered = line.lowercased()
 
             if lowered.range(of: #"^\d{1,2}\s*rounds?\b"#, options: .regularExpression) != nil {
+                return false
+            }
+            if lowered.range(of: #"(?i)^(?:block\s*[a-z0-9]+\s*[:\-]?\s*)?(?:amrap|emom)\b"#, options: .regularExpression) != nil {
+                return false
+            }
+            if lowered.contains("every minute on the minute") {
                 return false
             }
             if lowered.range(of: #"^\d{1,3}\s+[a-z]"#, options: .regularExpression) != nil {

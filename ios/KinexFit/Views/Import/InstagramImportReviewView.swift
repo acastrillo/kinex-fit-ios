@@ -399,6 +399,7 @@ struct InstagramImportReviewView: View {
             title = "Instagram Workout"
             description = ""
             workoutCards = []
+            rounds = nil
             enhancementSourceText = ""
             return
         }
@@ -424,6 +425,7 @@ struct InstagramImportReviewView: View {
             // Fallback: no exercises detected, put text as description
             description = parsed.content
             workoutCards = []
+            rounds = nil
         }
     }
 
@@ -458,6 +460,8 @@ struct InstagramImportReviewView: View {
 
             if let structure = response.workout.structure, let r = structure.rounds, r > 0 {
                 rounds = r
+            } else {
+                rounds = nil
             }
         } catch {
             self.error = error

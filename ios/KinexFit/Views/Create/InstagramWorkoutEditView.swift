@@ -36,12 +36,13 @@ struct InstagramWorkoutEditView: View {
         self.onDiscard = onDiscard
 
         let parsedTitle = fetchedWorkout.parsedData.title ?? fetchedWorkout.title
-        let parsedRounds = fetchedWorkout.parsedData.structure?.rounds
-        let exercises = fetchedWorkout.parsedData.exercises
+        let parsedCards = EditableWorkoutCard.from(ingestResponse: fetchedWorkout.parsedData)
+        let hasBlockAwareCards = parsedCards.contains { $0.block != nil }
+        let parsedRounds = hasBlockAwareCards ? nil : fetchedWorkout.parsedData.structure?.rounds
 
         _title = State(initialValue: parsedTitle)
         _description = State(initialValue: fetchedWorkout.parsedData.summary ?? "")
-        _workoutCards = State(initialValue: EditableWorkoutCard.from(exercises: exercises, rounds: parsedRounds))
+        _workoutCards = State(initialValue: parsedCards)
         _rounds = State(initialValue: parsedRounds)
     }
 
@@ -256,16 +257,27 @@ struct InstagramWorkoutEditView: View {
             }
 
             // Show parsed exercise summary
-            if !fetchedWorkout.parsedData.exercises.isEmpty {
+            if !workoutCards.isEmpty {
                 Rectangle()
                     .fill(AppTheme.separator)
                     .frame(height: 1)
 
-                ForEach(Array(fetchedWorkout.parsedData.exercises.enumerated()), id: \.offset) { index, exercise in
+                ForEach(Array(workoutCards.enumerated()), id: \.element.id) { index, card in
+                    if shouldShowSummaryBlockHeader(at: index), let block = card.block {
+                        HStack(spacing: 6) {
+                            Image(systemName: block.type.iconName)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(AppTheme.accent)
+                            Text(block.title)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(AppTheme.secondaryText)
+                        }
+                    }
+
                     HStack(spacing: 8) {
                         Text("\u{2022}")
                             .foregroundStyle(AppTheme.accent)
-                        Text(exerciseSummaryLine(exercise))
+                        Text(exerciseSummaryLine(card))
                             .font(.system(size: 16, weight: .medium))
                             .foregroundStyle(AppTheme.primaryText)
                     }
@@ -435,15 +447,24 @@ struct InstagramWorkoutEditView: View {
 
     // MARK: - Helpers
 
-    private func exerciseSummaryLine(_ exercise: ExerciseData) -> String {
-        var parts: [String] = [exercise.name]
-        if let reps = exercise.reps {
+    private func exerciseSummaryLine(_ card: EditableWorkoutCard) -> String {
+        var parts: [String] = [card.trimmedName]
+        if !card.reps.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let reps = card.reps.trimmingCharacters(in: .whitespacesAndNewlines)
             parts.insert(reps, at: 0)
         }
-        if let weight = exercise.weight {
+        if !card.weight.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let weight = card.weight.trimmingCharacters(in: .whitespacesAndNewlines)
             parts.append("@ \(weight)")
         }
         return parts.joined(separator: " ")
+    }
+
+    private func shouldShowSummaryBlockHeader(at index: Int) -> Bool {
+        guard index >= 0, index < workoutCards.count else { return false }
+        guard let current = workoutCards[index].block else { return false }
+        guard index > 0 else { return true }
+        return workoutCards[index - 1].block?.identityKey != current.identityKey
     }
 
     // MARK: - Actions
@@ -477,6 +498,8 @@ struct InstagramWorkoutEditView: View {
 
             if let structure = response.workout.structure, let r = structure.rounds, r > 0 {
                 rounds = r
+            } else {
+                rounds = nil
             }
         } catch {
             self.error = error

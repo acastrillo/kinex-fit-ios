@@ -49,19 +49,25 @@ struct WorkoutCardEditor: View {
             LazyVStack(spacing: 10) {
                 ForEach(cards) { card in
                     if let cardBinding = binding(for: card.id) {
-                        exerciseCardRow(card: cardBinding, index: indexForCard(id: card.id) + 1)
-                            .onDrag {
-                                draggedCard = card
-                                return NSItemProvider(object: card.id.uuidString as NSString)
+                        VStack(alignment: .leading, spacing: 8) {
+                            if shouldShowBlockHeader(for: card), let block = card.block {
+                                blockHeader(block, order: blockOrder(for: card))
                             }
-                            .onDrop(
-                                of: [UTType.text],
-                                delegate: CardReorderDropDelegate(
-                                    item: card,
-                                    cards: $cards,
-                                    draggedCard: $draggedCard
+
+                            exerciseCardRow(card: cardBinding, index: indexForCard(id: card.id) + 1)
+                                .onDrag {
+                                    draggedCard = card
+                                    return NSItemProvider(object: card.id.uuidString as NSString)
+                                }
+                                .onDrop(
+                                    of: [UTType.text],
+                                    delegate: CardReorderDropDelegate(
+                                        item: card,
+                                        cards: $cards,
+                                        draggedCard: $draggedCard
+                                    )
                                 )
-                            )
+                        }
                     }
                 }
             }
@@ -232,6 +238,21 @@ struct WorkoutCardEditor: View {
             .foregroundStyle(AppTheme.secondaryText)
     }
 
+    private func blockHeader(_ block: WorkoutBlockContext, order: Int) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: block.type.iconName)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(AppTheme.accent)
+            Text("Block \(order): \(block.title)")
+                .font(Typography.fieldLabel)
+                .foregroundStyle(AppTheme.secondaryText)
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .kinexCard(cornerRadius: 10, fill: AppTheme.cardBackgroundElevated)
+    }
+
     private func binding(for id: UUID) -> Binding<EditableWorkoutCard>? {
         guard let index = cards.firstIndex(where: { $0.id == id }) else {
             return nil
@@ -243,13 +264,48 @@ struct WorkoutCardEditor: View {
         cards.firstIndex(where: { $0.id == id }) ?? 0
     }
 
+    private func shouldShowBlockHeader(for card: EditableWorkoutCard) -> Bool {
+        guard let block = card.block,
+              let currentIndex = cards.firstIndex(where: { $0.id == card.id }) else {
+            return false
+        }
+
+        guard currentIndex > 0 else { return true }
+        return cards[currentIndex - 1].block?.identityKey != block.identityKey
+    }
+
+    private func blockOrder(for card: EditableWorkoutCard) -> Int {
+        guard let currentIndex = cards.firstIndex(where: { $0.id == card.id }) else {
+            return 1
+        }
+
+        var order = 0
+        var lastIdentity: String?
+
+        for candidate in cards.prefix(currentIndex + 1) {
+            guard let identity = candidate.block?.identityKey else {
+                lastIdentity = nil
+                continue
+            }
+            if identity != lastIdentity {
+                order += 1
+                lastIdentity = identity
+            }
+        }
+
+        return max(order, 1)
+    }
+
     private func addCard() {
+        let inheritedBlock = cards.last?.block
+        let defaultSets = (rounds != nil || inheritedBlock != nil) ? "1" : ""
         let newCard = EditableWorkoutCard(
             name: "",
-            sets: rounds != nil ? "1" : "",
+            sets: defaultSets,
             reps: "",
             weight: "",
-            restSeconds: "\(defaultRestSeconds)"
+            restSeconds: "\(defaultRestSeconds)",
+            block: inheritedBlock
         )
         cards.append(newCard)
         editingCardID = newCard.id

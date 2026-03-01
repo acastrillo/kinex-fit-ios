@@ -447,6 +447,8 @@ struct WorkoutFormView: View {
 
         if let structure = workout.structure, let r = structure.rounds, r > 0 {
             rounds = r
+        } else {
+            rounds = nil
         }
     }
 

@@ -294,14 +294,40 @@ struct WorkoutDetailView: View {
                 emptyExerciseState
             } else {
                 LazyVStack(spacing: 12) {
-                    ForEach(presentation.exercises) { exercise in
-                        workoutExerciseCard(exercise)
+                    if presentation.blocks.isEmpty {
+                        ForEach(presentation.exercises) { exercise in
+                            workoutExerciseCard(exercise)
+                        }
+                    } else {
+                        ForEach(presentation.blocks) { block in
+                            workoutBlockSection(block)
+                        }
                     }
                 }
             }
         }
         .padding(12)
         .kinexCard(cornerRadius: 16)
+    }
+
+    private func workoutBlockSection(_ block: WorkoutContentPresentation.Block) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: block.type.iconName)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(AppTheme.accent)
+                Text(block.title)
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppTheme.primaryText)
+                Spacer()
+            }
+
+            ForEach(block.exercises) { exercise in
+                workoutExerciseCard(exercise)
+            }
+        }
+        .padding(12)
+        .kinexCard(cornerRadius: 14, fill: AppTheme.cardBackground)
     }
 
     private var emptyExerciseState: some View {
@@ -326,7 +352,9 @@ struct WorkoutDetailView: View {
     }
 
     private func workoutExerciseCard(_ exercise: WorkoutContentPresentation.Exercise) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
+        let defaultSets = exercise.block == nil ? (presentation.rounds ?? 1) : 1
+
+        return VStack(alignment: .leading, spacing: 7) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text("\(exercise.index)")
                     .font(.system(size: 14, weight: .semibold))
@@ -346,7 +374,7 @@ struct WorkoutDetailView: View {
                 .foregroundStyle(AppTheme.secondaryText)
 
             HStack(spacing: 18) {
-                statColumn(value: "\(exercise.sets ?? presentation.rounds ?? 1)", label: "sets")
+                statColumn(value: "\(exercise.sets ?? defaultSets)", label: "sets")
                 statColumn(value: "\(exercise.reps ?? 0)", label: "reps")
                 if let weight = exercise.weight {
                     statColumn(value: weight, label: "weight")
@@ -492,10 +520,27 @@ struct WorkoutContentPresentation {
         let sets: Int?
         let weight: String?
         let restSeconds: Int?
+        let block: WorkoutBlockContext?
+    }
+
+    struct Block: Identifiable, Hashable {
+        let id: String
+        let index: Int
+        let type: WorkoutBlockType
+        let value: String?
+        let exercises: [Exercise]
+
+        var title: String {
+            if let value, !value.isEmpty {
+                return "\(type.displayName) \(value)"
+            }
+            return type.displayName
+        }
     }
 
     let rounds: Int?
     let exercises: [Exercise]
+    let blocks: [Block]
     let restSeconds: Int?
     let estimatedDurationMinutes: Int?
     let source: WorkoutSource
@@ -504,6 +549,13 @@ struct WorkoutContentPresentation {
     let summaryCardCount: Int
 
     var subtitle: String {
+        if blocks.count == 1, let firstBlock = blocks.first {
+            let count = max(summaryExerciseCount, firstBlock.exercises.count)
+            return "\(firstBlock.title) with \(count) exercises."
+        }
+        if !blocks.isEmpty {
+            return "\(blocks.count) blocks, \(summaryExerciseCount) exercises."
+        }
         if let rounds, summaryExerciseCount > 0 {
             let perRound = max(summaryExerciseCount / max(rounds, 1), 1)
             return "\(rounds) rounds of \(perRound) exercises."
@@ -544,24 +596,29 @@ struct WorkoutContentPresentation {
             pattern: #"(?i)\brest\b[^0-9]{0,10}(\d{1,3})\s*(?:s|sec|secs|seconds)\b"#
         )
 
-        let parsedExercises = parseExercises(
+        let parsedContent = parseExerciseContent(
             from: lines,
             rounds: rounds,
             fallbackRestSeconds: globalRestSeconds
         )
+        let parsedExercises = parsedContent.exercises
+        let parsedBlocks = parsedContent.blocks
+
         let exerciseCount = max(
             fallbackExerciseCount ?? 0,
             parsedExercises.count
         )
+
+        let shouldMultiplyByRounds = parsedBlocks.isEmpty && (rounds ?? 0) > 1
         let summaryExerciseCount: Int
-        if let rounds, rounds > 1, exerciseCount > 0 {
+        if shouldMultiplyByRounds, let rounds, exerciseCount > 0 {
             summaryExerciseCount = rounds * exerciseCount
         } else {
             summaryExerciseCount = exerciseCount
         }
 
         let summaryCardCount: Int
-        if let rounds, rounds > 1, exerciseCount > 0 {
+        if shouldMultiplyByRounds, let rounds, exerciseCount > 0 {
             // Mirrors web semantics where rest cards can appear between rounds.
             summaryCardCount = summaryExerciseCount + max(rounds - 1, 0)
         } else {
@@ -572,6 +629,7 @@ struct WorkoutContentPresentation {
             explicitDuration: durationMinutes,
             content: rawContent,
             rounds: rounds,
+            blocks: parsedBlocks,
             exerciseCount: exerciseCount,
             restSeconds: globalRestSeconds
         )
@@ -579,6 +637,7 @@ struct WorkoutContentPresentation {
         return WorkoutContentPresentation(
             rounds: rounds,
             exercises: parsedExercises,
+            blocks: parsedBlocks,
             restSeconds: globalRestSeconds,
             estimatedDurationMinutes: inferredDuration,
             source: source,
@@ -588,15 +647,25 @@ struct WorkoutContentPresentation {
         )
     }
 
-    private static func parseExercises(
+    private static func parseExerciseContent(
         from lines: [String],
         rounds: Int?,
         fallbackRestSeconds: Int?
-    ) -> [Exercise] {
+    ) -> (exercises: [Exercise], blocks: [Block]) {
         var exercises: [Exercise] = []
+        var blockContexts: [WorkoutBlockContext] = []
+        var blockExercises: [String: [Exercise]] = [:]
+        var activeBlock: WorkoutBlockContext?
 
         for rawLine in lines {
             let cleanedLine = normalizeLine(rawLine)
+
+            if let blockHeader = parseBlockHeader(from: cleanedLine, blockIndex: blockContexts.count + 1) {
+                activeBlock = blockHeader
+                blockContexts.append(blockHeader)
+                continue
+            }
+
             guard shouldKeepExerciseLine(cleanedLine, rounds: rounds) else { continue }
 
             let repsFromPrefix = capture(in: cleanedLine, pattern: #"^(\d{1,3})\s+(.+)$"#)
@@ -636,16 +705,37 @@ struct WorkoutContentPresentation {
                     reps: reps ?? repsFromSetsPattern,
                     sets: sets,
                     weight: weight,
-                    restSeconds: localRest ?? fallbackRestSeconds
+                    restSeconds: localRest ?? fallbackRestSeconds,
+                    block: activeBlock
                 )
             )
+
+            if let activeBlock {
+                blockExercises[activeBlock.id, default: []].append(exercises[index - 1])
+            }
 
             if exercises.count >= 24 {
                 break
             }
         }
 
-        return exercises
+        var blocks: [Block] = []
+        for context in blockContexts {
+            guard let groupedExercises = blockExercises[context.id], !groupedExercises.isEmpty else {
+                continue
+            }
+            blocks.append(
+                Block(
+                    id: context.id,
+                    index: blocks.count + 1,
+                    type: context.type,
+                    value: context.normalizedValue,
+                    exercises: groupedExercises
+                )
+            )
+        }
+
+        return (exercises, blocks)
     }
 
     private static func shouldKeepExerciseLine(_ line: String, rounds: Int?) -> Bool {
@@ -665,6 +755,15 @@ struct WorkoutContentPresentation {
             return false
         }
         if lowered.hasPrefix("rest ") || lowered.hasPrefix("rest:") || lowered.hasPrefix("round rest") {
+            return false
+        }
+        if lowered.range(
+            of: #"(?i)^(?:block\s*[a-z0-9]+\s*[:\-]?\s*)?(?:amrap|emom)\b"#,
+            options: .regularExpression
+        ) != nil {
+            return false
+        }
+        if lowered.contains("every minute on the minute") {
             return false
         }
         if lowered.hasSuffix(":") {
@@ -703,6 +802,73 @@ struct WorkoutContentPresentation {
         return true
     }
 
+    private static func parseBlockHeader(from line: String, blockIndex: Int) -> WorkoutBlockContext? {
+        let lowered = line.lowercased()
+
+        if lowered.range(
+            of: #"(?i)^(?:block\s*[a-z0-9]+\s*[:\-]?\s*)?amrap\b"#,
+            options: .regularExpression
+        ) != nil {
+            return WorkoutBlockContext(
+                id: "amrap-\(blockIndex)",
+                type: .amrap,
+                value: normalizedTimeValue(from: line)
+            )
+        }
+
+        if lowered.range(
+            of: #"(?i)^(?:block\s*[a-z0-9]+\s*[:\-]?\s*)?emom\b"#,
+            options: .regularExpression
+        ) != nil
+            || lowered.contains("every minute on the minute")
+            || lowered.range(
+                of: #"(?i)^(?:block\s*[a-z0-9]+\s*[:\-]?\s*)?e\d{1,2}mom\b"#,
+                options: .regularExpression
+            ) != nil
+        {
+            return WorkoutBlockContext(
+                id: "emom-\(blockIndex)",
+                type: .emom,
+                value: normalizedTimeValue(from: line)
+            )
+        }
+
+        return nil
+    }
+
+    private static func normalizedTimeValue(from line: String) -> String? {
+        if let shorthand = capture(in: line, pattern: #"(?i)\be(\d{1,2})mom\b"#) {
+            return "\(shorthand[0]) min"
+        }
+
+        if line.lowercased().contains("every minute on the minute") {
+            return "1 min"
+        }
+
+        if let minuteSecond = capture(in: line, pattern: #"(?i)\b(\d{1,2}:\d{2})\b"#) {
+            return minuteSecond[0]
+        }
+
+        guard let timeCapture = capture(
+            in: line,
+            pattern: #"(?i)\b(\d{1,3})\s*(min|mins|minute|minutes|sec|secs|second|seconds|s)\b"#
+        ) else {
+            return nil
+        }
+
+        let value = timeCapture[0]
+        let unit = normalizedTimeUnit(timeCapture[1])
+        return "\(value) \(unit)"
+    }
+
+    private static func normalizedTimeUnit(_ rawUnit: String) -> String {
+        let lowered = rawUnit.lowercased()
+        if lowered.hasPrefix("min") {
+            return "min"
+        }
+        return "sec"
+    }
+
     private static func normalizeLine(_ line: String) -> String {
         var normalized = line
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -717,6 +883,11 @@ struct WorkoutContentPresentation {
 
     private static func sanitizeExerciseName(_ raw: String) -> String {
         var output = raw
+            .replacingOccurrences(
+                of: #"(?i)^\s*min(?:ute)?\s*\d+\s*[:\-]\s*"#,
+                with: "",
+                options: .regularExpression
+            )
             .replacingOccurrences(
                 of: #"(?i)\b\d{1,2}\s*x\s*\d{1,3}\b"#,
                 with: "",
@@ -755,11 +926,36 @@ struct WorkoutContentPresentation {
         explicitDuration: Int?,
         content: String,
         rounds: Int?,
+        blocks: [Block],
         exerciseCount: Int,
         restSeconds: Int?
     ) -> Int? {
         if let explicitDuration, explicitDuration > 0 {
             return explicitDuration
+        }
+
+        if !blocks.isEmpty {
+            let blockMinutes = blocks.compactMap { block -> Int? in
+                guard let value = block.value else { return nil }
+
+                if let minuteMatch = firstIntegerMatch(
+                    in: value,
+                    pattern: #"(?i)\b(\d{1,3})\s*(?:min|mins|minute|minutes)\b"#
+                ) {
+                    return minuteMatch
+                }
+
+                if let minuteSecond = capture(in: value, pattern: #"(?i)\b(\d{1,2}):(\d{2})\b"#),
+                   let minutes = Int(minuteSecond[0]) {
+                    return max(minutes, 1)
+                }
+
+                return nil
+            }
+            let total = blockMinutes.reduce(0, +)
+            if total > 0 {
+                return total
+            }
         }
 
         if let minutesFromText = firstIntegerMatch(
