@@ -23,7 +23,14 @@ struct SyncWorkout: Codable {
     let workoutId: String
     let title: String
     let content: String?
+    let enhancementSourceText: String?
     let source: WorkoutSource
+    let durationMinutes: Int?
+    let exerciseCount: Int?
+    let difficulty: String?
+    let imageURL: String?
+    let sourceURL: String?
+    let sourceAuthor: String?
     let scheduledDate: String?
     let scheduledTime: String?
     let status: WorkoutScheduleStatus?
@@ -36,7 +43,14 @@ struct SyncWorkout: Codable {
         workoutId = workout.id
         title = workout.title
         content = workout.content
+        enhancementSourceText = workout.enhancementSourceText
         source = workout.source
+        durationMinutes = workout.durationMinutes
+        exerciseCount = workout.exerciseCount
+        difficulty = workout.difficulty
+        imageURL = workout.imageURL
+        sourceURL = workout.sourceURL
+        sourceAuthor = workout.sourceAuthor
         scheduledDate = workout.scheduledDate
         scheduledTime = workout.scheduledTime
         status = workout.status

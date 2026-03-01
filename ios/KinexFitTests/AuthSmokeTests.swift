@@ -658,6 +658,57 @@ final class AuthSmokeTests: XCTestCase {
         XCTAssertEqual(tokenStore.accessToken, "social-access-token")
         XCTAssertEqual(tokenStore.refreshToken, "social-refresh-token")
     }
+
+    func testSyncPayloadIncludesWorkoutMetadataForCreateAndUpdate() throws {
+        let workout = Workout(
+            id: "workout-metadata-1",
+            title: "Metadata Workout",
+            content: "3 rounds of squats and lunges",
+            enhancementSourceText: "Original creator text",
+            source: .instagram,
+            durationMinutes: 42,
+            exerciseCount: 10,
+            difficulty: "advanced",
+            imageURL: "https://cdn.kinexfit.com/workouts/workout-metadata-1.png",
+            sourceURL: "https://www.instagram.com/p/kinexfit123",
+            sourceAuthor: "@coachkinex",
+            scheduledDate: "2026-03-07",
+            scheduledTime: "08:00",
+            status: .scheduled,
+            completedDate: nil,
+            createdAt: Date(timeIntervalSince1970: 1_709_000_000),
+            updatedAt: Date(timeIntervalSince1970: 1_709_003_600)
+        )
+
+        let payload = SyncPayloadV1.createOrUpdate(workout: workout)
+        let data = try JSONCoding.apiEncoder().encode(payload)
+        let root = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let encodedWorkout = try XCTUnwrap(root["workout"] as? [String: Any])
+
+        XCTAssertEqual(encodedWorkout["id"] as? String, "workout-metadata-1")
+        XCTAssertEqual(encodedWorkout["workoutId"] as? String, "workout-metadata-1")
+        XCTAssertEqual(encodedWorkout["title"] as? String, "Metadata Workout")
+        XCTAssertEqual(encodedWorkout["content"] as? String, "3 rounds of squats and lunges")
+        XCTAssertEqual(encodedWorkout["enhancementSourceText"] as? String, "Original creator text")
+        XCTAssertEqual(encodedWorkout["source"] as? String, "instagram")
+        XCTAssertEqual(encodedWorkout["durationMinutes"] as? Int, 42)
+        XCTAssertEqual(encodedWorkout["exerciseCount"] as? Int, 10)
+        XCTAssertEqual(encodedWorkout["difficulty"] as? String, "advanced")
+        XCTAssertEqual(
+            encodedWorkout["imageURL"] as? String,
+            "https://cdn.kinexfit.com/workouts/workout-metadata-1.png"
+        )
+        XCTAssertEqual(
+            encodedWorkout["sourceURL"] as? String,
+            "https://www.instagram.com/p/kinexfit123"
+        )
+        XCTAssertEqual(encodedWorkout["sourceAuthor"] as? String, "@coachkinex")
+        XCTAssertEqual(encodedWorkout["scheduledDate"] as? String, "2026-03-07")
+        XCTAssertEqual(encodedWorkout["scheduledTime"] as? String, "08:00")
+        XCTAssertEqual(encodedWorkout["status"] as? String, "scheduled")
+        XCTAssertNotNil(encodedWorkout["createdAt"] as? String)
+        XCTAssertNotNil(encodedWorkout["updatedAt"] as? String)
+    }
 }
 
 private final class MockURLProtocol: URLProtocol {
