@@ -16,6 +16,7 @@ struct User: Codable, Equatable, Identifiable {
     var aiQuotaUsed: Int
     var aiQuotaLimit: Int
     var onboardingCompleted: Bool
+    var role: UserRole?
     var updatedAt: Date
 
     var displayName: String {
@@ -72,6 +73,16 @@ enum SubscriptionStatus: String, Codable {
     case canceled
     case pastDue = "past_due"
     case trialing
+}
+
+enum UserRole: String, Codable {
+    case user
+    case admin
+    case moderator
+
+    var isAdmin: Bool {
+        self == .admin
+    }
 }
 
 // MARK: - GRDB Conformance

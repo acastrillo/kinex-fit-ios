@@ -34,13 +34,15 @@ struct SettingsView: View {
                     )
                 }
 
-                settingsSection(title: "Administration") {
-                    SettingsRow(
-                        icon: "shield",
-                        title: "Admin Panel",
-                        subtitle: "Manage users, settings, and system logs",
-                        action: { }
-                    )
+                if user?.role?.isAdmin == true {
+                    settingsSection(title: "Administration") {
+                        SettingsRow(
+                            icon: "shield",
+                            title: "Admin Panel",
+                            subtitle: "Manage users, settings, and system logs",
+                            action: { }
+                        )
+                    }
                 }
 
                 settingsSection(title: "Stats & Progress") {
