@@ -12,6 +12,7 @@ struct SettingsView: View {
     @State private var showingDeleteAccount = false
     @State private var showPaywall = false
     @State private var showingTrainingProfile = false
+    @State private var showingOnboarding = false
 
     let onAccountDeleted: () async -> Void
 
@@ -72,6 +73,15 @@ struct SettingsView: View {
                         subtitle: "Set goals and preferences for AI-powered workouts",
                         action: { showingTrainingProfile = true }
                     )
+
+                    if user?.skipOnboardingAt != nil && !user?.onboardingCompleted ?? false {
+                        SettingsRow(
+                            icon: "checkmark.circle",
+                            title: "Complete Your Profile",
+                            subtitle: "Finish setting up your training profile",
+                            action: { showingOnboarding = true }
+                        )
+                    }
                 }
 
                 settingsSection(title: "Data") {
@@ -128,6 +138,14 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showingTrainingProfile) {
             TrainingProfileSettingsView()
+        }
+        .sheet(isPresented: $showingOnboarding) {
+            OnboardingCoordinator(onComplete: {
+                showingOnboarding = false
+                Task {
+                    await loadUser()
+                }
+            })
         }
     }
 

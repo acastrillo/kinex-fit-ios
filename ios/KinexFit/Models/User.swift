@@ -18,6 +18,8 @@ struct User: Codable, Equatable, Identifiable {
     var onboardingCompleted: Bool
     var role: UserRole?
     var updatedAt: Date
+    var skipOnboardingAt: Date?
+    var onboardingCompletedStep: Int?
 
     var displayName: String {
         if let firstName, !firstName.isEmpty {
@@ -99,6 +101,8 @@ extension User: FetchableRecord, PersistableRecord {
         case aiQuotaUsed, aiQuotaLimit
         case onboardingCompleted
         case updatedAt
+        case skipOnboardingAt
+        case onboardingCompletedStep
     }
 
     init(row: Row) {
@@ -116,6 +120,8 @@ extension User: FetchableRecord, PersistableRecord {
         aiQuotaLimit = row[Columns.aiQuotaLimit] ?? tier.defaultAILimit
         onboardingCompleted = row[Columns.onboardingCompleted] ?? false
         updatedAt = row[Columns.updatedAt]
+        skipOnboardingAt = row[Columns.skipOnboardingAt]
+        onboardingCompletedStep = row[Columns.onboardingCompletedStep]
     }
 
     func encode(to container: inout PersistenceContainer) {
@@ -132,5 +138,7 @@ extension User: FetchableRecord, PersistableRecord {
         container[Columns.aiQuotaLimit] = aiQuotaLimit
         container[Columns.onboardingCompleted] = onboardingCompleted
         container[Columns.updatedAt] = updatedAt
+        container[Columns.skipOnboardingAt] = skipOnboardingAt
+        container[Columns.onboardingCompletedStep] = onboardingCompletedStep
     }
 }

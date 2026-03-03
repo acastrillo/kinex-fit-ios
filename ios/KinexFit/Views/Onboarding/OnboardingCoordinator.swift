@@ -75,6 +75,32 @@ final class OnboardingViewModel: ObservableObject {
         }
     }
 
+    func jumpToStep(_ step: Int) {
+        guard let targetStep = OnboardingStep(rawValue: step) else { return }
+        withAnimation {
+            currentStep = targetStep
+        }
+    }
+
+    func skipOnboarding() async {
+        isSubmitting = true
+        errorMessage = nil
+
+        do {
+            var user = try await userRepository.getCurrentUser()
+            user.skipOnboardingAt = Date()
+            user.onboardingCompletedStep = currentStep.rawValue
+            try await userRepository.updateUser(user)
+
+            onboardingLogger.debug("User skipped onboarding at step: \(self.currentStep.rawValue)")
+            onComplete()
+        } catch {
+            errorMessage = "Failed to save skip state: \(error.localizedDescription)"
+            onboardingLogger.error("Failed to skip onboarding: \(error.localizedDescription, privacy: .public)")
+            isSubmitting = false
+        }
+    }
+
     // MARK: - Completion
 
     func completeOnboarding() async {
@@ -336,11 +362,13 @@ struct OnboardingCoordinator: View {
             titleVisibility: .visible
         ) {
             Button("Skip All", role: .destructive) {
-                viewModel.skipToEnd()
+                Task {
+                    await viewModel.skipOnboarding()
+                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("You can always update your preferences in Settings later.")
+            Text("You can always complete your profile in Settings later.")
         }
     }
 }
