@@ -364,6 +364,19 @@ struct WorkoutSessionView: View {
         } message: {
             Text(saveError ?? "Failed to save workout.")
         }
+        // MARK: - Keyboard Shortcuts
+        .keyboardShortcut("p") {
+            isPaused.toggle()
+        }
+        .keyboardShortcut(" ", modifiers: .command) {
+            isPaused.toggle()
+        }
+        .keyboardShortcut("e", modifiers: .command) {
+            showEndDialog = true
+        }
+        .keyboardShortcut("t", modifiers: .command) {
+            showTimerSelection = true
+        }
     }
 
     // MARK: - Sticky Header
