@@ -5,6 +5,21 @@ import OSLog
 
 private let logger = Logger(subsystem: "com.kinex.fit", category: "NotificationManager")
 
+// MARK: - Reminder Types
+
+enum ReminderImportance: Int {
+    case low = 0
+    case normal = 1
+    case high = 2
+
+    var soundName: UNNotificationSoundName? {
+        switch self {
+        case .low: return nil
+        case .normal, .high: return .default
+        }
+    }
+}
+
 /// Manages push notifications and local notifications
 @MainActor
 final class NotificationManager: NSObject, ObservableObject {
@@ -124,6 +139,33 @@ final class NotificationManager: NSObject, ObservableObject {
 
         try await center.add(request)
         logger.info("Scheduled workout reminder for \(date)")
+    }
+
+    /// Schedule a reminder with customizable importance level
+    func scheduleReminder(
+        title: String,
+        body: String,
+        date: Date,
+        importance: ReminderImportance = .normal,
+        identifier: String = UUID().uuidString
+    ) async throws {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        if let sound = importance.soundName {
+            content.sound = sound
+        }
+        content.badge = NSNumber(value: UIApplication.shared.applicationIconBadgeNumber + 1)
+
+        let components = Calendar.current.dateComponents(
+            [.year, .month, .day, .hour, .minute],
+            from: date
+        )
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+
+        try await center.add(request)
+        logger.info("Scheduled reminder: \(title) at \(date) with importance: \(importance)")
     }
 
     /// Cancel a scheduled notification
