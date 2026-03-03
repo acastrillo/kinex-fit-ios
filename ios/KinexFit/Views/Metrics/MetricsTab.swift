@@ -554,6 +554,15 @@ private struct AddBodyMetricSheet: View {
     @State private var date = Date()
     @State private var weight = ""
     @State private var bodyFat = ""
+    @State private var muscleMass = ""
+    @State private var chest = ""
+    @State private var waist = ""
+    @State private var hips = ""
+    @State private var thighs = ""
+    @State private var arms = ""
+    @State private var calves = ""
+    @State private var shoulders = ""
+    @State private var neck = ""
     @State private var unit = "imperial"
     @State private var notes = ""
     @State private var isSaving = false
@@ -564,7 +573,16 @@ private struct AddBodyMetricSheet: View {
                 Section {
                     DatePicker("Date", selection: $date, displayedComponents: .date)
                 }
-                Section("Weight") {
+                
+                Section("Unit") {
+                    Picker("Unit", selection: $unit) {
+                        Text("Imperial (lbs/inches)").tag("imperial")
+                        Text("Metric (kg/cm)").tag("metric")
+                    }
+                    .pickerStyle(.segmented)
+                }
+                
+                Section("Weight & Composition") {
                     HStack {
                         TextField("185.5", text: $weight)
                             #if os(iOS)
@@ -573,8 +591,7 @@ private struct AddBodyMetricSheet: View {
                         Text(unit == "metric" ? "kg" : "lbs")
                             .foregroundStyle(.secondary)
                     }
-                }
-                Section("Body Fat %") {
+                    
                     HStack {
                         TextField("18.5", text: $bodyFat)
                             #if os(iOS)
@@ -582,19 +599,35 @@ private struct AddBodyMetricSheet: View {
                             #endif
                         Text("%").foregroundStyle(.secondary)
                     }
-                }
-                Section("Unit") {
-                    Picker("Unit", selection: $unit) {
-                        Text("Imperial (lbs)").tag("imperial")
-                        Text("Metric (kg)").tag("metric")
+                    
+                    HStack {
+                        TextField("150", text: $muscleMass)
+                            #if os(iOS)
+                            .keyboardType(.decimalPad)
+                            #endif
+                        Text(unit == "metric" ? "kg" : "lbs")
+                            .foregroundStyle(.secondary)
                     }
-                    .pickerStyle(.segmented)
                 }
+                
+                Section("Measurements") {
+                    VStack(spacing: 12) {
+                        MeasurementField(label: "Chest", value: $chest, unit: unit)
+                        MeasurementField(label: "Waist", value: $waist, unit: unit)
+                        MeasurementField(label: "Hips", value: $hips, unit: unit)
+                        MeasurementField(label: "Thighs", value: $thighs, unit: unit)
+                        MeasurementField(label: "Arms", value: $arms, unit: unit)
+                        MeasurementField(label: "Calves", value: $calves, unit: unit)
+                        MeasurementField(label: "Shoulders", value: $shoulders, unit: unit)
+                        MeasurementField(label: "Neck", value: $neck, unit: unit)
+                    }
+                }
+                
                 Section("Notes") {
                     TextField("Optional notes", text: $notes)
                 }
             }
-            .navigationTitle("Add Entry")
+            .navigationTitle("Add Metrics Entry")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -604,10 +637,17 @@ private struct AddBodyMetricSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
-                        .disabled((weight.isEmpty && bodyFat.isEmpty) || isSaving)
+                        .disabled(isFormEmpty || isSaving)
                 }
             }
         }
+    }
+    
+    private var isFormEmpty: Bool {
+        weight.isEmpty && bodyFat.isEmpty && muscleMass.isEmpty &&
+        chest.isEmpty && waist.isEmpty && hips.isEmpty &&
+        thighs.isEmpty && arms.isEmpty && calves.isEmpty &&
+        shoulders.isEmpty && neck.isEmpty
     }
 
     private func save() async {
@@ -620,11 +660,43 @@ private struct AddBodyMetricSheet: View {
             date: formatter.string(from: date),
             weight: Double(weight),
             bodyFatPercentage: Double(bodyFat),
+            muscleMass: Double(muscleMass),
+            chest: Double(chest),
+            waist: Double(waist),
+            hips: Double(hips),
+            thighs: Double(thighs),
+            arms: Double(arms),
+            calves: Double(calves),
+            shoulders: Double(shoulders),
+            neck: Double(neck),
             unit: unit,
             notes: notes.isEmpty ? nil : notes
         )
         await onSave(payload)
         dismiss()
+    }
+}
+
+// MARK: - Measurement Field Helper
+
+private struct MeasurementField: View {
+    let label: String
+    @Binding var value: String
+    let unit: String
+    
+    var body: some View {
+        HStack {
+            Text(label)
+                .frame(width: 80, alignment: .leading)
+            TextField("0", text: $value)
+                #if os(iOS)
+                .keyboardType(.decimalPad)
+                #endif
+                .frame(maxWidth: .infinity)
+            Text(unit == "metric" ? "cm" : "in")
+                .foregroundStyle(.secondary)
+                .frame(width: 35, alignment: .trailing)
+        }
     }
 }
 
