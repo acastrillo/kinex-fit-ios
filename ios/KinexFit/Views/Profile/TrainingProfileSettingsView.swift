@@ -13,6 +13,10 @@ struct TrainingProfileSettingsView: View {
     @State private var isSaving = false
     @State private var errorMessage: String?
     @State private var showErrorAlert = false
+    @State private var validationErrors: [String: String] = [:]
+    @State private var showValidationFeedback = false
+    @State private var saveProgress: String = ""
+    @State private var showSaveSuccess = false
 
     private var userRepository: UserRepository {
         appState.environment.userRepository
@@ -304,18 +308,71 @@ struct TrainingProfileSettingsView: View {
         }
     }
 
+    private func validateProfile() -> Bool {
+        validationErrors.removeAll()
+        
+        // Validate experience level
+        if profile.experience == nil {
+            validationErrors["experience"] = "Please select your experience level"
+        }
+        
+        // Validate training split
+        if profile.preferredSplit == nil {
+            validationErrors["split"] = "Please select your training split"
+        }
+        
+        // Validate training days
+        if let days = profile.trainingDays, (days < 1 || days > 7) {
+            validationErrors["days"] = "Training days must be between 1 and 7"
+        }
+        
+        // Validate session duration
+        if let duration = profile.sessionDuration, (duration < 15 || duration > 180) {
+            validationErrors["duration"] = "Session duration must be between 15 and 180 minutes"
+        }
+        
+        // Validate goals selected
+        if profile.goals.isEmpty {
+            validationErrors["goals"] = "Please select at least one training goal"
+        }
+        
+        // Validate equipment selected
+        if profile.equipment.isEmpty {
+            validationErrors["equipment"] = "Please select at least one equipment option"
+        }
+        
+        showValidationFeedback = !validationErrors.isEmpty
+        return validationErrors.isEmpty
+    }
+
     private func saveProfile() async {
+        // Validate before attempting save
+        if !validateProfile() {
+            await MainActor.run {
+                logger.info("Profile validation failed: \(validationErrors)")
+            }
+            return
+        }
+        
         isSaving = true
         defer { isSaving = false }
 
         do {
+            await MainActor.run { saveProgress = "Saving profile..." }
+            
             if let user = try await userRepository.getCurrentUser() {
                 var updatedUser = user
                 updatedUser.trainingProfile = profile
+                
+                await MainActor.run { saveProgress = "Syncing with backend..." }
                 try await userRepository.updateUser(updatedUser)
 
                 await MainActor.run {
-                    dismiss()
+                    saveProgress = "Profile saved successfully!"
+                    showSaveSuccess = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        dismiss()
+                    }
                 }
             }
         } catch {
@@ -323,6 +380,7 @@ struct TrainingProfileSettingsView: View {
             await MainActor.run {
                 errorMessage = "Failed to save your profile. Please try again."
                 showErrorAlert = true
+                saveProgress = ""
             }
         }
     }
