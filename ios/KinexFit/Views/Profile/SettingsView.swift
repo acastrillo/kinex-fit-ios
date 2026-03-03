@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var isSavingProfile = false
     @State private var showingDeleteAccount = false
     @State private var showPaywall = false
+    @State private var showingTrainingProfile = false
 
     let onAccountDeleted: () async -> Void
 
@@ -67,7 +68,7 @@ struct SettingsView: View {
                         icon: "target",
                         title: "Training Profile",
                         subtitle: "Set goals and preferences for AI-powered workouts",
-                        action: { }
+                        action: { showingTrainingProfile = true }
                     )
                 }
 
@@ -122,6 +123,9 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showingDeleteAccount) {
             DeleteAccountView(onAccountDeleted: onAccountDeleted)
+        }
+        .sheet(isPresented: $showingTrainingProfile) {
+            TrainingProfileSettingsView()
         }
     }
 
