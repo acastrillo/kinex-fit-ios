@@ -136,10 +136,23 @@ struct CalendarTab: View {
                 ForEach(workoutsForSelectedDate) { workout in
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 5) {
-                            Text(workout.title)
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(AppTheme.primaryText)
-                                .lineLimit(2)
+                            HStack(spacing: 8) {
+                                Text(workout.title)
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(AppTheme.primaryText)
+                                    .lineLimit(2)
+                                
+                                // Status badge
+                                if let status = workout.status {
+                                    Text(statusLabel(status))
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(statusColor(status))
+                                        .clipShape(Capsule())
+                                }
+                            }
 
                             Text(workoutMetadata(workout))
                                 .font(.system(size: 14, weight: .medium))
@@ -190,7 +203,10 @@ struct CalendarTab: View {
     private func calendarDayCell(_ date: Date) -> some View {
         let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
         let isInDisplayedMonth = calendar.isDate(date, equalTo: displayedMonth, toGranularity: .month)
-        let workoutCount = workoutsOnDate(date).count
+        let workoutsOnDay = workoutsOnDate(date)
+        let workoutCount = workoutsOnDay.count
+        let completedCount = workoutsOnDay.filter { $0.status == .completed }.count
+        let scheduledCount = workoutsOnDay.filter { $0.status == .scheduled }.count
 
         return Button {
             selectedDate = date
@@ -203,18 +219,33 @@ struct CalendarTab: View {
                             (isInDisplayedMonth ? AppTheme.primaryText : AppTheme.tertiaryText)
                     )
 
-                if workoutCount > 1 {
-                    Text("\(workoutCount)")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 1)
-                        .background(AppTheme.accent)
-                        .clipShape(Capsule())
-                } else if workoutCount == 1 {
-                    Circle()
-                        .fill(AppTheme.accent)
-                        .frame(width: 5, height: 5)
+                if workoutCount > 0 {
+                    HStack(spacing: 3) {
+                        // Completed indicator (green)
+                        if completedCount > 0 {
+                            Circle()
+                                .fill(AppTheme.statStreak) // green for completed
+                                .frame(width: 5, height: 5)
+                        }
+                        
+                        // Scheduled indicator (orange)
+                        if scheduledCount > 0 {
+                            Circle()
+                                .fill(AppTheme.accent) // orange for scheduled
+                                .frame(width: 5, height: 5)
+                        }
+                        
+                        // Count badge
+                        if workoutCount > 2 {
+                            Text("\(workoutCount)")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(AppTheme.primaryText.opacity(0.6))
+                                .clipShape(Capsule())
+                        }
+                    }
                 } else {
                     Circle()
                         .fill(Color.clear)
@@ -307,6 +338,22 @@ struct CalendarTab: View {
 
     private func loadWorkouts() async {
         workouts = (try? await workoutRepository.fetchAll()) ?? []
+    }
+
+    private func statusLabel(_ status: WorkoutScheduleStatus) -> String {
+        switch status {
+        case .scheduled: return "Scheduled"
+        case .completed: return "Done"
+        case .skipped: return "Skipped"
+        }
+    }
+
+    private func statusColor(_ status: WorkoutScheduleStatus) -> Color {
+        switch status {
+        case .completed: return AppTheme.statStreak // Green
+        case .scheduled: return AppTheme.accent      // Orange
+        case .skipped: return AppTheme.tertiaryText  // Gray
+        }
     }
 }
 
