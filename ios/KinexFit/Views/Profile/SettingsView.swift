@@ -84,6 +84,97 @@ struct SettingsView: View {
                     }
                 }
 
+                settingsSection(title: "Appearance") {
+                    Menu {
+                        ForEach(AppThemeMode.allCases, id: \.self) { mode in
+                            Button(mode.displayName) {
+                                if var user = user {
+                                    user.preferredTheme = mode
+                                    Task {
+                                        try? await appState.environment.userRepository.updateUser(user)
+                                        await loadUser()
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        SettingsRow(
+                            icon: "moon.stars",
+                            title: "Theme",
+                            subtitle: user?.preferredTheme.displayName ?? "System",
+                            action: {}
+                        )
+                    }
+                }
+
+                settingsSection(title: "Notifications") {
+                    Toggle(isOn: Binding(
+                        get: { user?.enableNotificationSound ?? true },
+                        set: { enabled in
+                            if var user = user {
+                                user.enableNotificationSound = enabled
+                                Task {
+                                    try? await appState.environment.userRepository.updateUser(user)
+                                    await loadUser()
+                                }
+                            }
+                        }
+                    )) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "speaker.wave.2")
+                                .foregroundStyle(AppTheme.secondaryText)
+                                .frame(width: 34, height: 34)
+                                .background(AppTheme.cardBackgroundElevated)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Notification Sounds")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(AppTheme.primaryText)
+                                Text("Play sounds for alerts and reminders")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(AppTheme.secondaryText)
+                            }
+                            Spacer()
+                        }
+                        .padding(12)
+                    }
+                    .toggleStyle(.switch)
+
+                    Toggle(isOn: Binding(
+                        get: { user?.enableNotificationHaptics ?? true },
+                        set: { enabled in
+                            if var user = user {
+                                user.enableNotificationHaptics = enabled
+                                Task {
+                                    try? await appState.environment.userRepository.updateUser(user)
+                                    await loadUser()
+                                }
+                            }
+                        }
+                    )) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "iphone.radiowaves.left.and.right")
+                                .foregroundStyle(AppTheme.secondaryText)
+                                .frame(width: 34, height: 34)
+                                .background(AppTheme.cardBackgroundElevated)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Haptic Feedback")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(AppTheme.primaryText)
+                                Text("Vibration for interactions")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(AppTheme.secondaryText)
+                            }
+                            Spacer()
+                        }
+                        .padding(12)
+                    }
+                    .toggleStyle(.switch)
+                }
+
                 settingsSection(title: "Data") {
                     SettingsRow(
                         icon: "trash",

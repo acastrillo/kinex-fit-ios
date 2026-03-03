@@ -20,6 +20,9 @@ struct User: Codable, Equatable, Identifiable {
     var updatedAt: Date
     var skipOnboardingAt: Date?
     var onboardingCompletedStep: Int?
+    var preferredTheme: AppThemeMode = .system
+    var enableNotificationSound: Bool = true
+    var enableNotificationHaptics: Bool = true
 
     var displayName: String {
         if let firstName, !firstName.isEmpty {
@@ -87,6 +90,20 @@ enum UserRole: String, Codable {
     }
 }
 
+enum AppThemeMode: String, Codable, CaseIterable {
+    case light
+    case dark
+    case system
+
+    var displayName: String {
+        switch self {
+        case .light: return "Light"
+        case .dark: return "Dark"
+        case .system: return "System"
+        }
+    }
+}
+
 // MARK: - GRDB Conformance
 
 extension User: FetchableRecord, PersistableRecord {
@@ -103,6 +120,9 @@ extension User: FetchableRecord, PersistableRecord {
         case updatedAt
         case skipOnboardingAt
         case onboardingCompletedStep
+        case preferredTheme
+        case enableNotificationSound
+        case enableNotificationHaptics
     }
 
     init(row: Row) {
@@ -122,6 +142,10 @@ extension User: FetchableRecord, PersistableRecord {
         updatedAt = row[Columns.updatedAt]
         skipOnboardingAt = row[Columns.skipOnboardingAt]
         onboardingCompletedStep = row[Columns.onboardingCompletedStep]
+        let themeStr = row[Columns.preferredTheme] as String? ?? "system"
+        preferredTheme = AppThemeMode(rawValue: themeStr) ?? .system
+        enableNotificationSound = row[Columns.enableNotificationSound] ?? true
+        enableNotificationHaptics = row[Columns.enableNotificationHaptics] ?? true
     }
 
     func encode(to container: inout PersistenceContainer) {
@@ -140,5 +164,8 @@ extension User: FetchableRecord, PersistableRecord {
         container[Columns.updatedAt] = updatedAt
         container[Columns.skipOnboardingAt] = skipOnboardingAt
         container[Columns.onboardingCompletedStep] = onboardingCompletedStep
+        container[Columns.preferredTheme] = preferredTheme.rawValue
+        container[Columns.enableNotificationSound] = enableNotificationSound
+        container[Columns.enableNotificationHaptics] = enableNotificationHaptics
     }
 }
