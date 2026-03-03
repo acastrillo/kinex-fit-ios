@@ -276,7 +276,7 @@ final class WorkoutRepository {
         )
         let response: WorkoutScheduleActionResponse = try await apiClient.send(request)
 
-        return try await database.dbQueue.write { db in
+        let scheduledWorkout = try await database.dbQueue.write { db in
             guard var workout = try Workout.fetchOne(db, key: workoutId) else {
                 return nil
             }
@@ -310,6 +310,62 @@ final class WorkoutRepository {
             try workout.update(db)
             return workout
         }
+
+        // Schedule push notification for scheduled workout
+        if let scheduledWorkout = scheduledWorkout,
+           scheduledWorkout.status == .scheduled,
+           let notificationManager = AppState.shared?.environment.notificationManager {
+            
+            let notificationDate = Self.constructScheduleDateTime(
+                date: scheduledWorkout.scheduledDate,
+                time: scheduledWorkout.scheduledTime
+            )
+            
+            if notificationDate > Date() {
+                try await notificationManager.scheduleWorkoutReminder(
+                    title: "Workout Scheduled",
+                    body: "\(scheduledWorkout.title) - Time to get started!",
+                    date: notificationDate,
+                    identifier: "workout-\(workoutId)-scheduled"
+                )
+            }
+        }
+
+        return scheduledWorkout
+    }
+
+    /// Helper to construct a complete DateTime from date and time strings
+    private static func constructScheduleDateTime(date: String, time: String?) -> Date {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        
+        guard let baseDate = dateFormatter.date(from: date) else {
+            return Date().addingTimeInterval(3600) // Default to 1 hour from now
+        }
+        
+        if let time = time {
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "HH:mm"
+            timeFormatter.locale = Locale(identifier: "en_US_POSIX")
+            
+            if let timeDate = timeFormatter.date(from: time) {
+                let timeComponents = Calendar.current.dateComponents([.hour, .minute], from: timeDate)
+                var dateComponents = Calendar.current.dateComponents([.year, .month, .day], from: baseDate)
+                dateComponents.hour = timeComponents.hour
+                dateComponents.minute = timeComponents.minute
+                
+                if let combinedDate = Calendar.current.date(from: dateComponents) {
+                    return combinedDate
+                }
+            }
+        }
+        
+        // Default to 8 AM on scheduled date if no time provided
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: baseDate)
+        components.hour = 8
+        components.minute = 0
+        return Calendar.current.date(from: components) ?? baseDate
     }
 
     /// Unschedule a workout and clear local scheduling metadata.
@@ -318,7 +374,7 @@ final class WorkoutRepository {
         let request = APIRequest.unscheduleWorkout(workoutId: workoutId)
         let _: WorkoutScheduleActionResponse = try await apiClient.send(request)
 
-        return try await database.dbQueue.write { db in
+        let unscheduledWorkout = try await database.dbQueue.write { db in
             guard var workout = try Workout.fetchOne(db, key: workoutId) else {
                 return nil
             }
@@ -332,6 +388,13 @@ final class WorkoutRepository {
             try workout.update(db)
             return workout
         }
+
+        // Cancel scheduled push notification
+        if let notificationManager = AppState.shared?.environment.notificationManager {
+            notificationManager.cancelNotification(identifier: "workout-\(workoutId)-scheduled")
+        }
+
+        return unscheduledWorkout
     }
 
     /// Mark a workout completed via backend completion endpoint and update local scheduling state.
