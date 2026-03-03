@@ -1145,9 +1145,13 @@ struct WorkoutSessionView: View {
         intervalPhaseRemainingSeconds = 0
 
         AudioServicesPlaySystemSound(SystemSoundID(1005))
-        let feedback = UINotificationFeedbackGenerator()
-        feedback.prepare()
-        feedback.notificationOccurred(.success)
+        
+        let hapticEnabled = appState.currentUser?.enableNotificationHaptics ?? true
+        if hapticEnabled {
+            let feedback = UINotificationFeedbackGenerator()
+            feedback.prepare()
+            feedback.notificationOccurred(.success)
+        }
 
         guard !didPresentAutoCompletion else { return }
         didPresentAutoCompletion = true
@@ -1157,15 +1161,25 @@ struct WorkoutSessionView: View {
 
     private func triggerTransitionAlert(for phase: WorkoutIntervalPhase) {
         AudioServicesPlaySystemSound(SystemSoundID(1113))
+        
+        // Check user preference for haptic feedback
+        let hapticEnabled = appState.currentUser?.enableNotificationHaptics ?? true
         let feedback = UINotificationFeedbackGenerator()
         feedback.prepare()
+        
         switch phase {
         case .work:
-            feedback.notificationOccurred(.success)
+            if hapticEnabled {
+                feedback.notificationOccurred(.success)
+            }
         case .rest:
-            feedback.notificationOccurred(.warning)
+            if hapticEnabled {
+                feedback.notificationOccurred(.warning)
+            }
         case .completed:
-            feedback.notificationOccurred(.success)
+            if hapticEnabled {
+                feedback.notificationOccurred(.success)
+            }
         }
     }
 
