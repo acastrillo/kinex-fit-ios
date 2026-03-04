@@ -4,7 +4,6 @@ import SwiftUI
 struct CreateWorkoutView: View {
     @EnvironmentObject private var appState: AppState
     @State private var selectedTab: ImportTab = .instagram
-    @State private var showingAIGenerate = false
 
     enum ImportTab: String, CaseIterable, Identifiable {
         case instagram = "URL/Social"
@@ -38,12 +37,10 @@ struct CreateWorkoutView: View {
             VStack(spacing: 20) {
                 headerSection
 
-                AIFeatureCard {
-                    showingAIGenerate = true
-                }
-                .padding(.horizontal, 16)
-
                 importSection
+                    .padding(.horizontal, 16)
+
+                WorkoutOfTheWeekSection()
                     .padding(.horizontal, 16)
             }
             .padding(.top, 16)
@@ -51,13 +48,6 @@ struct CreateWorkoutView: View {
         }
         .background(AppTheme.background.ignoresSafeArea())
         .scrollIndicators(.hidden)
-        .sheet(isPresented: $showingAIGenerate) {
-            WorkoutGeneratorView { title, content in
-                Task {
-                    await saveGeneratedWorkout(title: title, content: content)
-                }
-            }
-        }
         .sheet(isPresented: $appState.showInstagramEditSheet) {
             if let workout = appState.pendingInstagramWorkout {
                 InstagramWorkoutEditView(
@@ -130,16 +120,6 @@ struct CreateWorkoutView: View {
     }
 
     // MARK: - Actions
-
-    private func saveGeneratedWorkout(title: String, content: String) async {
-        let workout = Workout(
-            title: title,
-            content: content,
-            enhancementSourceText: content,
-            source: .manual  // Generated workouts are saved as manual
-        )
-        _ = try? await workoutRepository.create(workout)
-    }
 
     private func saveInstagramWorkout(title: String, content: String?) async throws {
         guard let pendingWorkout = appState.pendingInstagramWorkout else { return }
