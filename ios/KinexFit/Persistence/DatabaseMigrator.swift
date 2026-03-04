@@ -172,6 +172,37 @@ struct DatabaseMigratorFactory {
             }
         }
 
+        migrator.registerMigration("add-user-onboarding-preferences-columns") { db in
+            let existingColumns = Set(try db.columns(in: "users").map(\.name))
+            let missingColumns = [
+                "skipOnboardingAt",
+                "onboardingCompletedStep",
+                "preferredTheme",
+                "enableNotificationSound",
+                "enableNotificationHaptics"
+            ].filter { !existingColumns.contains($0) }
+
+            guard !missingColumns.isEmpty else { return }
+
+            try db.alter(table: "users") { table in
+                if missingColumns.contains("skipOnboardingAt") {
+                    table.add(column: "skipOnboardingAt", .datetime)
+                }
+                if missingColumns.contains("onboardingCompletedStep") {
+                    table.add(column: "onboardingCompletedStep", .integer)
+                }
+                if missingColumns.contains("preferredTheme") {
+                    table.add(column: "preferredTheme", .text).notNull().defaults(to: "system")
+                }
+                if missingColumns.contains("enableNotificationSound") {
+                    table.add(column: "enableNotificationSound", .boolean).notNull().defaults(to: true)
+                }
+                if missingColumns.contains("enableNotificationHaptics") {
+                    table.add(column: "enableNotificationHaptics", .boolean).notNull().defaults(to: true)
+                }
+            }
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

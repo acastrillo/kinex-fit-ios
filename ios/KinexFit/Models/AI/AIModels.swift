@@ -153,6 +153,24 @@ struct EnhancedWorkoutData: Codable {
     var content: String {
         description ?? ""
     }
+
+    /// Build a parser-friendly content string from structured AI exercise data.
+    /// Falls back to the provided text (or description) when no exercises are available.
+    func composedContentForEditing(fallback: String? = nil) -> String {
+        let fallbackText = (fallback ?? content).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let exercises, !exercises.isEmpty else {
+            return fallbackText
+        }
+
+        let rounds = structure?.rounds.flatMap { $0 > 0 ? $0 : nil }
+        let cards = EditableWorkoutCard.from(enhancedExercises: exercises, rounds: rounds)
+        guard !cards.isEmpty else {
+            return fallbackText
+        }
+
+        let notes = description?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return EditableWorkoutCard.composeContent(notes: notes, cards: cards, rounds: rounds)
+    }
 }
 
 struct AIWorkoutStructure: Codable {

@@ -87,7 +87,13 @@ final class OnboardingViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            var user = try await userRepository.getCurrentUser()
+            guard var user = try await userRepository.getCurrentUser() else {
+                throw NSError(
+                    domain: "Onboarding",
+                    code: 404,
+                    userInfo: [NSLocalizedDescriptionKey: "No current user found"]
+                )
+            }
             user.skipOnboardingAt = Date()
             user.onboardingCompletedStep = currentStep.rawValue
             try await userRepository.updateUser(user)

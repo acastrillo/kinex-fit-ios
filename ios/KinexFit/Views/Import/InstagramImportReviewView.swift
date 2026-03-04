@@ -15,6 +15,13 @@ struct InstagramImportReviewView: View {
     @State private var rounds: Int? = nil
     @State private var enhancementSourceText: String = ""
     @State private var mediaImage: UIImage?
+    @State private var parsedRestBetweenSets: String?
+    @State private var parsingConfidence: Double = 0
+    @State private var unresolvedMatches: [PendingMatchResolution] = []
+    @State private var unparsedLines: [CaptionUnparsedLine] = []
+    @State private var isApplyingParserOutput = false
+    @State private var hasInitializedFromParser = false
+    @State private var hasUserEditedContent = false
     @State private var isProcessing = false
     @State private var isSaving = false
     @State private var isEnhancing = false
@@ -28,8 +35,50 @@ struct InstagramImportReviewView: View {
         case description
     }
 
+    private struct PendingMatchResolution: Identifiable, Equatable {
+        var id: String
+        var cardID: UUID
+        var rawName: String
+        var options: [CaptionExerciseOption]
+        var selectedOptionID: String
+
+        init(cardID: UUID, rawName: String, options: [CaptionExerciseOption]) {
+            self.id = cardID.uuidString
+            self.cardID = cardID
+            self.rawName = rawName
+            self.options = options
+            self.selectedOptionID = options.first?.id ?? ""
+        }
+
+        var selectedOption: CaptionExerciseOption? {
+            options.first(where: { $0.id == selectedOptionID })
+        }
+    }
+
     private var importService: InstagramImportService {
         appState.instagramImportService
+    }
+
+    private var parsingService: CaptionImportParsingService {
+        CaptionImportParsingService(apiClient: appState.environment.apiClient)
+    }
+
+    private var sourcePlatform: SocialPlatform {
+        guard let url = importItem.postURL else {
+            return .instagram
+        }
+        return SocialPlatform.detect(from: url)
+    }
+
+    private var sourceAccentColor: Color {
+        switch sourcePlatform {
+        case .instagram:
+            return .pink
+        case .tiktok:
+            return .cyan
+        case .unknown:
+            return .blue
+        }
     }
 
     private var isValid: Bool {
@@ -71,6 +120,14 @@ struct InstagramImportReviewView: View {
                     } else {
                         // Imported workout card with enhance
                         importedWorkoutCard
+
+                        if !unresolvedMatches.isEmpty {
+                            unresolvedMatchesCard
+                        }
+
+                        if !unparsedLines.isEmpty {
+                            unparsedLinesCard
+                        }
 
                         // Rounds indicator
                         if let rounds, rounds > 0 {
@@ -128,6 +185,15 @@ struct InstagramImportReviewView: View {
         .task {
             await loadData()
         }
+        .onChange(of: title) { _, _ in
+            markUserEdited()
+        }
+        .onChange(of: description) { _, _ in
+            markUserEdited()
+        }
+        .onChange(of: workoutCards) { _, _ in
+            markUserEdited()
+        }
     }
 
     // MARK: - Header
@@ -149,11 +215,11 @@ struct InstagramImportReviewView: View {
 
     private var sourceInfoSection: some View {
         HStack(spacing: 12) {
-            Image(systemName: "camera.on.rectangle")
-                .foregroundStyle(.pink)
+            Image(systemName: sourcePlatform.iconName)
+                .foregroundStyle(sourceAccentColor)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Instagram Import")
+                Text("\(sourcePlatform.displayName) Import")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(AppTheme.primaryText)
 
@@ -184,7 +250,7 @@ struct InstagramImportReviewView: View {
         VStack(spacing: 16) {
             ProgressView()
                 .tint(AppTheme.accent)
-            Text("Extracting text from media...")
+            Text("Preparing workout preview...")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(AppTheme.secondaryText)
         }
@@ -222,6 +288,25 @@ struct InstagramImportReviewView: View {
                 .disabled(isEnhancing || enhancementInput.isEmpty)
             }
 
+            let parsedExerciseCount = workoutCards.filter { !$0.trimmedName.isEmpty }.count
+            if parsedExerciseCount > 0 {
+                HStack(spacing: 10) {
+                    Text("Found \(parsedExerciseCount) exercise\(parsedExerciseCount == 1 ? "" : "s")")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(AppTheme.primaryText)
+
+                    Text("\(Int((parsingConfidence * 100).rounded()))% confidence")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+
+                if let parsedRestBetweenSets, !parsedRestBetweenSets.isEmpty {
+                    Text("Rest between sets: \(parsedRestBetweenSets)")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+            }
+
             if let text = importItem.extractedText ?? importItem.captionText, !text.isEmpty {
                 Rectangle()
                     .fill(AppTheme.separator)
@@ -238,6 +323,85 @@ struct InstagramImportReviewView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(minHeight: 60, maxHeight: 120)
+            }
+        }
+        .padding(14)
+        .kinexCard(cornerRadius: 16)
+    }
+
+    // MARK: - Match Resolution
+
+    private var unresolvedMatchesCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Resolve Exercise Matches")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            ForEach(unresolvedMatches.indices, id: \.self) { index in
+                let resolution = unresolvedMatches[index]
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("“\(resolution.rawName)”")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(AppTheme.secondaryText)
+
+                    Picker(
+                        "Match",
+                        selection: Binding(
+                            get: { unresolvedMatches[index].selectedOptionID },
+                            set: { newValue in
+                                unresolvedMatches[index].selectedOptionID = newValue
+                                applyResolution(unresolvedMatches[index])
+                            }
+                        )
+                    ) {
+                        ForEach(resolution.options) { option in
+                            Text(option.displayName).tag(option.id)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                .padding(10)
+                .kinexCard(cornerRadius: 10, fill: AppTheme.cardBackgroundElevated)
+            }
+        }
+        .padding(14)
+        .kinexCard(cornerRadius: 16)
+    }
+
+    // MARK: - Unparsed
+
+    private var unparsedLinesCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Unparsed Lines")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            ForEach(unparsedLines) { line in
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(line.text)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(AppTheme.primaryText)
+                            .lineLimit(2)
+
+                        if let reason = line.reason, !reason.isEmpty {
+                            Text(reason)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(AppTheme.tertiaryText)
+                        }
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Button("Add") {
+                        addUnparsedLineToCards(line)
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppTheme.accent)
+                    .buttonStyle(.plain)
+                }
+                .padding(10)
+                .kinexCard(cornerRadius: 10, fill: AppTheme.cardBackgroundElevated)
             }
         }
         .padding(14)
@@ -323,7 +487,7 @@ struct InstagramImportReviewView: View {
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(AppTheme.secondaryText)
 
-                Text("Source: Instagram Share")
+                Text("Source: \(sourcePlatform.displayName) Share")
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(AppTheme.secondaryText)
             }
@@ -377,56 +541,201 @@ struct InstagramImportReviewView: View {
             isProcessing = true
             do {
                 let processed = try await importService.processImport(importItem)
-                await MainActor.run {
-                    parseExtractedText(processed.extractedText)
-                    isProcessing = false
-                }
+                await parseExtractedText(processed.extractedText, sourceURL: processed.postURL)
+                isProcessing = false
             } catch {
-                await MainActor.run {
-                    self.error = error
-                    showingError = true
-                    isProcessing = false
-                    parseExtractedText(importItem.captionText)
-                }
+                self.error = error
+                showingError = true
+                await parseExtractedText(importItem.captionText, sourceURL: importItem.postURL)
+                isProcessing = false
             }
         } else {
-            parseExtractedText(importItem.extractedText ?? importItem.captionText)
+            await parseExtractedText(importItem.extractedText ?? importItem.captionText, sourceURL: importItem.postURL)
         }
     }
 
-    private func parseExtractedText(_ text: String?) {
+    private func parseExtractedText(_ text: String?, sourceURL: String?) async {
+        guard !hasUserEditedContent else { return }
+
         guard let text = text, !text.isEmpty else {
-            title = "Instagram Workout"
+            title = defaultTitle
             description = ""
             workoutCards = []
             rounds = nil
             enhancementSourceText = ""
+            unresolvedMatches = []
+            unparsedLines = []
+            parsedRestBetweenSets = nil
+            parsingConfidence = 0
             return
         }
 
         enhancementSourceText = text
+        isProcessing = true
 
-        let parsed = WorkoutTextParser.parse(text)
-        title = parsed.title
-
-        // Use WorkoutContentPresentation to extract exercises for card building
-        let presentation = WorkoutContentPresentation.from(
-            content: text,
-            source: .instagram,
-            durationMinutes: nil,
-            fallbackExerciseCount: nil
-        )
-
-        if !presentation.exercises.isEmpty {
-            workoutCards = EditableWorkoutCard.from(presentation: presentation)
-            rounds = presentation.rounds
-            description = EditableWorkoutCard.extractNotes(from: text, exercises: presentation.exercises)
-        } else {
-            // Fallback: no exercises detected, put text as description
-            description = parsed.content
-            workoutCards = []
-            rounds = nil
+        let parsedWorkout = await parsingService.parseImportText(text, sourceURL: sourceURL)
+        if hasUserEditedContent {
+            isProcessing = false
+            return
         }
+
+        applyParsedWorkout(parsedWorkout, rawText: text)
+        isProcessing = false
+    }
+
+    private var defaultTitle: String {
+        switch sourcePlatform {
+        case .tiktok:
+            return "TikTok Workout"
+        case .instagram:
+            return "Instagram Workout"
+        case .unknown:
+            return "Imported Workout"
+        }
+    }
+
+    private func applyParsedWorkout(_ parsedWorkout: CaptionParsedWorkout, rawText: String) {
+        isApplyingParserOutput = true
+        defer { isApplyingParserOutput = false }
+
+        var nextCards: [EditableWorkoutCard] = []
+        var nextResolutions: [PendingMatchResolution] = []
+        let defaultRest = secondsText(from: parsedWorkout.restBetweenSets)
+
+        for exercise in parsedWorkout.exercises.sorted(by: { $0.position < $1.position }) {
+            let card = EditableWorkoutCard(
+                name: exercise.exerciseName,
+                sets: exercise.sets.map(String.init) ?? "",
+                reps: repsText(for: exercise),
+                weight: "",
+                restSeconds: defaultRest
+            )
+            nextCards.append(card)
+
+            switch exercise.match {
+            case .ambiguous(let options):
+                let resolvedOptions = deduplicatedOptions(from: options, fallbackName: exercise.exerciseName)
+                if !resolvedOptions.isEmpty {
+                    nextResolutions.append(
+                        PendingMatchResolution(
+                            cardID: card.id,
+                            rawName: exercise.rawName,
+                            options: resolvedOptions
+                        )
+                    )
+                }
+
+            case .unknown(let closestMatches):
+                let options = deduplicatedOptions(
+                    from: closestMatches.map { CaptionExerciseOption(kinexExerciseID: nil, displayName: $0) },
+                    fallbackName: exercise.exerciseName
+                )
+                if options.count > 1 {
+                    nextResolutions.append(
+                        PendingMatchResolution(
+                            cardID: card.id,
+                            rawName: exercise.rawName,
+                            options: options
+                        )
+                    )
+                }
+
+            case .exact, .fuzzy:
+                break
+            }
+        }
+
+        title = parsedWorkout.title
+        rounds = parsedWorkout.rounds
+        parsingConfidence = parsedWorkout.parsingConfidence
+        parsedRestBetweenSets = parsedWorkout.restBetweenSets
+        unresolvedMatches = nextResolutions
+        unparsedLines = parsedWorkout.unparsedLines
+
+        if nextCards.isEmpty {
+            description = parsedWorkout.notes ?? rawText
+            workoutCards = []
+        } else {
+            description = parsedWorkout.notes ?? ""
+            workoutCards = nextCards
+        }
+
+        hasInitializedFromParser = true
+    }
+
+    private func repsText(for exercise: CaptionParsedExercise) -> String {
+        if let reps = exercise.reps {
+            return String(reps)
+        }
+        if let duration = exercise.duration {
+            if duration % 60 == 0, duration >= 60 {
+                return "\(duration / 60) min"
+            }
+            return "\(duration)s"
+        }
+        return ""
+    }
+
+    private func secondsText(from restValue: String?) -> String {
+        guard let restValue = restValue?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !restValue.isEmpty else {
+            return ""
+        }
+
+        let lowered = restValue.lowercased()
+        if lowered.contains("min"),
+           let value = Int(lowered.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()),
+           value > 0 {
+            return String(value * 60)
+        }
+        if let value = Int(lowered.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()),
+           value > 0 {
+            return String(value)
+        }
+        return ""
+    }
+
+    private func deduplicatedOptions(from options: [CaptionExerciseOption], fallbackName: String) -> [CaptionExerciseOption] {
+        var seen = Set<String>()
+        var deduped: [CaptionExerciseOption] = []
+
+        let allOptions = [CaptionExerciseOption(kinexExerciseID: nil, displayName: fallbackName)] + options
+        for option in allOptions {
+            let key = option.displayName.lowercased()
+            if seen.contains(key) { continue }
+            seen.insert(key)
+            deduped.append(option)
+        }
+
+        return deduped
+    }
+
+    private func applyResolution(_ resolution: PendingMatchResolution) {
+        guard let selected = resolution.selectedOption else { return }
+        guard let index = workoutCards.firstIndex(where: { $0.id == resolution.cardID }) else { return }
+
+        workoutCards[index].name = selected.displayName
+        hasUserEditedContent = true
+    }
+
+    private func addUnparsedLineToCards(_ line: CaptionUnparsedLine) {
+        let defaultRest = secondsText(from: parsedRestBetweenSets)
+        let newCard = EditableWorkoutCard(
+            name: line.text,
+            sets: "",
+            reps: "",
+            weight: "",
+            restSeconds: defaultRest
+        )
+        workoutCards.append(newCard)
+        unparsedLines.removeAll { $0.id == line.id }
+        hasUserEditedContent = true
+    }
+
+    private func markUserEdited() {
+        guard hasInitializedFromParser else { return }
+        guard !isApplyingParserOutput else { return }
+        hasUserEditedContent = true
     }
 
     // MARK: - Actions
@@ -446,11 +755,14 @@ struct InstagramImportReviewView: View {
                 try? await appState.environment.userRepository.updateAIQuotaFromRemaining(remaining)
             }
             title = response.workout.title
+            let aiRounds = response.workout.structure?.rounds.flatMap { $0 > 0 ? $0 : nil }
 
             if let exercises = response.workout.exercises {
-                let aiCards = EditableWorkoutCard.from(enhancedExercises: exercises)
+                let aiCards = EditableWorkoutCard.from(enhancedExercises: exercises, rounds: aiRounds)
                 if !aiCards.isEmpty {
                     workoutCards = aiCards
+                    unresolvedMatches = []
+                    unparsedLines = []
                 }
             }
 
@@ -458,11 +770,7 @@ struct InstagramImportReviewView: View {
                 description = desc
             }
 
-            if let structure = response.workout.structure, let r = structure.rounds, r > 0 {
-                rounds = r
-            } else {
-                rounds = nil
-            }
+            rounds = aiRounds
         } catch {
             self.error = error
             showingError = true

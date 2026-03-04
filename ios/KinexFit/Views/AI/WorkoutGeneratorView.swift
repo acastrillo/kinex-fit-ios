@@ -69,7 +69,7 @@ struct WorkoutGeneratorView: View {
                             if let response = generatedResponse {
                                 onWorkoutGenerated(
                                     response.workout.title,
-                                    response.workout.content
+                                    response.workout.composedContentForEditing()
                                 )
                                 dismiss()
                             }

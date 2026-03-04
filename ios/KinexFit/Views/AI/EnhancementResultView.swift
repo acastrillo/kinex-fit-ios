@@ -53,7 +53,7 @@ struct EnhancementResultView: View {
                     Button("Use This") {
                         onAccept(
                             response.workout.title,
-                            response.workout.content
+                            response.workout.composedContentForEditing()
                         )
                         dismiss()
                     }

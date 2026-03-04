@@ -6,6 +6,7 @@ enum InstagramFetchError: LocalizedError {
     case quotaExceeded(used: Int, limit: Int)
     case rateLimited
     case postNotFound
+    case sourceAuthenticationRequired
     case networkError(Error)
     case parsingFailed
     case unauthorized
@@ -22,12 +23,14 @@ enum InstagramFetchError: LocalizedError {
             return "Too many requests. Please try again later"
         case .postNotFound:
             return "Post not found"
+        case .sourceAuthenticationRequired:
+            return "Instagram access restricted"
         case .networkError:
             return "Network connection error"
         case .parsingFailed:
             return "Failed to parse workout content"
         case .unauthorized:
-            return "Authentication required"
+            return "Session expired"
         case .serverError(let statusCode):
             return "Server error (Status: \(statusCode))"
         case .decodingError:
@@ -45,12 +48,14 @@ enum InstagramFetchError: LocalizedError {
             return "You've made too many requests. Wait a few minutes and try again."
         case .postNotFound:
             return "The post may be private, deleted, or the URL may be incorrect. Please verify the URL and try again."
+        case .sourceAuthenticationRequired:
+            return "This Instagram post requires login or has restricted visibility. Try a public post URL or use manual import."
         case .networkError:
             return "Check your internet connection and try again."
         case .parsingFailed:
             return "The workout content couldn't be parsed automatically. Try manual entry instead."
         case .unauthorized:
-            return "Please log in to continue."
+            return "Your session expired. Sign in again and retry this import."
         case .serverError:
             return "Our servers are experiencing issues. Please try again later."
         case .decodingError:
@@ -63,7 +68,7 @@ enum InstagramFetchError: LocalizedError {
         switch self {
         case .networkError, .serverError, .rateLimited:
             return true
-        case .invalidURL, .quotaExceeded, .postNotFound, .parsingFailed, .unauthorized, .decodingError:
+        case .invalidURL, .quotaExceeded, .postNotFound, .sourceAuthenticationRequired, .parsingFailed, .unauthorized, .decodingError:
             return false
         }
     }

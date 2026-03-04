@@ -95,10 +95,9 @@ struct TrainingProfileSettingsView: View {
                     .foregroundStyle(AppTheme.primaryText)
 
                 Picker("Experience", selection: $profile.experience) {
-                    Text("Beginner").tag(ExperienceLevel?.beginner)
-                    Text("Intermediate").tag(ExperienceLevel?.intermediate)
-                    Text("Advanced").tag(ExperienceLevel?.advanced)
-                    Text("Elite").tag(ExperienceLevel?.elite)
+                    Text("Beginner").tag(Optional(ExperienceLevel.beginner))
+                    Text("Intermediate").tag(Optional(ExperienceLevel.intermediate))
+                    Text("Advanced").tag(Optional(ExperienceLevel.advanced))
                 }
                 .pickerStyle(.segmented)
                 .tint(AppTheme.accent)
@@ -109,17 +108,17 @@ struct TrainingProfileSettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             // Training Split
-            if let currentSplit = profile.preferredSplit {
+            if profile.preferredSplit != nil {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Training Split")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(AppTheme.primaryText)
 
                     Picker("Split", selection: $profile.preferredSplit) {
-                        Text("Full Body").tag(PreferredSplit?.fullBody)
-                        Text("Upper/Lower").tag(PreferredSplit?.upperLower)
-                        Text("Push/Pull/Legs").tag(PreferredSplit?.pushPullLegs)
-                        Text("Body Part").tag(PreferredSplit?.bodyPart)
+                        Text("Full Body").tag(Optional(PreferredSplit.fullBody))
+                        Text("Upper/Lower").tag(Optional(PreferredSplit.upperLower))
+                        Text("Push/Pull/Legs").tag(Optional(PreferredSplit.pushPullLegs))
+                        Text("Bro Split").tag(Optional(PreferredSplit.broSplit))
                     }
                     .pickerStyle(.menu)
                 }
@@ -142,12 +141,14 @@ struct TrainingProfileSettingsView: View {
                 }
 
                 Stepper(
+                    "Training days",
                     value: Binding(
                         get: { profile.trainingDays ?? 4 },
                         set: { profile.trainingDays = $0 }
                     ),
                     in: 1...7
                 )
+                .labelsHidden()
                 .tint(AppTheme.accent)
             }
             .padding(.horizontal, 14)
@@ -168,6 +169,7 @@ struct TrainingProfileSettingsView: View {
                 }
 
                 Stepper(
+                    "Session duration",
                     value: Binding(
                         get: { profile.sessionDuration ?? 60 },
                         set: { profile.sessionDuration = $0 }
@@ -175,6 +177,7 @@ struct TrainingProfileSettingsView: View {
                     in: 15...180,
                     step: 5
                 )
+                .labelsHidden()
                 .tint(AppTheme.accent)
             }
             .padding(.horizontal, 14)
@@ -293,11 +296,10 @@ struct TrainingProfileSettingsView: View {
         defer { isLoading = false }
 
         do {
-            if let user = try await userRepository.getCurrentUser(),
-               let userProfile = user.trainingProfile {
-                await MainActor.run {
-                    self.profile = userProfile
-                }
+            let request = APIRequest.getTrainingProfile()
+            let fetchedProfile: TrainingProfile = try await appState.environment.apiClient.send(request)
+            await MainActor.run {
+                self.profile = fetchedProfile
             }
         } catch {
             logger.error("Failed to load training profile: \(error)")
@@ -361,11 +363,8 @@ struct TrainingProfileSettingsView: View {
             await MainActor.run { saveProgress = "Saving profile..." }
             
             if let user = try await userRepository.getCurrentUser() {
-                var updatedUser = user
-                updatedUser.trainingProfile = profile
-                
                 await MainActor.run { saveProgress = "Syncing with backend..." }
-                try await userRepository.updateUser(updatedUser)
+                try await userRepository.syncUserSettings(user, trainingProfile: profile)
 
                 await MainActor.run {
                     saveProgress = "Profile saved successfully!"
@@ -388,5 +387,5 @@ struct TrainingProfileSettingsView: View {
 
 #Preview {
     TrainingProfileSettingsView()
-        .environmentObject(AppState(environment: MockEnvironment()))
+        .environmentObject(AppState(environment: .preview))
 }

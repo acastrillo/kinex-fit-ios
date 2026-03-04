@@ -5,8 +5,6 @@ struct InstagramImportTab: View {
     @EnvironmentObject private var appState: AppState
     @State private var instagramURL: String = ""
     @State private var fetchState: FetchStateView.FetchState = .idle
-    @State private var showingError = false
-    @State private var errorMessage: String = ""
     @State private var showPaywall = false
 
     private var instagramFetchService: InstagramFetchService {
@@ -68,7 +66,8 @@ struct InstagramImportTab: View {
                 state: fetchState,
                 onProcessAndEdit: processAndEdit,
                 onRetry: fetchWorkout,
-                onShowPaywall: { showPaywall = true }
+                onShowPaywall: { showPaywall = true },
+                onReauthenticate: handleReauthentication
             )
 
             Spacer()
@@ -84,11 +83,6 @@ struct InstagramImportTab: View {
             }
         }
         .padding(2)
-        .alert("Error", isPresented: $showingError) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(errorMessage)
-        }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
@@ -150,6 +144,11 @@ struct InstagramImportTab: View {
 
     private func processAndEdit(_ workout: FetchedWorkout) {
         appState.navigateToInstagramEdit(workout)
+    }
+
+    private func handleReauthentication() {
+        fetchState = .idle
+        NotificationCenter.default.post(name: .authSessionInvalidated, object: nil)
     }
 }
 

@@ -434,8 +434,10 @@ struct WorkoutFormView: View {
     }
 
     private func applyEnhancedResponse(_ workout: EnhancedWorkoutData) {
+        let aiRounds = workout.structure?.rounds.flatMap { $0 > 0 ? $0 : nil }
+
         if let exercises = workout.exercises {
-            let aiCards = EditableWorkoutCard.from(enhancedExercises: exercises)
+            let aiCards = EditableWorkoutCard.from(enhancedExercises: exercises, rounds: aiRounds)
             if !aiCards.isEmpty {
                 workoutCards = aiCards
             }
@@ -445,11 +447,7 @@ struct WorkoutFormView: View {
             content = desc
         }
 
-        if let structure = workout.structure, let r = structure.rounds, r > 0 {
-            rounds = r
-        } else {
-            rounds = nil
-        }
+        rounds = aiRounds
     }
 
     private func save() async {

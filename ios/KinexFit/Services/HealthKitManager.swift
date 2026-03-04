@@ -140,23 +140,17 @@ final class HealthKitManager: NSObject, ObservableObject {
             end: Date(),
             options: .strictStartDate
         )
-
-        let query = HKSampleQuery(
-            sampleType: .workoutType(),
-            predicate: predicate,
-            limit: HKObjectQueryNoLimit,
-            sortDescriptors: [
-                NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
-            ]
-        ) { _, samples, error in
-            if let error = error {
-                logger.error("Failed to fetch workouts: \(error.localizedDescription)")
-            }
-        }
-
         return try await withCheckedThrowingContinuation { continuation in
-            query.results = { _, samples, error in
+            let query = HKSampleQuery(
+                sampleType: .workoutType(),
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [
+                    NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+                ]
+            ) { _, samples, error in
                 if let error = error {
+                    logger.error("Failed to fetch workouts: \(error.localizedDescription)")
                     continuation.resume(throwing: error)
                 } else {
                     continuation.resume(returning: (samples as? [HKWorkout]) ?? [])

@@ -31,9 +31,23 @@ final class InstagramImportService: ObservableObject {
 
     /// Refresh the list of pending imports from App Group
     func refreshPendingImports() {
-        pendingImports = AppGroup.getPendingImports()
-            .filter { $0.processingStatus == .pending || $0.processingStatus == .processing }
-        logger.info("Found \(self.pendingImports.count) pending imports")
+        if AppGroup.containerURL == nil {
+            logger.error("App Group container unavailable for identifier \(AppGroup.identifier, privacy: .public)")
+        }
+
+        let allImports = AppGroup.getPendingImports()
+        pendingImports = allImports
+            .filter {
+                $0.processingStatus == .pending ||
+                $0.processingStatus == .processing ||
+                $0.processingStatus == .completed
+            }
+
+        let filteredOutCount = allImports.count - pendingImports.count
+        if filteredOutCount > 0 {
+            logger.warning("Filtered out \(filteredOutCount) failed import(s) during refresh")
+        }
+        logger.info("Found \(self.pendingImports.count) pending imports (raw: \(allImports.count))")
     }
 
     /// Get a specific import by ID

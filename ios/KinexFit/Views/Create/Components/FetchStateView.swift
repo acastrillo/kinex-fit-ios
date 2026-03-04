@@ -6,6 +6,7 @@ struct FetchStateView: View {
     let onProcessAndEdit: (FetchedWorkout) -> Void
     let onRetry: () -> Void
     let onShowPaywall: (() -> Void)?
+    let onReauthenticate: (() -> Void)?
 
     enum FetchState {
         case idle
@@ -177,6 +178,21 @@ struct FetchStateView: View {
                 .buttonStyle(.plain)
             }
 
+            if case .unauthorized = error {
+                Button(action: { onReauthenticate?() }) {
+                    HStack {
+                        Image(systemName: "person.crop.circle.badge.exclamationmark")
+                        Text("Sign In Again")
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(AppTheme.cardBackgroundElevated)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+
             if error.shouldShowUpgradePrompt {
                 Button("View Subscription Plans") {
                     onShowPaywall?()
@@ -196,7 +212,8 @@ struct FetchStateView: View {
         state: .idle,
         onProcessAndEdit: { _ in },
         onRetry: { },
-        onShowPaywall: nil
+        onShowPaywall: nil,
+        onReauthenticate: nil
     )
     .padding()
     .preferredColorScheme(.dark)
@@ -207,7 +224,8 @@ struct FetchStateView: View {
         state: .fetching,
         onProcessAndEdit: { _ in },
         onRetry: { },
-        onShowPaywall: nil
+        onShowPaywall: nil,
+        onReauthenticate: nil
     )
     .padding()
     .preferredColorScheme(.dark)
@@ -253,7 +271,8 @@ struct FetchStateView: View {
         state: .fetched(mockWorkout),
         onProcessAndEdit: { _ in print("Process & Edit") },
         onRetry: { },
-        onShowPaywall: nil
+        onShowPaywall: nil,
+        onReauthenticate: nil
     )
     .padding()
     .preferredColorScheme(.dark)
@@ -264,7 +283,8 @@ struct FetchStateView: View {
         state: .error(.invalidURL),
         onProcessAndEdit: { _ in },
         onRetry: { print("Retry") },
-        onShowPaywall: nil
+        onShowPaywall: nil,
+        onReauthenticate: nil
     )
     .padding()
     .preferredColorScheme(.dark)
@@ -275,7 +295,8 @@ struct FetchStateView: View {
         state: .error(.quotaExceeded(used: 10, limit: 10)),
         onProcessAndEdit: { _ in },
         onRetry: { },
-        onShowPaywall: { }
+        onShowPaywall: { },
+        onReauthenticate: nil
     )
     .padding()
     .preferredColorScheme(.dark)

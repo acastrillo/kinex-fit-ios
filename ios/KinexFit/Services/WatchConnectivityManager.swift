@@ -5,7 +5,6 @@ import OSLog
 private let logger = Logger(subsystem: "com.kinex.fit", category: "WatchConnectivity")
 
 /// Manages communication with Apple Watch companion app
-@MainActor
 final class WatchConnectivityManager: NSObject, WCSessionDelegate, ObservableObject {
     @Published var isWatchPaired: Bool = false
     @Published var isWatchAppInstalled: Bool = false
@@ -54,11 +53,11 @@ final class WatchConnectivityManager: NSObject, WCSessionDelegate, ObservableObj
             "timestamp": Date().timeIntervalSince1970,
         ]
 
-        session.sendMessage(message) { [weak self] in
-            self?.logger.info("Workout data sent to Watch")
-        } errorHandler: { [weak self] error in
-            self?.logger.error("Failed to send workout to Watch: \(error.localizedDescription)")
-        }
+        session.sendMessage(message, replyHandler: { _ in
+            logger.info("Workout data sent to Watch")
+        }, errorHandler: { error in
+            logger.error("Failed to send workout to Watch: \(error.localizedDescription)")
+        })
     }
 
     /// Send timer update to Watch
@@ -73,7 +72,7 @@ final class WatchConnectivityManager: NSObject, WCSessionDelegate, ObservableObj
         ]
 
         session.sendMessage(message, replyHandler: nil) { error in
-            logger.debug("Timer update sent to Watch")
+            logger.error("Failed to send timer update to Watch: \(error.localizedDescription)")
         }
     }
 
@@ -85,9 +84,7 @@ final class WatchConnectivityManager: NSObject, WCSessionDelegate, ObservableObj
         message.merge(metrics) { _, new in new }
 
         session.sendMessage(message, replyHandler: nil) { error in
-            if let error = error {
-                logger.error("Failed to send metrics to Watch: \(error.localizedDescription)")
-            }
+            logger.error("Failed to send metrics to Watch: \(error.localizedDescription)")
         }
     }
 
@@ -101,9 +98,9 @@ final class WatchConnectivityManager: NSObject, WCSessionDelegate, ObservableObj
         DispatchQueue.main.async {
             self.isWatchPaired = activationState == .activated
             if let error = error {
-                self.logger.error("Watch activation error: \(error.localizedDescription)")
+                logger.error("Watch activation error: \(error.localizedDescription)")
             } else {
-                self.logger.info("Watch session activated: \(activationState == .activated)")
+                logger.info("Watch session activated: \(activationState == .activated)")
             }
         }
     }
@@ -111,14 +108,14 @@ final class WatchConnectivityManager: NSObject, WCSessionDelegate, ObservableObj
     func sessionDidBecomeInactive(_ session: WCSession) {
         DispatchQueue.main.async {
             self.isWatchPaired = false
-            self.logger.info("Watch session became inactive")
+            logger.info("Watch session became inactive")
         }
     }
 
     func sessionDidDeactivate(_ session: WCSession) {
         DispatchQueue.main.async {
             self.isWatchPaired = false
-            self.logger.info("Watch session deactivated")
+            logger.info("Watch session deactivated")
         }
     }
 
@@ -151,14 +148,14 @@ final class WatchConnectivityManager: NSObject, WCSessionDelegate, ObservableObj
     func sessionDidInstallValueStore(_ session: WCSession) {
         DispatchQueue.main.async {
             self.isWatchAppInstalled = true
-            self.logger.info("Watch app installed")
+            logger.info("Watch app installed")
         }
     }
 
     nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
         DispatchQueue.main.async {
             self.isWatchPaired = session.isPaired
-            self.logger.info("Watch paired state changed: \(session.isPaired)")
+            logger.info("Watch paired state changed: \(session.isPaired)")
         }
     }
     #endif

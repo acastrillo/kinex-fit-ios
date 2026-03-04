@@ -10,8 +10,8 @@ final class EmailManager {
 
     private let apiClient: APIClient
 
-    init(apiClient: APIClient = AppState.shared?.environment.apiClient ?? .preview) {
-        self.apiClient = apiClient
+    init(apiClient: APIClient? = nil) {
+        self.apiClient = apiClient ?? AppState.shared?.environment.apiClient ?? AppEnvironment.preview.apiClient
     }
 
     // MARK: - Weekly Summary
@@ -36,9 +36,9 @@ final class EmailManager {
     /// Fetch weekly summary from backend
     func fetchWeeklySummary() async throws -> WeeklySummary {
         let request = APIRequest(
-            method: .get,
             path: "/api/user/summary/weekly",
-            query: ["format": "json"]
+            method: .get,
+            queryItems: [URLQueryItem(name: "format", value: "json")]
         )
 
         let response: WeeklySummary = try await apiClient.send(request)

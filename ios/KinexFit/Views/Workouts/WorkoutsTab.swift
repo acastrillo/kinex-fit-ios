@@ -282,11 +282,12 @@ struct WorkoutsTab: View {
     private func saveImportedWorkout(title: String, content: String?) async throws {
         let sourceText = selectedImport?.extractedText ?? selectedImport?.captionText
         let normalizedSourceText = sourceText?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sourceType = Self.sourceTypeForImportedPostURL(selectedImport?.postURL)
         let workout = Workout(
             title: title,
             content: content,
             enhancementSourceText: (normalizedSourceText?.isEmpty == false ? normalizedSourceText : content),
-            source: .instagram,
+            source: sourceType,
             exerciseCount: estimateExerciseCount(from: content),
             difficulty: inferDifficulty(title: title, content: content),
             sourceURL: selectedImport?.postURL
@@ -344,6 +345,13 @@ struct WorkoutsTab: View {
         if sourceText.contains("advanced") || sourceText.contains("elite") { return "advanced" }
         if sourceText.contains("intermediate") { return "intermediate" }
         return nil
+    }
+
+    static func sourceTypeForImportedPostURL(_ postURL: String?) -> WorkoutSource {
+        guard let postURL, !postURL.isEmpty else {
+            return .instagram
+        }
+        return SocialPlatform.detect(from: postURL).workoutSource
     }
 
     // MARK: - Sync Operations

@@ -6,7 +6,17 @@ private let logger = Logger(subsystem: "com.kinex.fit", category: "StatsReposito
 
 /// Repository for stats and analytics operations
 /// Handles caching, pagination, and date range filtering
+@MainActor
 final class StatsRepository {
+    static let shared: StatsRepository = {
+        let environment = AppState.shared?.environment ?? .preview
+        return StatsRepository(
+            database: environment.database,
+            apiClient: environment.apiClient,
+            syncEngine: environment.syncEngine
+        )
+    }()
+
     private let database: AppDatabase
     private let apiClient: APIClient
     private let syncEngine: SyncEngine
@@ -16,14 +26,14 @@ final class StatsRepository {
     private static let statsCacheDuration: TimeInterval = 3600 // 1 hour
     private var statsCache: [String: CacheEntry] = [:]
     
-    struct CacheEntry {
-        let data: [String: Any]
-        let fetchedAt: Date
-        
-        var isExpired: Bool {
-            Date().timeIntervalSince(fetchedAt) > StatsRepository.statsCacheDuration
+        struct CacheEntry {
+            let data: [String: Any]
+            let fetchedAt: Date
+            
+            var isExpired: Bool {
+                Date().timeIntervalSince(fetchedAt) > 3600
+            }
         }
-    }
     
     init(database: AppDatabase, apiClient: APIClient, syncEngine: SyncEngine) {
         self.database = database
@@ -53,11 +63,9 @@ final class StatsRepository {
         
         // Filter by date range if provided
         let filtered = metrics.filter { metric in
-            guard let date = parseMetricDate(metric.date) else { return true }
-            
+            let date = metric.date
             if let start = startDate, date < start { return false }
             if let end = endDate, date > end { return false }
-            
             return true
         }
         
@@ -66,6 +74,15 @@ final class StatsRepository {
         logger.debug("Cached body metrics stats with key: \(cacheKey)")
         
         return filtered
+    }
+
+    /// Backward-compatible alias used by export and analytics features.
+    func getBodyMetrics(
+        startDate: Date? = nil,
+        endDate: Date? = nil,
+        limit: Int = 100
+    ) async throws -> [BodyMetric] {
+        try await getBodyMetricsStats(startDate: startDate, endDate: endDate, limit: limit)
     }
     
     /// Fetch personal records (PRs) with caching
@@ -83,7 +100,7 @@ final class StatsRepository {
         
         // Extract PRs from profile
         let prs = profile.personalRecords.reduce(into: [String: PersonalRecord]()) { dict, pr in
-            dict[pr.exercise] = pr
+            dict[pr.exerciseName] = pr
         }
         
         // Cache the result
@@ -119,7 +136,8 @@ final class StatsRepository {
             
             // Parse exercise data from content
             if let maxWeight = extractMaxWeight(from: workout.content, exercise: exercise),
-               let date = workout.completedDate {
+               let completedDate = workout.completedDate,
+               let date = parseDateString(completedDate) {
                 
                 let point = ProgressionPoint(
                     date: date,
@@ -156,13 +174,6 @@ final class StatsRepository {
     
     // MARK: - Helper Methods
     
-    private func parseMetricDate(_ dateString: String) -> Date? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter.date(from: dateString)
-    }
-    
     private func extractMaxWeight(from content: String?, exercise: String) -> Double? {
         // Simple weight extraction from content
         // In production, this would parse structured data
@@ -184,6 +195,14 @@ final class StatsRepository {
         
         return nil
     }
+
+    private func parseDateString(_ value: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: value)
+    }
 }
 
 // MARK: - Models
@@ -194,22 +213,4 @@ struct ProgressionPoint: Identifiable {
     let weight: Double
     let reps: Int
     let volume: Double // weight × reps
-}
-
-struct BodyMetric: Identifiable, Codable {
-    let id: String
-    let date: String // YYYY-MM-DD
-    let weight: Double?
-    let bodyFatPercentage: Double?
-    let muscleMass: Double?
-    let chest: Double?
-    let waist: Double?
-    let hips: Double?
-    let thighs: Double?
-    let arms: Double?
-    let calves: Double?
-    let shoulders: Double?
-    let neck: Double?
-    let unit: String
-    let notes: String?
 }

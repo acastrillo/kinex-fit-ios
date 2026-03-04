@@ -8,7 +8,9 @@ private let logger = Logger(subsystem: "com.kinex.fit", category: "Milestones")
 final class MilestoneManager {
     static let shared = MilestoneManager()
 
-    private let notificationManager = NotificationManager(apiClient: AppState.shared?.environment.apiClient ?? .preview)
+    private let notificationManager = NotificationManager(
+        apiClient: AppState.shared?.environment.apiClient ?? AppEnvironment.preview.apiClient
+    )
     private let userDefaults = UserDefaults.standard
 
     // MARK: - Milestones

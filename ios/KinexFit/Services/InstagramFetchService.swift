@@ -39,7 +39,7 @@ actor InstagramFetchService {
             return response
 
         } catch let error as APIError {
-            throw mapAPIError(error)
+            throw mapAPIError(error, context: .socialFetch)
         } catch {
             throw InstagramFetchError.networkError(error)
         }
@@ -62,7 +62,7 @@ actor InstagramFetchService {
             return response
 
         } catch let error as APIError {
-            throw mapAPIError(error)
+            throw mapAPIError(error, context: .captionIngest)
         } catch {
             throw InstagramFetchError.parsingFailed
         }
@@ -97,12 +97,12 @@ actor InstagramFetchService {
                     logger.info("Successfully fetched TikTok post via fallback endpoint")
                     return fallbackResponse
                 } catch let fallbackError as APIError {
-                    throw mapAPIError(fallbackError)
+                    throw mapAPIError(fallbackError, context: .socialFetch)
                 } catch {
                     throw InstagramFetchError.networkError(error)
                 }
             }
-            throw mapAPIError(error)
+            throw mapAPIError(error, context: .socialFetch)
         } catch {
             throw InstagramFetchError.networkError(error)
         }
@@ -195,12 +195,26 @@ actor InstagramFetchService {
 
     // MARK: - Error Mapping
 
+    private enum APIErrorContext {
+        case socialFetch
+        case captionIngest
+    }
+
     /// Map APIError to InstagramFetchError
-    private func mapAPIError(_ apiError: APIError) -> InstagramFetchError {
+    private func mapAPIError(_ apiError: APIError, context: APIErrorContext) -> InstagramFetchError {
         switch apiError {
-        case .httpStatus(let statusCode, _):
+        case .httpStatus(let statusCode, let data):
+            if let data,
+               let errorResponse = decodeErrorResponse(from: data) {
+                return mapErrorResponse(errorResponse, statusCode: statusCode, context: context)
+            }
+
             switch statusCode {
             case 401:
+                if let data,
+                   let responseText = String(data: data, encoding: .utf8)?.lowercased() {
+                    return Self.map401AuthenticationMessage(responseText, context: context)
+                }
                 return .unauthorized
             case 404:
                 return .postNotFound
@@ -219,34 +233,198 @@ actor InstagramFetchService {
     }
 
     /// Map structured error response to InstagramFetchError
-    private func mapErrorResponse(_ errorResponse: ErrorResponse, statusCode: Int) -> InstagramFetchError {
+    private func mapErrorResponse(
+        _ errorResponse: ErrorResponse,
+        statusCode: Int,
+        context: APIErrorContext
+    ) -> InstagramFetchError {
+        let message = errorResponse.normalizedMessage
+        let normalizedMessage = message.lowercased()
+
         // Check for quota exceeded
-        if let message = errorResponse.message, message.contains("quota") || message.contains("limit") {
+        if normalizedMessage.contains("quota") || normalizedMessage.contains("limit") {
             // Try to extract quota numbers if available
             return .quotaExceeded(used: errorResponse.quotaUsed ?? 0, limit: errorResponse.quotaLimit ?? 100)
         }
 
         // Check for rate limiting
-        if statusCode == 429 || errorResponse.message?.contains("rate limit") == true {
+        if statusCode == 429 || normalizedMessage.contains("rate limit") {
             return .rateLimited
         }
 
+        if statusCode == 401 {
+            if let codedError = Self.map401ErrorCode(errorResponse, context: context) {
+                return codedError
+            }
+            return Self.map401AuthenticationMessage(normalizedMessage, context: context)
+        }
+
+        if statusCode == 403, Self.isSourceAuthenticationError(normalizedMessage) {
+            return .sourceAuthenticationRequired
+        }
+
         // Check for not found
-        if statusCode == 404 || errorResponse.message?.contains("not found") == true {
+        if statusCode == 404 || normalizedMessage.contains("not found") {
             return .postNotFound
         }
 
         // Default to server error
         return .serverError(statusCode: statusCode)
     }
+
+    private func decodeErrorResponse(from data: Data) -> ErrorResponse? {
+        try? JSONDecoder().decode(ErrorResponse.self, from: data)
+    }
+
+    private nonisolated static func map401AuthenticationMessage(
+        _ normalizedMessage: String,
+        context: APIErrorContext
+    ) -> InstagramFetchError {
+        if isLikelyAppAuthenticationError(normalizedMessage) {
+            return .unauthorized
+        }
+
+        // Some scraper providers return generic "please login" 401 responses
+        // when the source post is not publicly accessible.
+        if isSourceAuthenticationError(normalizedMessage)
+            || (context == .socialFetch && isAmbiguousSourceLoginPrompt(normalizedMessage)) {
+            return .sourceAuthenticationRequired
+        }
+
+        return .unauthorized
+    }
+
+    private nonisolated static func map401ErrorCode(
+        _ errorResponse: ErrorResponse,
+        context: APIErrorContext
+    ) -> InstagramFetchError? {
+        let normalizedCode = (errorResponse.errorCode ?? errorResponse.code ?? "").lowercased()
+        guard !normalizedCode.isEmpty else { return nil }
+
+        let appCodes = [
+            "app_auth_required",
+            "invalid_token",
+            "token_expired",
+            "session_expired",
+            "unauthorized"
+        ]
+        if appCodes.contains(where: { normalizedCode.contains($0) }) {
+            return .unauthorized
+        }
+
+        let sourceCodes = [
+            "source_auth_required",
+            "instagram_auth_required",
+            "tiktok_auth_required",
+            "source_login_required",
+            "private_post"
+        ]
+        if sourceCodes.contains(where: { normalizedCode.contains($0) }) {
+            return .sourceAuthenticationRequired
+        }
+
+        if context == .socialFetch, normalizedCode.contains("auth_required") {
+            return .sourceAuthenticationRequired
+        }
+        return nil
+    }
+
+    private nonisolated static func isSourceAuthenticationError(_ normalizedMessage: String) -> Bool {
+        let sourceKeywords = [
+            "instagram",
+            "tiktok",
+            "private post",
+            "private account",
+            "restricted",
+            "requires login",
+            "login required",
+            "authentication required",
+            "sign in to view",
+            "not publicly available",
+            "checkpoint",
+            "cookie"
+        ]
+
+        return sourceKeywords.contains { normalizedMessage.contains($0) }
+    }
+
+    private nonisolated static func isAmbiguousSourceLoginPrompt(_ normalizedMessage: String) -> Bool {
+        let ambiguousKeywords = [
+            "please login",
+            "please log in",
+            "error please login"
+        ]
+
+        return ambiguousKeywords.contains { normalizedMessage.contains($0) }
+    }
+
+    private nonisolated static func isLikelyAppAuthenticationError(_ normalizedMessage: String) -> Bool {
+        let appKeywords = [
+            "unauthorized",
+            "please sign in",
+            "sign in to continue",
+            "login to continue",
+            "access token",
+            "refresh token",
+            "token expired",
+            "jwt",
+            "session expired"
+        ]
+
+        return appKeywords.contains { normalizedMessage.contains($0) }
+    }
 }
 
 // MARK: - Error Response Model
 
 /// Error response structure from backend
-private struct ErrorResponse: Codable {
+private struct ErrorResponse: Decodable {
     let message: String?
     let error: String?
+    let detail: String?
+    let details: String?
+    let code: String?
+    let errorCode: String?
     let quotaUsed: Int?
     let quotaLimit: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case message
+        case error
+        case detail
+        case details
+        case code
+        case errorCode
+        case error_code
+        case quotaUsed
+        case quota_used
+        case quotaLimit
+        case quota_limit
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+        error = try container.decodeIfPresent(String.self, forKey: .error)
+        detail = try container.decodeIfPresent(String.self, forKey: .detail)
+        details = try container.decodeIfPresent(String.self, forKey: .details)
+        code =
+            (try? container.decodeIfPresent(String.self, forKey: .code))
+            ?? (try? container.decodeIfPresent(String.self, forKey: .error_code))
+        errorCode = try container.decodeIfPresent(String.self, forKey: .errorCode)
+        quotaUsed =
+            (try? container.decodeIfPresent(Int.self, forKey: .quotaUsed))
+            ?? (try? container.decodeIfPresent(Int.self, forKey: .quota_used))
+        quotaLimit =
+            (try? container.decodeIfPresent(Int.self, forKey: .quotaLimit))
+            ?? (try? container.decodeIfPresent(Int.self, forKey: .quota_limit))
+    }
+
+    var normalizedMessage: String {
+        message?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? error?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? detail?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? details?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? ""
+    }
 }

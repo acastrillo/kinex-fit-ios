@@ -218,6 +218,7 @@ struct WorkoutSessionView: View {
     @State private var intervalPhaseRemainingSeconds: Int
     @State private var intervalElapsedSeconds: Int
     @State private var showTimerSelection = false
+    @State private var hapticEnabled = true
     @State private var didPresentAutoCompletion = false
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -332,6 +333,9 @@ struct WorkoutSessionView: View {
             if timerConfiguration.usesCountdown {
                 resetIntervalState(for: timerConfiguration)
             }
+            Task {
+                await loadNotificationPreferences()
+            }
         }
         .onReceive(timer) { _ in
             handleSessionTick()
@@ -363,19 +367,6 @@ struct WorkoutSessionView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(saveError ?? "Failed to save workout.")
-        }
-        // MARK: - Keyboard Shortcuts
-        .keyboardShortcut("p") {
-            isPaused.toggle()
-        }
-        .keyboardShortcut(" ", modifiers: .command) {
-            isPaused.toggle()
-        }
-        .keyboardShortcut("e", modifiers: .command) {
-            showEndDialog = true
-        }
-        .keyboardShortcut("t", modifiers: .command) {
-            showTimerSelection = true
         }
     }
 
@@ -1159,7 +1150,6 @@ struct WorkoutSessionView: View {
 
         AudioServicesPlaySystemSound(SystemSoundID(1005))
         
-        let hapticEnabled = appState.currentUser?.enableNotificationHaptics ?? true
         if hapticEnabled {
             let feedback = UINotificationFeedbackGenerator()
             feedback.prepare()
@@ -1175,8 +1165,6 @@ struct WorkoutSessionView: View {
     private func triggerTransitionAlert(for phase: WorkoutIntervalPhase) {
         AudioServicesPlaySystemSound(SystemSoundID(1113))
         
-        // Check user preference for haptic feedback
-        let hapticEnabled = appState.currentUser?.enableNotificationHaptics ?? true
         let feedback = UINotificationFeedbackGenerator()
         feedback.prepare()
         
@@ -1194,6 +1182,11 @@ struct WorkoutSessionView: View {
                 feedback.notificationOccurred(.success)
             }
         }
+    }
+
+    private func loadNotificationPreferences() async {
+        guard let user = try? await appState.environment.userRepository.getCurrentUser() else { return }
+        hapticEnabled = user.enableNotificationHaptics
     }
 
     private func applyTimerConfiguration(_ configuration: WorkoutSessionTimerConfiguration) {

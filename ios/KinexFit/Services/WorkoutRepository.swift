@@ -106,7 +106,7 @@ final class WorkoutRepository {
         }
 
         do {
-            let request = APIRequest(path: "/api/mobile/ai/workout-of-the-week", method: .post)
+            let request = APIRequest(path: "/api/mobile/ai/workout-of-the-week", method: .get)
             let response: WorkoutRecommendationResponse = try await apiClient.send(request)
             guard let recommendedWorkout = response.workout else {
                 try await clearWorkoutOfTheWeekCache()
@@ -114,7 +114,9 @@ final class WorkoutRepository {
             }
 
             let normalizedTitle = Self.normalizedRecommendationText(recommendedWorkout.title)
-            let normalizedContent = Self.normalizedRecommendationText(recommendedWorkout.content)
+            let normalizedContent = Self.normalizedRecommendationText(
+                recommendedWorkout.composedContentForEditing()
+            )
             let fallbackTitle = "Workout of the Week"
 
             var entry = WorkoutOfTheWeekCacheEntry(
@@ -276,7 +278,7 @@ final class WorkoutRepository {
         )
         let response: WorkoutScheduleActionResponse = try await apiClient.send(request)
 
-        let scheduledWorkout = try await database.dbQueue.write { db in
+        let scheduledWorkout: Workout? = try await database.dbQueue.write { db in
             guard var workout = try Workout.fetchOne(db, key: workoutId) else {
                 return nil
             }
@@ -312,22 +314,25 @@ final class WorkoutRepository {
         }
 
         // Schedule push notification for scheduled workout
+        let notificationManager = await MainActor.run { AppState.shared?.environment.notificationManager }
         if let scheduledWorkout = scheduledWorkout,
-           scheduledWorkout.status == .scheduled,
-           let notificationManager = AppState.shared?.environment.notificationManager {
+           scheduledWorkout.status == WorkoutScheduleStatus.scheduled,
+           let notificationManager {
             
-            let notificationDate = Self.constructScheduleDateTime(
-                date: scheduledWorkout.scheduledDate,
-                time: scheduledWorkout.scheduledTime
-            )
-            
-            if notificationDate > Date() {
-                try await notificationManager.scheduleWorkoutReminder(
-                    title: "Workout Scheduled",
-                    body: "\(scheduledWorkout.title) - Time to get started!",
-                    date: notificationDate,
-                    identifier: "workout-\(workoutId)-scheduled"
+            if let scheduledDate = scheduledWorkout.scheduledDate {
+                let notificationDate = Self.constructScheduleDateTime(
+                    date: scheduledDate,
+                    time: scheduledWorkout.scheduledTime
                 )
+                
+                if notificationDate > Date() {
+                    try await notificationManager.scheduleWorkoutReminder(
+                        title: "Workout Scheduled",
+                        body: "\(scheduledWorkout.title) - Time to get started!",
+                        date: notificationDate,
+                        identifier: "workout-\(workoutId)-scheduled"
+                    )
+                }
             }
         }
 
@@ -374,7 +379,7 @@ final class WorkoutRepository {
         let request = APIRequest.unscheduleWorkout(workoutId: workoutId)
         let _: WorkoutScheduleActionResponse = try await apiClient.send(request)
 
-        let unscheduledWorkout = try await database.dbQueue.write { db in
+        let unscheduledWorkout: Workout? = try await database.dbQueue.write { db in
             guard var workout = try Workout.fetchOne(db, key: workoutId) else {
                 return nil
             }
@@ -390,8 +395,11 @@ final class WorkoutRepository {
         }
 
         // Cancel scheduled push notification
-        if let notificationManager = AppState.shared?.environment.notificationManager {
-            notificationManager.cancelNotification(identifier: "workout-\(workoutId)-scheduled")
+        let notificationManager = await MainActor.run { AppState.shared?.environment.notificationManager }
+        if let notificationManager {
+            await MainActor.run {
+                notificationManager.cancelNotification(identifier: "workout-\(workoutId)-scheduled")
+            }
         }
 
         return unscheduledWorkout

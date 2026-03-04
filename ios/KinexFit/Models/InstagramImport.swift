@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 /// Represents an Instagram post import pending processing
 struct InstagramImport: Codable, Identifiable {
@@ -48,6 +49,7 @@ struct InstagramImport: Codable, Identifiable {
 
 /// Utility for App Group shared storage
 enum AppGroup {
+    private static let logger = Logger(subsystem: "com.kinex.fit", category: "AppGroup")
     static let identifier = "group.com.kinex.fit"
 
     static var containerURL: URL? {
@@ -78,14 +80,18 @@ enum AppGroup {
         guard let importsDir = importsDirectory,
               let mediaDir = mediaDirectory else { return }
 
-        try? FileManager.default.createDirectory(
-            at: importsDir,
-            withIntermediateDirectories: true
-        )
-        try? FileManager.default.createDirectory(
-            at: mediaDir,
-            withIntermediateDirectories: true
-        )
+        do {
+            try FileManager.default.createDirectory(
+                at: importsDir,
+                withIntermediateDirectories: true
+            )
+            try FileManager.default.createDirectory(
+                at: mediaDir,
+                withIntermediateDirectories: true
+            )
+        } catch {
+            logger.error("Failed to ensure App Group directories: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     // MARK: - Import Management
@@ -99,27 +105,36 @@ enum AppGroup {
 
     /// Get all pending imports
     static func getPendingImports() -> [InstagramImport] {
-        guard let defaults = sharedDefaults,
-              let data = defaults.data(forKey: pendingImportsKey) else {
+        guard let defaults = sharedDefaults else {
+            logger.error("Shared defaults unavailable for App Group identifier \(identifier, privacy: .public)")
+            return []
+        }
+        guard let data = defaults.data(forKey: pendingImportsKey) else {
             return []
         }
 
         do {
             return try JSONDecoder().decode([InstagramImport].self, from: data)
         } catch {
+            logger.error(
+                "Failed to decode pending imports payload (bytes: \(data.count), key: \(pendingImportsKey, privacy: .public)): \(error.localizedDescription, privacy: .public)"
+            )
             return []
         }
     }
 
     /// Save the pending imports array
     static func savePendingImports(_ imports: [InstagramImport]) {
-        guard let defaults = sharedDefaults else { return }
+        guard let defaults = sharedDefaults else {
+            logger.error("Shared defaults unavailable for App Group identifier \(identifier, privacy: .public)")
+            return
+        }
 
         do {
             let data = try JSONEncoder().encode(imports)
             defaults.set(data, forKey: pendingImportsKey)
         } catch {
-            // Handle error silently
+            logger.error("Failed to encode pending imports for save: \(error.localizedDescription, privacy: .public)")
         }
     }
 

@@ -128,7 +128,7 @@ final class AIService {
     func getWorkoutOfTheWeek() async throws -> WorkoutRecommendationResponse {
         logger.info("Fetching workout of the week")
 
-        let request = APIRequest(path: "/api/mobile/ai/workout-of-the-week", method: .post)
+        let request = APIRequest(path: "/api/mobile/ai/workout-of-the-week", method: .get)
 
         do {
             let response: WorkoutRecommendationResponse = try await apiClient.send(request)

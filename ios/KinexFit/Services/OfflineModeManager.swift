@@ -1,6 +1,7 @@
 import Foundation
 import Network
 import OSLog
+import SwiftUI
 
 private let logger = Logger(subsystem: "com.kinex.fit", category: "OfflineMode")
 

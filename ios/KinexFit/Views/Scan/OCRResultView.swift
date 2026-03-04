@@ -58,7 +58,7 @@ struct OCRResultView: View {
                     // AI Enhancement button
                     EnhanceWithAIButton(text: ocrResponse.text) { response in
                         title = response.workout.title
-                        content = response.workout.content
+                        content = response.workout.composedContentForEditing()
                         enhancementResponse = response
                     }
                     .padding(.horizontal)

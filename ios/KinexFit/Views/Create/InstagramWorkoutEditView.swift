@@ -484,9 +484,10 @@ struct InstagramWorkoutEditView: View {
                 try? await appState.environment.userRepository.updateAIQuotaFromRemaining(remaining)
             }
             title = response.workout.title
+            let aiRounds = response.workout.structure?.rounds.flatMap { $0 > 0 ? $0 : nil }
 
             if let exercises = response.workout.exercises {
-                let aiCards = EditableWorkoutCard.from(enhancedExercises: exercises)
+                let aiCards = EditableWorkoutCard.from(enhancedExercises: exercises, rounds: aiRounds)
                 if !aiCards.isEmpty {
                     workoutCards = aiCards
                 }
@@ -496,11 +497,7 @@ struct InstagramWorkoutEditView: View {
                 description = desc
             }
 
-            if let structure = response.workout.structure, let r = structure.rounds, r > 0 {
-                rounds = r
-            } else {
-                rounds = nil
-            }
+            rounds = aiRounds
         } catch {
             self.error = error
             showingError = true

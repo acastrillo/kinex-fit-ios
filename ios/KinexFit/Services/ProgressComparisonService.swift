@@ -10,8 +10,8 @@ final class ProgressComparisonService {
 
     private let statsRepository: StatsRepository
 
-    init(statsRepository: StatsRepository = .shared) {
-        self.statsRepository = statsRepository
+    init(statsRepository: StatsRepository? = nil) {
+        self.statsRepository = statsRepository ?? .shared
     }
 
     // MARK: - Comparisons

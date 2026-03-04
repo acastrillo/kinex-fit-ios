@@ -504,10 +504,7 @@ struct WorkoutDetailView: View {
             var updated = workout
             updated.title = response.workout.title
             updated.enhancementSourceText = workout.enhancementSourceText ?? input
-            updated.content = Self.composeEnhancedContent(
-                description: response.workout.description,
-                exercises: response.workout.exercises,
-                rounds: response.workout.structure?.rounds,
+            updated.content = response.workout.composedContentForEditing(
                 fallback: workout.content ?? ""
             )
             try await onUpdate?(updated)
@@ -518,27 +515,6 @@ struct WorkoutDetailView: View {
             enhancementError = error.localizedDescription
             showingEnhancementError = true
         }
-    }
-
-    /// Compose a content string from structured AI response data.
-    /// Uses the exercises array to produce standard exercise notation.
-    private static func composeEnhancedContent(
-        description: String?,
-        exercises: [EnhancedExercise]?,
-        rounds: Int?,
-        fallback: String
-    ) -> String {
-        guard let exercises = exercises else {
-            return fallback
-        }
-
-        let cards = EditableWorkoutCard.from(enhancedExercises: exercises)
-        guard !cards.isEmpty else {
-            return fallback
-        }
-
-        let notes = description?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return EditableWorkoutCard.composeContent(notes: notes, cards: cards, rounds: rounds)
     }
 }
 

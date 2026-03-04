@@ -36,6 +36,11 @@ final class UserRepository {
         logger.debug("User saved: \(user.id)")
     }
 
+    /// Backward-compatible alias used by existing call sites.
+    func updateUser(_ user: User) async throws {
+        try await save(user)
+    }
+
     /// Sync editable profile/settings fields to backend.
     func syncUserSettings(_ user: User, trainingProfile: TrainingProfile? = nil) async throws {
         let payload = UserSettingsPayload(user: user, trainingProfile: trainingProfile)

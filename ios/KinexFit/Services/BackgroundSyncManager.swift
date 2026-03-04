@@ -14,11 +14,11 @@ final class BackgroundSyncManager {
     private let userRepository: UserRepository
 
     init(
-        workoutRepository: WorkoutRepository = AppState.shared?.environment.workoutRepository ?? .preview,
-        userRepository: UserRepository = AppState.shared?.environment.userRepository ?? .preview
+        workoutRepository: WorkoutRepository? = nil,
+        userRepository: UserRepository? = nil
     ) {
-        self.workoutRepository = workoutRepository
-        self.userRepository = userRepository
+        self.workoutRepository = workoutRepository ?? AppState.shared?.environment.workoutRepository ?? AppEnvironment.preview.workoutRepository
+        self.userRepository = userRepository ?? AppState.shared?.environment.userRepository ?? AppEnvironment.preview.userRepository
     }
 
     // MARK: - Setup
@@ -56,7 +56,7 @@ final class BackgroundSyncManager {
         // Create expiration handler
         task.expirationHandler = {
             logger.warning("Background sync task expired")
-            task.setTaskFailed(withError: NSError(domain: "BGSync", code: -1))
+            task.setTaskCompleted(success: false)
         }
 
         do {
@@ -76,7 +76,7 @@ final class BackgroundSyncManager {
             scheduleBackgroundSync()
         } catch {
             logger.error("Background sync failed: \(error.localizedDescription)")
-            task.setTaskFailed(withError: error)
+            task.setTaskCompleted(success: false)
         }
     }
 

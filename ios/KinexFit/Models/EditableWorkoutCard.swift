@@ -145,14 +145,23 @@ extension EditableWorkoutCard {
     }
 
     /// Create cards from AI-enhanced `EnhancedExercise` array.
-    static func from(enhancedExercises: [EnhancedExercise]) -> [EditableWorkoutCard] {
-        enhancedExercises.compactMap { exercise in
+    static func from(enhancedExercises: [EnhancedExercise], rounds: Int? = nil) -> [EditableWorkoutCard] {
+        let roundsFallback = rounds.flatMap { $0 > 0 ? $0 : nil }
+
+        return enhancedExercises.compactMap { exercise in
             guard let normalizedName = normalizeAIExerciseName(exercise.name) else {
                 return nil
             }
 
             let reps = normalizedAIReps(for: exercise)
-            let setsText = exercise.sets.map(String.init) ?? (reps.isEmpty ? "" : "1")
+            let setsText: String
+            if let sets = exercise.sets, sets > 0 {
+                setsText = String(sets)
+            } else if let roundsFallback {
+                setsText = String(roundsFallback)
+            } else {
+                setsText = reps.isEmpty ? "" : "1"
+            }
 
             return EditableWorkoutCard(
                 name: normalizedName,
@@ -166,10 +175,12 @@ extension EditableWorkoutCard {
 
     /// Create cards from local `WorkoutContentPresentation` exercises.
     static func from(presentation: WorkoutContentPresentation) -> [EditableWorkoutCard] {
-        presentation.exercises.map { exercise in
+        let roundsFallback = presentation.rounds.flatMap { $0 > 0 ? $0 : nil }
+
+        return presentation.exercises.map { exercise in
             EditableWorkoutCard(
                 name: exercise.name,
-                sets: exercise.sets.map(String.init) ?? "",
+                sets: exercise.sets.map(String.init) ?? roundsFallback.map(String.init) ?? "",
                 reps: exercise.reps.map(String.init) ?? "",
                 weight: exercise.weight ?? "",
                 restSeconds: exercise.restSeconds.map(String.init) ?? "",
@@ -183,10 +194,12 @@ extension EditableWorkoutCard {
         rounds: Int?,
         block: WorkoutBlockContext?
     ) -> [EditableWorkoutCard] {
-        exercises.map { exercise in
+        let roundsFallback = rounds.flatMap { $0 > 0 ? $0 : nil }
+
+        return exercises.map { exercise in
             EditableWorkoutCard(
                 name: exercise.name,
-                sets: exercise.sets.map(String.init) ?? (rounds.map(String.init) ?? ""),
+                sets: exercise.sets.map(String.init) ?? (roundsFallback.map(String.init) ?? ""),
                 reps: exercise.reps ?? "",
                 weight: exercise.weight ?? "",
                 restSeconds: exercise.restSeconds.map(String.init) ?? "",

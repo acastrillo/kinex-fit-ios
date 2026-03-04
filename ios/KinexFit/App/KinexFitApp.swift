@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 @main
 struct KinexFitApp: App {
@@ -16,6 +17,11 @@ struct KinexFitApp: App {
                         return
                     }
                     NotificationCenter.default.post(name: .subscriptionDeepLinkReceived, object: url)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                    if appState.featureFlags.shareExtensionImportEnabled {
+                        appState.checkForPendingImports()
+                    }
                 }
         }
     }

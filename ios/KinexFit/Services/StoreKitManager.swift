@@ -105,6 +105,8 @@ final class StoreKitManager: NSObject, ObservableObject {
                     await handleAutoRenewableSubscription(transaction)
                 case .nonConsumable, .nonRenewable, .consumable:
                     purchasedProductIds.insert(transaction.productID)
+                default:
+                    logger.warning("Unhandled product type for transaction: \(transaction.productID)")
                 }
 
                 await transaction.finish()
@@ -195,11 +197,11 @@ extension Product {
     }
 
     var isTrial: Bool {
-        trialPeriod != nil
+        subscription?.introductoryOffer?.paymentMode == .freeTrial
     }
 
     var trialDuration: String? {
-        guard let period = trialPeriod else { return nil }
+        guard let period = subscription?.introductoryOffer?.period else { return nil }
         return "\(period.value) \(period.unit.displayName)"
     }
 }

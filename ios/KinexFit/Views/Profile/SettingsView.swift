@@ -74,7 +74,7 @@ struct SettingsView: View {
                         action: { showingTrainingProfile = true }
                     )
 
-                    if user?.skipOnboardingAt != nil && !user?.onboardingCompleted ?? false {
+                    if user?.skipOnboardingAt != nil && !(user?.onboardingCompleted ?? false) {
                         SettingsRow(
                             icon: "checkmark.circle",
                             title: "Complete Your Profile",

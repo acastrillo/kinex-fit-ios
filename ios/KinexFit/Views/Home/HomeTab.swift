@@ -6,11 +6,6 @@ struct HomeTab: View {
     @State private var stats: HomeStats = .empty
     @State private var recentWorkouts: [Workout] = []
     @State private var user: User?
-    @State private var workoutOfTheWeek: WorkoutRepository.WorkoutOfTheWeekCacheEntry?
-    @State private var isLoadingWorkoutOfTheWeek = false
-    @State private var isOpeningWorkoutOfTheWeek = false
-    @State private var workoutOfTheWeekLoadFailed = false
-    @State private var showingWorkoutOfTheWeekEditor = false
     
     private var workoutRepository: WorkoutRepository {
         appState.environment.workoutRepository
@@ -35,18 +30,7 @@ struct HomeTab: View {
         .background(AppTheme.background.ignoresSafeArea())
         .scrollIndicators(.hidden)
         .refreshable {
-            await loadHomeData(forceRefreshWorkoutOfTheWeek: true)
-        }
-        .sheet(isPresented: $showingWorkoutOfTheWeekEditor) {
-            if let workoutOfTheWeek {
-                WorkoutFormView(
-                    mode: .create,
-                    initialTitle: workoutOfTheWeek.title,
-                    initialRawContent: workoutOfTheWeek.content,
-                    initialSource: .imported,
-                    onSave: saveWorkoutOfTheWeek
-                )
-            }
+            await loadHomeData()
         }
         .task {
             user = try? await appState.environment.userRepository.getCurrentUser()
@@ -79,166 +63,7 @@ struct HomeTab: View {
     // MARK: - Weekly Workout
 
     private var workoutOfTheWeekSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Workout of the Week")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(AppTheme.primaryText)
-
-                Spacer()
-
-                Button {
-                    Task {
-                        await loadWorkoutOfTheWeek(forceRefresh: true)
-                    }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(AppTheme.secondaryText)
-                        .padding(8)
-                        .background(AppTheme.cardBackgroundElevated)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .disabled(isLoadingWorkoutOfTheWeek)
-            }
-
-            if isLoadingWorkoutOfTheWeek && workoutOfTheWeek == nil {
-                HStack(spacing: 10) {
-                    ProgressView()
-                        .tint(AppTheme.accent)
-
-                    Text("Loading this week's featured workout...")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(AppTheme.secondaryText)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
-                .kinexCard(cornerRadius: 14, fill: AppTheme.cardBackgroundElevated)
-            } else if let workoutOfTheWeek {
-                workoutOfTheWeekCard(workoutOfTheWeek)
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(workoutOfTheWeekLoadFailed
-                         ? "Couldn't load this week's featured workout."
-                         : "No featured workout is available right now.")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(AppTheme.secondaryText)
-
-                    Button("Try Again") {
-                        Task {
-                            await loadWorkoutOfTheWeek(forceRefresh: true)
-                        }
-                    }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AppTheme.accent)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
-                .kinexCard(cornerRadius: 14, fill: AppTheme.cardBackgroundElevated)
-            }
-        }
-    }
-
-    private func workoutOfTheWeekCard(_ featuredWorkout: WorkoutRepository.WorkoutOfTheWeekCacheEntry) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Text("FEATURED")
-                    .font(.system(size: 11, weight: .heavy))
-                    .foregroundStyle(.white.opacity(0.92))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(AppTheme.accent.opacity(0.88))
-                    .clipShape(Capsule())
-
-                if featuredWorkout.isNew {
-                    Text("NEW")
-                        .font(.system(size: 11, weight: .heavy))
-                        .foregroundStyle(AppTheme.primaryText)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 5)
-                        .background(AppTheme.primaryText.opacity(0.15))
-                        .clipShape(Capsule())
-                }
-
-                Spacer()
-
-                Image(systemName: "sparkles")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.88))
-            }
-
-            Text(featuredWorkout.title)
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(AppTheme.primaryText)
-                .lineLimit(2)
-
-            Text(workoutOfTheWeekSummary(for: featuredWorkout))
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(AppTheme.primaryText.opacity(0.84))
-                .lineLimit(3)
-
-            HStack(spacing: 10) {
-                if let difficulty = difficultyLabel(from: featuredWorkout.difficulty) {
-                    Text(difficulty)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(AppTheme.primaryText)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 5)
-                        .background(AppTheme.primaryText.opacity(0.12))
-                        .clipShape(Capsule())
-                }
-
-                Text("Refreshes \(dateLabel(for: featuredWorkout.expiresAt))")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(AppTheme.primaryText.opacity(0.78))
-
-                Spacer()
-            }
-
-            Button {
-                Task {
-                    await openWorkoutOfTheWeek(featuredWorkout)
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    if isOpeningWorkoutOfTheWeek {
-                        ProgressView()
-                            .tint(AppTheme.accent)
-                    } else {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(AppTheme.accent)
-                    }
-
-                    Text(isOpeningWorkoutOfTheWeek ? "Opening..." : "Open Workout")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(AppTheme.primaryText)
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, 10)
-                .background(AppTheme.background.opacity(0.55))
-                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .disabled(isOpeningWorkoutOfTheWeek)
-        }
-        .padding(16)
-        .background(
-            LinearGradient(
-                colors: [
-                    AppTheme.accent.opacity(0.36),
-                    AppTheme.cardBackgroundElevated
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(AppTheme.accent.opacity(0.35), lineWidth: 1)
-        }
+        WorkoutOfTheWeekSection()
     }
 
     // MARK: - Stats Grid
@@ -412,9 +237,8 @@ struct HomeTab: View {
 
     // MARK: - Data Operations
 
-    private func loadHomeData(forceRefreshWorkoutOfTheWeek: Bool = false) async {
+    private func loadHomeData() async {
         await loadStats()
-        await loadWorkoutOfTheWeek(forceRefresh: forceRefreshWorkoutOfTheWeek)
     }
 
     private func loadStats() async {
@@ -434,130 +258,6 @@ struct HomeTab: View {
         }
     }
 
-    private func loadWorkoutOfTheWeek(forceRefresh: Bool = false) async {
-        await MainActor.run {
-            isLoadingWorkoutOfTheWeek = true
-            workoutOfTheWeekLoadFailed = false
-        }
-
-        defer {
-            Task { @MainActor in
-                isLoadingWorkoutOfTheWeek = false
-            }
-        }
-
-        do {
-            let featuredWorkout = try await workoutRepository.fetchWorkoutOfTheWeek(forceRefresh: forceRefresh)
-            await MainActor.run {
-                workoutOfTheWeek = featuredWorkout
-            }
-        } catch {
-            await MainActor.run {
-                if workoutOfTheWeek?.isExpired == true {
-                    workoutOfTheWeek = nil
-                }
-                workoutOfTheWeekLoadFailed = true
-            }
-        }
-    }
-
-    private func openWorkoutOfTheWeek(_ featuredWorkout: WorkoutRepository.WorkoutOfTheWeekCacheEntry) async {
-        guard !isOpeningWorkoutOfTheWeek else { return }
-
-        await MainActor.run {
-            isOpeningWorkoutOfTheWeek = true
-        }
-
-        defer {
-            Task { @MainActor in
-                isOpeningWorkoutOfTheWeek = false
-            }
-        }
-
-        if let workoutID = featuredWorkout.preferredWorkoutID,
-           let existingWorkout = try? await workoutRepository.fetch(id: workoutID) {
-            await MainActor.run {
-                appState.navigateToWorkoutCard(workoutID: existingWorkout.id)
-            }
-            return
-        }
-
-        await MainActor.run {
-            showingWorkoutOfTheWeekEditor = true
-        }
-    }
-
-    private func saveWorkoutOfTheWeek(title: String, content: String?, enhancementSourceText: String?) async throws {
-        let normalizedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalizedContent = content?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalizedEnhancementSource = enhancementSourceText?.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let workout = Workout(
-            title: normalizedTitle.isEmpty ? "Workout of the Week" : normalizedTitle,
-            content: normalizedContent?.isEmpty == false ? normalizedContent : nil,
-            enhancementSourceText: normalizedEnhancementSource?.isEmpty == false
-                ? normalizedEnhancementSource
-                : normalizedContent,
-            source: .imported,
-            exerciseCount: estimateExerciseCount(from: normalizedContent),
-            difficulty: workoutOfTheWeek?.difficulty
-        )
-
-        let savedWorkout = try await workoutRepository.create(workout)
-        await workoutRepository.setWorkoutOfTheWeekLocalWorkoutID(savedWorkout.id)
-
-        await MainActor.run {
-            workoutOfTheWeek?.localWorkoutID = savedWorkout.id
-            showingWorkoutOfTheWeekEditor = false
-            appState.navigateToWorkoutCard(workoutID: savedWorkout.id)
-        }
-    }
-
-    private func workoutOfTheWeekSummary(for featuredWorkout: WorkoutRepository.WorkoutOfTheWeekCacheEntry) -> String {
-        let rationale = featuredWorkout.rationale?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if let rationale, !rationale.isEmpty {
-            return rationale
-        }
-
-        let content = featuredWorkout.content.trimmingCharacters(in: .whitespacesAndNewlines)
-        if content.isEmpty {
-            return "Tap to review and save this week's featured workout."
-        }
-        return content
-    }
-
-    private func difficultyLabel(from rawDifficulty: String?) -> String? {
-        guard let rawDifficulty,
-              !rawDifficulty.isEmpty else {
-            return nil
-        }
-
-        let normalized = rawDifficulty.lowercased()
-        switch normalized {
-        case "hiit":
-            return "HIIT"
-        default:
-            return String(normalized.prefix(1)).uppercased() + String(normalized.dropFirst())
-        }
-    }
-
-    private func estimateExerciseCount(from content: String?) -> Int? {
-        guard let content else { return nil }
-        let lines = content
-            .components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { line in
-                !line.isEmpty &&
-                !line.hasPrefix("-") &&
-                !line.hasPrefix("#") &&
-                !line.lowercased().contains("warm") &&
-                !line.lowercased().contains("cool")
-            }
-
-        guard !lines.isEmpty else { return nil }
-        return min(lines.count, 30)
-    }
 }
 
 // MARK: - Preview

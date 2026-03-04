@@ -10,14 +10,14 @@ final class TrendingService {
 
     private let statsRepository: StatsRepository
 
-    init(statsRepository: StatsRepository = .shared) {
-        self.statsRepository = statsRepository
+    init(statsRepository: StatsRepository? = nil) {
+        self.statsRepository = statsRepository ?? .shared
     }
 
     // MARK: - Trending Analysis
 
     func getTrendingExercises(timeframe: Timeframe = .week, limit: Int = 5) async throws -> [TrendingExercise] {
-        let startDate = Date(timeIntervalSinceNow: -timeframe.seconds)
+        _ = Date(timeIntervalSinceNow: -timeframe.seconds)
 
         // Get all workouts in timeframe
         // Count exercise occurrences

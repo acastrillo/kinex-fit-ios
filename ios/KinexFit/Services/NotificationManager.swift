@@ -12,7 +12,7 @@ enum ReminderImportance: Int {
     case normal = 1
     case high = 2
 
-    var soundName: UNNotificationSoundName? {
+    var sound: UNNotificationSound? {
         switch self {
         case .low: return nil
         case .normal, .high: return .default
@@ -152,7 +152,7 @@ final class NotificationManager: NSObject, ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        if let sound = importance.soundName {
+        if let sound = importance.sound {
             content.sound = sound
         }
         content.badge = NSNumber(value: UIApplication.shared.applicationIconBadgeNumber + 1)
@@ -165,7 +165,7 @@ final class NotificationManager: NSObject, ObservableObject {
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
         try await center.add(request)
-        logger.info("Scheduled reminder: \(title) at \(date) with importance: \(importance)")
+        logger.info("Scheduled reminder: \(title) at \(date) with importance: \(importance.rawValue)")
     }
 
     /// Cancel a scheduled notification

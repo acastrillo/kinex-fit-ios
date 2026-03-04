@@ -12,11 +12,11 @@ final class ExportService {
     private let statsRepository: StatsRepository
 
     init(
-        workoutRepository: WorkoutRepository = AppState.shared?.environment.workoutRepository ?? .preview,
-        statsRepository: StatsRepository = .shared
+        workoutRepository: WorkoutRepository? = nil,
+        statsRepository: StatsRepository? = nil
     ) {
-        self.workoutRepository = workoutRepository
-        self.statsRepository = statsRepository
+        self.workoutRepository = workoutRepository ?? AppState.shared?.environment.workoutRepository ?? AppEnvironment.preview.workoutRepository
+        self.statsRepository = statsRepository ?? .shared
     }
 
     // MARK: - Export Formats
@@ -42,11 +42,16 @@ final class ExportService {
     // MARK: - Export Data
 
     struct ExportPayload: Codable {
+        struct DateRange: Codable {
+            let start: Date
+            let end: Date
+        }
+
         let exportedAt: Date
         let workouts: [Workout]
         let metrics: [BodyMetric]
         let personalRecords: [PersonalRecord]
-        let dateRange: (start: Date, end: Date)
+        let dateRange: DateRange
 
         enum CodingKeys: String, CodingKey {
             case exportedAt = "exported_at"
@@ -63,10 +68,26 @@ final class ExportService {
         startDate: Date? = nil,
         endDate: Date? = nil
     ) async throws -> Data {
-        let workouts = try await workoutRepository.getCompletedWorkouts(
-            startDate: startDate,
-            endDate: endDate
-        )
+        let allWorkouts = try await workoutRepository.fetchAll()
+        let workouts = allWorkouts.filter { workout in
+            guard workout.isCompleted else { return false }
+
+            if let startDate,
+               let completedDate = workout.completedDate,
+               let parsed = Self.parseCompletedDate(completedDate),
+               parsed < startDate {
+                return false
+            }
+
+            if let endDate,
+               let completedDate = workout.completedDate,
+               let parsed = Self.parseCompletedDate(completedDate),
+               parsed > endDate {
+                return false
+            }
+
+            return true
+        }
 
         let metrics = try await statsRepository.getBodyMetrics(
             startDate: startDate,
@@ -78,7 +99,7 @@ final class ExportService {
             workouts: workouts,
             metrics: metrics,
             personalRecords: [],
-            dateRange: (startDate ?? Date.distantPast, endDate ?? Date())
+            dateRange: .init(start: startDate ?? Date.distantPast, end: endDate ?? Date())
         )
 
         switch format {
@@ -100,6 +121,14 @@ final class ExportService {
         }
 
         return csv
+    }
+
+    private static func parseCompletedDate(_ value: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: value)
     }
 
     // MARK: - Share Export

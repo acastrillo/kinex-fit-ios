@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import OSLog
 
 private let logger = Logger(subsystem: "com.kinex.fit", category: "Analytics")
@@ -10,20 +11,29 @@ final class AnalyticsService {
 
     private let db: AppDatabase
 
-    init(db: AppDatabase = try! .current) {
-        self.db = db
+    init(db: AppDatabase? = nil) {
+        self.db = db ?? AppState.shared?.environment.database ?? (try! AppDatabase.inMemory())
     }
 
     // MARK: - Dashboard Stats
 
     func getDashboardStats() async throws -> DashboardStats {
-        let totalWorkouts = try db.read { db in
-            try Workout.filter(Column("status") == "completed").fetchCount(db)
+        let totalWorkouts = try await db.dbQueue.read { db in
+            try Workout
+                .filter(Workout.Columns.status == WorkoutScheduleStatus.completed.rawValue)
+                .fetchCount(db)
         }
 
-        let thisMonth = try db.read { db in
+        let thisMonth = try await db.dbQueue.read { db in
             let startOfMonth = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date()))!
-            return try Workout.filter(Column("completedDate") >= startOfMonth.ISO8601Format()).fetchCount(db)
+            let formatter = DateFormatter()
+            formatter.calendar = Calendar(identifier: .gregorian)
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "yyyy-MM-dd"
+            let startOfMonthString = formatter.string(from: startOfMonth)
+            return try Workout
+                .filter(Workout.Columns.completedDate >= startOfMonthString)
+                .fetchCount(db)
         }
 
         let avgIntensity = 7.5  // RPE average

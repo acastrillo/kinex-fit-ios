@@ -16,13 +16,24 @@ struct APIClient {
     }
 
     func send(_ request: APIRequest) async throws -> Data {
-        try await send(request, allowRefreshRetry: true)
+        try await send(
+            request,
+            allowRefreshRetry: true,
+            includeAuthorizationOverride: nil,
+            allowUnauthenticatedSocialRetry: true
+        )
     }
 
-    private func send(_ request: APIRequest, allowRefreshRetry: Bool) async throws -> Data {
+    private func send(
+        _ request: APIRequest,
+        allowRefreshRetry: Bool,
+        includeAuthorizationOverride: Bool?,
+        allowUnauthenticatedSocialRetry: Bool
+    ) async throws -> Data {
         // Auth endpoints accept provider/credential payloads and should not be coupled to
         // any previously stored bearer token (which may be stale in Keychain).
-        let shouldIncludeAuthorization = shouldIncludeAuthorizationHeader(path: request.path)
+        let shouldIncludeAuthorization =
+            includeAuthorizationOverride ?? shouldIncludeAuthorizationHeader(path: request.path)
         var urlRequest = try makeURLRequest(for: request, includeAuthorization: shouldIncludeAuthorization)
         let authTraceID = UUID().uuidString
         if isAuthEndpoint(path: request.path) {
@@ -38,10 +49,55 @@ struct APIClient {
             return data
         }
 
+        if shouldRetrySocialImportWithoutAuthorization(
+            request: request,
+            statusCode: httpResponse.statusCode,
+            includedAuthorization: shouldIncludeAuthorization,
+            allowUnauthenticatedSocialRetry: allowUnauthenticatedSocialRetry
+        ) {
+            logger.warning(
+                "Social import request returned 504 with Authorization; retrying once without Authorization. path=\(request.path, privacy: .public)"
+            )
+            return try await send(
+                request,
+                allowRefreshRetry: false,
+                includeAuthorizationOverride: false,
+                allowUnauthenticatedSocialRetry: false
+            )
+        }
+
+        if shouldAttemptSocialImportTokenRefresh(
+            request: request,
+            statusCode: httpResponse.statusCode,
+            includedAuthorization: shouldIncludeAuthorization,
+            allowRefreshRetry: allowRefreshRetry,
+            responseData: data
+        ) {
+            logger.warning(
+                "Social import request returned app-auth 401; refreshing token and retrying once. path=\(request.path, privacy: .public)"
+            )
+            let didRefresh = await Self.refreshCoordinator.refresh(using: self)
+            if didRefresh {
+                return try await send(
+                    request,
+                    allowRefreshRetry: false,
+                    includeAuthorizationOverride: nil,
+                    allowUnauthenticatedSocialRetry: allowUnauthenticatedSocialRetry
+                )
+            }
+            try? tokenStore.clearAll()
+            NotificationCenter.default.post(name: .authSessionInvalidated, object: nil)
+        }
+
         if shouldAttemptTokenRefresh(for: request, statusCode: httpResponse.statusCode, allowRefreshRetry: allowRefreshRetry) {
             let didRefresh = await Self.refreshCoordinator.refresh(using: self)
             if didRefresh {
-                return try await send(request, allowRefreshRetry: false)
+                return try await send(
+                    request,
+                    allowRefreshRetry: false,
+                    includeAuthorizationOverride: nil,
+                    allowUnauthenticatedSocialRetry: allowUnauthenticatedSocialRetry
+                )
             }
             try? tokenStore.clearAll()
             NotificationCenter.default.post(name: .authSessionInvalidated, object: nil)
@@ -148,7 +204,8 @@ struct APIClient {
     }
 
     /// Endpoints whose 401 responses should participate in session refresh/invalidation flow.
-    /// Social import endpoints intentionally do NOT participate; they may return 401 for source-specific reasons.
+    /// Social import endpoints are handled by a dedicated flow because they may return 401
+    /// for either app-session errors or source visibility/authentication constraints.
     private func isSessionManagedEndpoint(path: String) -> Bool {
         path.hasPrefix("/api/mobile/")
             || path.hasPrefix("/api/workouts")
@@ -176,6 +233,79 @@ struct APIClient {
             || path.hasPrefix("/api/tiktok-fetch")
             || path.hasPrefix("/api/ingest")
             || path.hasPrefix("/api/user/settings")
+    }
+
+    private func shouldRetrySocialImportWithoutAuthorization(
+        request: APIRequest,
+        statusCode: Int,
+        includedAuthorization: Bool,
+        allowUnauthenticatedSocialRetry: Bool
+    ) -> Bool {
+        guard allowUnauthenticatedSocialRetry else { return false }
+        guard includedAuthorization else { return false }
+        guard statusCode == 504 else { return false }
+        return isSocialImportEndpoint(path: request.path)
+    }
+
+    private func shouldAttemptSocialImportTokenRefresh(
+        request: APIRequest,
+        statusCode: Int,
+        includedAuthorization: Bool,
+        allowRefreshRetry: Bool,
+        responseData: Data?
+    ) -> Bool {
+        guard allowRefreshRetry else { return false }
+        guard includedAuthorization else { return false }
+        guard statusCode == 401 else { return false }
+        guard tokenStore.accessToken != nil, tokenStore.refreshToken != nil else { return false }
+        guard isSocialImportEndpoint(path: request.path) else { return false }
+        guard let normalizedResponseText = normalizedResponseText(from: responseData), !normalizedResponseText.isEmpty else {
+            return false
+        }
+        guard !Self.isLikelySourceAuthenticationError(normalizedResponseText) else { return false }
+        return Self.isLikelyAppAuthenticationError(normalizedResponseText)
+    }
+
+    private func isSocialImportEndpoint(path: String) -> Bool {
+        path.hasPrefix("/api/instagram-fetch") || path.hasPrefix("/api/tiktok-fetch")
+    }
+
+    private func normalizedResponseText(from data: Data?) -> String? {
+        guard let data else { return nil }
+        return String(data: data, encoding: .utf8)?.lowercased()
+    }
+
+    private static func isLikelyAppAuthenticationError(_ normalizedMessage: String) -> Bool {
+        let appKeywords = [
+            "unauthorized",
+            "please sign in",
+            "sign in to continue",
+            "login to continue",
+            "access token",
+            "refresh token",
+            "token expired",
+            "jwt",
+            "session expired",
+            "app_auth_required"
+        ]
+
+        return appKeywords.contains { normalizedMessage.contains($0) }
+    }
+
+    private static func isLikelySourceAuthenticationError(_ normalizedMessage: String) -> Bool {
+        let sourceKeywords = [
+            "instagram",
+            "tiktok",
+            "private post",
+            "private account",
+            "not publicly available",
+            "sign in to view",
+            "requires login",
+            "checkpoint",
+            "cookie"
+        ]
+
+        return sourceKeywords.contains { normalizedMessage.contains($0) }
     }
 
     fileprivate func performTokenRefresh() async -> Bool {
