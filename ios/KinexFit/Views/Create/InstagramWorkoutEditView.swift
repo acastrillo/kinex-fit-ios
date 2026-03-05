@@ -262,13 +262,13 @@ struct InstagramWorkoutEditView: View {
                     .fill(AppTheme.separator)
                     .frame(height: 1)
 
-                ForEach(Array(workoutCards.enumerated()), id: \.element.id) { index, card in
-                    if shouldShowSummaryBlockHeader(at: index), let block = card.block {
+                ForEach(summaryRows) { row in
+                    if let blockTitle = row.blockTitle, !blockTitle.isEmpty {
                         HStack(spacing: 6) {
-                            Image(systemName: block.type.iconName)
+                            Image(systemName: row.blockIconName ?? "sparkles")
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(AppTheme.accent)
-                            Text(block.title)
+                            Text(blockTitle)
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(AppTheme.secondaryText)
                         }
@@ -276,10 +276,10 @@ struct InstagramWorkoutEditView: View {
 
                     HStack(spacing: 8) {
                         Text("\u{2022}")
-                            .foregroundStyle(AppTheme.accent)
-                        Text(exerciseSummaryLine(card))
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(AppTheme.primaryText)
+                            .foregroundStyle(row.isRest ? AppTheme.secondaryText : AppTheme.accent)
+                        Text(row.text)
+                            .font(.system(size: 16, weight: row.isRest ? .regular : .medium))
+                            .foregroundStyle(row.isRest ? AppTheme.secondaryText : AppTheme.primaryText)
                     }
                 }
             }
@@ -447,6 +447,59 @@ struct InstagramWorkoutEditView: View {
 
     // MARK: - Helpers
 
+    private struct SummaryGroup {
+        let blockTitle: String?
+        let blockIconName: String?
+        let cards: [EditableWorkoutCard]
+        let totalSets: Int
+    }
+
+    private struct SummaryRow: Identifiable {
+        let id = UUID()
+        let blockTitle: String?
+        let blockIconName: String?
+        let text: String
+        let isRest: Bool
+    }
+
+    private var summaryRows: [SummaryRow] {
+        let groups = groupedSummaryCards()
+        guard !groups.isEmpty else { return [] }
+
+        var rows: [SummaryRow] = []
+        for group in groups {
+            let hasAnyRest = group.cards.contains {
+                !$0.restSeconds.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            let showRestBetweenSets = hasAnyRest || group.totalSets > 1
+            for setIndex in 1...group.totalSets {
+                for card in group.cards {
+                    let cardTotalSets = normalizedSetCount(for: card)
+                    guard setIndex <= cardTotalSets else { continue }
+                    rows.append(
+                        SummaryRow(
+                            blockTitle: setIndex == 1 ? group.blockTitle : nil,
+                            blockIconName: setIndex == 1 ? group.blockIconName : nil,
+                            text: "Set \(setIndex) of \(cardTotalSets): \(exerciseSummaryLine(card))",
+                            isRest: false
+                        )
+                    )
+                }
+                if showRestBetweenSets, setIndex < group.totalSets {
+                    rows.append(
+                        SummaryRow(
+                            blockTitle: nil,
+                            blockIconName: nil,
+                            text: "Rest",
+                            isRest: true
+                        )
+                    )
+                }
+            }
+        }
+        return rows
+    }
+
     private func exerciseSummaryLine(_ card: EditableWorkoutCard) -> String {
         var parts: [String] = [card.trimmedName]
         if !card.reps.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -460,11 +513,62 @@ struct InstagramWorkoutEditView: View {
         return parts.joined(separator: " ")
     }
 
-    private func shouldShowSummaryBlockHeader(at index: Int) -> Bool {
-        guard index >= 0, index < workoutCards.count else { return false }
-        guard let current = workoutCards[index].block else { return false }
-        guard index > 0 else { return true }
-        return workoutCards[index - 1].block?.identityKey != current.identityKey
+    private func normalizedSetCount(for card: EditableWorkoutCard) -> Int {
+        let trimmedSets = card.sets.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let parsedSets = Int(trimmedSets), parsedSets > 0 {
+            return parsedSets
+        }
+        if let rounds, rounds > 0 {
+            return rounds
+        }
+        return 1
+    }
+
+    private func groupedSummaryCards() -> [SummaryGroup] {
+        let usableCards = workoutCards.filter { !$0.trimmedName.isEmpty }
+        guard !usableCards.isEmpty else { return [] }
+
+        var groups: [SummaryGroup] = []
+        var currentCards: [EditableWorkoutCard] = []
+        var currentGroupKey: String?
+        var currentBlockTitle: String?
+        var currentBlockIconName: String?
+        var currentSets = 1
+
+        func flushCurrentGroup() {
+            guard !currentCards.isEmpty else { return }
+            groups.append(
+                SummaryGroup(
+                    blockTitle: currentBlockTitle,
+                    blockIconName: currentBlockIconName,
+                    cards: currentCards,
+                    totalSets: max(currentSets, 1)
+                )
+            )
+            currentCards = []
+        }
+
+        for card in usableCards {
+            let sets = normalizedSetCount(for: card)
+            let groupKey = card.block?.identityKey ?? "sets-\(sets)"
+
+            if currentGroupKey != nil, currentGroupKey != groupKey {
+                flushCurrentGroup()
+            }
+
+            if currentCards.isEmpty {
+                currentGroupKey = groupKey
+                currentBlockTitle = card.block?.title
+                currentBlockIconName = card.block?.type.iconName
+                currentSets = sets
+            }
+
+            currentCards.append(card)
+            currentSets = max(currentSets, sets)
+        }
+
+        flushCurrentGroup()
+        return groups
     }
 
     // MARK: - Actions

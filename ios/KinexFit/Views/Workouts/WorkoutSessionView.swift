@@ -26,7 +26,6 @@ struct ExerciseCard: Identifiable {
     let exerciseId: String
     let exerciseName: String
     let exerciseNumber: Int
-    let setNumber: Int
     let totalSets: Int
     let reps: Int?
     let weight: String?
@@ -207,6 +206,7 @@ struct WorkoutSessionView: View {
     @State private var saveSuccess = false
     @State private var showEndDialog = false
     @State private var showCompletionSheet = false
+    @State private var showReadyToCompleteDialog = false
     @State private var selectedCardId: String?
     @State private var showMetricSheet = false
     @State private var saveError: String?
@@ -261,23 +261,20 @@ struct WorkoutSessionView: View {
         var cards: [ExerciseCard] = []
 
         for exercise in exercises {
-            let sets = exercise.sets ?? rounds
+            let sets = max(exercise.sets ?? rounds, 1)
             let isRun = isRunExercise(exercise.name)
-            for setNum in 1...max(sets, 1) {
-                let cardId = "\(exercise.id)-set\(setNum)"
-                cards.append(ExerciseCard(
-                    id: cardId,
-                    exerciseId: exercise.id,
-                    exerciseName: exercise.name,
-                    exerciseNumber: exercise.index,
-                    setNumber: setNum,
-                    totalSets: sets,
-                    reps: exercise.reps,
-                    weight: exercise.weight,
-                    restSeconds: exercise.restSeconds ?? presentation.restSeconds,
-                    isRun: isRun
-                ))
-            }
+            let cardId = exercise.id
+            cards.append(ExerciseCard(
+                id: cardId,
+                exerciseId: exercise.id,
+                exerciseName: exercise.name,
+                exerciseNumber: exercise.index,
+                totalSets: sets,
+                reps: exercise.reps,
+                weight: exercise.weight,
+                restSeconds: exercise.restSeconds ?? presentation.restSeconds,
+                isRun: isRun
+            ))
         }
         return cards
     }
@@ -294,6 +291,11 @@ struct WorkoutSessionView: View {
     private var selectedCard: ExerciseCard? {
         guard let id = selectedCardId else { return nil }
         return workoutCards.first { $0.id == id }
+    }
+
+    private func currentSet(for card: ExerciseCard) -> Int {
+        let stored = exerciseMetrics[card.id]?.roundCompleted ?? 1
+        return min(max(stored, 1), card.totalSets)
     }
 
     private var displayedTimerSeconds: Int {
@@ -346,6 +348,12 @@ struct WorkoutSessionView: View {
             Button("Save & End") { showCompletionSheet = true }
         } message: {
             Text("Would you like to save your progress or discard this session?")
+        }
+        .alert("All Workout Cards Completed", isPresented: $showReadyToCompleteDialog) {
+            Button("Not Yet", role: .cancel) { }
+            Button("Yes, Complete") { showCompletionSheet = true }
+        } message: {
+            Text("Timer paused. Are you ready to complete this workout?")
         }
         .sheet(isPresented: $showMetricSheet) {
             if let card = selectedCard {
@@ -619,108 +627,117 @@ struct WorkoutSessionView: View {
     private func exerciseCardView(_ card: ExerciseCard) -> some View {
         let metric = exerciseMetrics[card.id]
         let isCompleted = metric?.completed ?? false
+        let activeSet = currentSet(for: card)
 
-        return Button {
-            selectedCardId = card.id
-            showMetricSheet = true
-        } label: {
-            HStack(alignment: .top, spacing: 12) {
-                // Left content
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Text("\(card.exerciseNumber)")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(AppTheme.accent)
-                            .frame(width: 28, height: 28)
-                            .background(AppTheme.accent.opacity(0.15))
-                            .clipShape(Circle())
+        return HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Text("\(card.exerciseNumber)")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(AppTheme.accent)
+                        .frame(width: 28, height: 28)
+                        .background(AppTheme.accent.opacity(0.15))
+                        .clipShape(Circle())
 
-                        Text(card.exerciseName)
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
-                    }
+                    Text(card.exerciseName)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
 
-                    HStack(spacing: 6) {
-                        Text("Set \(card.setNumber) of \(card.totalSets)")
+                HStack(spacing: 6) {
+                    Text("Set \(activeSet) of \(card.totalSets)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(AppTheme.cardBackgroundElevated)
+                        .clipShape(Capsule())
+
+                    if card.isRun {
+                        Text("Run")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Color.blue)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.blue.opacity(0.12))
+                            .clipShape(Capsule())
+                    } else if let reps = card.reps {
+                        Text("Target: \(reps) reps\(card.weight.map { " @ \($0)" } ?? "")")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(AppTheme.secondaryText)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
                             .background(AppTheme.cardBackgroundElevated)
                             .clipShape(Capsule())
-
-                        if card.isRun {
-                            Text("Run")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(Color.blue)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(Color.blue.opacity(0.12))
-                                .clipShape(Capsule())
-                        } else if let reps = card.reps {
-                            Text("Target: \(reps) reps\(card.weight.map { " @ \($0)" } ?? "")")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(AppTheme.secondaryText)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(AppTheme.cardBackgroundElevated)
-                                .clipShape(Capsule())
-                        }
                     }
-
-                    // Logged metrics summary
-                    metricsSummaryText(for: card, metric: metric)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Right actions
-                VStack(spacing: 8) {
-                    Button {
-                        toggleComplete(card.id)
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 14))
-                            Text(isCompleted ? "Done" : "Complete")
-                                .font(.system(size: 12, weight: .semibold))
-                        }
-                        .foregroundStyle(isCompleted ? Color.green : AppTheme.secondaryText)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(isCompleted ? Color.green.opacity(0.12) : AppTheme.cardBackgroundElevated)
-                        .clipShape(Capsule())
-                        .overlay {
-                            Capsule().stroke(isCompleted ? Color.green.opacity(0.4) : Color.clear, lineWidth: 1)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
+                metricsSummaryText(metric: metric, isCompleted: isCompleted)
             }
-            .padding(14)
-            .kinexCard(
-                cornerRadius: 14,
-                fill: isCompleted ? Color.green.opacity(0.04) : AppTheme.cardBackground
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isCompleted ? Color.green.opacity(0.3) : AppTheme.cardBorder, lineWidth: 1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .trailing, spacing: 8) {
+                HStack(spacing: 4) {
+                    Image(systemName: isCompleted ? "checkmark.circle.fill" : "hand.tap.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(isCompleted ? "Done" : "Advance")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundStyle(isCompleted ? Color.green : AppTheme.secondaryText)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(isCompleted ? Color.green.opacity(0.14) : AppTheme.cardBackgroundElevated)
+                .clipShape(Capsule())
+                .overlay {
+                    Capsule().stroke(isCompleted ? Color.green.opacity(0.45) : Color.clear, lineWidth: 1)
+                }
+
+                if !isCompleted {
+                    Text("Tap card")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(AppTheme.tertiaryText)
+                }
             }
         }
-        .buttonStyle(.plain)
+        .padding(14)
+        .kinexCard(
+            cornerRadius: 14,
+            fill: isCompleted ? Color.green.opacity(0.08) : AppTheme.cardBackground
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(isCompleted ? Color.green.opacity(0.35) : AppTheme.cardBorder, lineWidth: 1)
+        }
+        .shadow(color: isCompleted ? Color.green.opacity(0.22) : Color.clear, radius: 12, y: 4)
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .onTapGesture {
+            advanceCardProgress(card.id)
+        }
+        .onLongPressGesture(minimumDuration: 0.45) {
+            selectedCardId = card.id
+            showMetricSheet = true
+        }
     }
 
     @ViewBuilder
-    private func metricsSummaryText(for card: ExerciseCard, metric: ExerciseMetric?) -> some View {
-        if let metric {
+    private func metricsSummaryText(
+        metric: ExerciseMetric?,
+        isCompleted: Bool
+    ) -> some View {
+        if isCompleted {
+            Text("Completed")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.green.opacity(0.92))
+        } else if let metric {
             if metric.isRun {
                 if let dist = metric.distance, dist > 0 {
                     Text("\(String(format: "%.1f", dist)) \(metric.distanceUnit)\(metric.timeSeconds.map { " · \(formatDuration($0))" } ?? "")")
                         .font(.system(size: 13))
                         .foregroundStyle(AppTheme.secondaryText)
                 } else {
-                    Text("Tap to log distance & time")
+                    Text("Long press to log distance & time")
                         .font(.system(size: 13))
                         .foregroundStyle(AppTheme.tertiaryText)
                 }
@@ -733,13 +750,13 @@ struct WorkoutSessionView: View {
                         .font(.system(size: 13))
                         .foregroundStyle(AppTheme.secondaryText)
                 } else {
-                    Text("Tap to log reps & weight")
+                    Text("Long press to log reps & weight")
                         .font(.system(size: 13))
                         .foregroundStyle(AppTheme.tertiaryText)
                 }
             }
         } else {
-            Text("Tap to log metrics")
+            Text("Tap to advance set")
                 .font(.system(size: 13))
                 .foregroundStyle(AppTheme.tertiaryText)
         }
@@ -761,7 +778,7 @@ struct WorkoutSessionView: View {
                         Text(card.exerciseName)
                             .font(.system(size: 24, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
-                        Text("Set \(card.setNumber) of \(card.totalSets)")
+                        Text("Set \(currentSet(for: card)) of \(card.totalSets)")
                             .font(.system(size: 15))
                             .foregroundStyle(AppTheme.secondaryText)
                     }
@@ -784,26 +801,9 @@ struct WorkoutSessionView: View {
                             .kinexCard(cornerRadius: 10, fill: AppTheme.cardBackgroundElevated)
                     }
 
-                    // Mark complete toggle
-                    Button {
-                        binding.wrappedValue.completed.toggle()
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: binding.wrappedValue.completed ? "checkmark.circle.fill" : "circle")
-                            Text(binding.wrappedValue.completed ? "Completed" : "Mark Complete")
-                        }
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(binding.wrappedValue.completed ? Color.green : AppTheme.secondaryText)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(binding.wrappedValue.completed ? Color.green.opacity(0.12) : AppTheme.cardBackgroundElevated)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(binding.wrappedValue.completed ? Color.green.opacity(0.4) : AppTheme.cardBorder, lineWidth: 1)
-                        }
-                    }
-                    .buttonStyle(.plain)
+                    Text("Long press any workout card to log metrics without advancing sets.")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(AppTheme.tertiaryText)
                 }
                 .padding(16)
             }
@@ -1202,16 +1202,47 @@ struct WorkoutSessionView: View {
                 isRun: card.isRun,
                 targetReps: card.reps,
                 targetWeight: card.weight,
-                roundCompleted: card.setNumber,
+                roundCompleted: 1,
                 roundTotal: card.totalSets
             )
         }
     }
 
-    private func toggleComplete(_ cardId: String) {
-        guard var metric = exerciseMetrics[cardId] else { return }
-        metric.completed.toggle()
+    private func advanceCardProgress(_ cardId: String) {
+        guard let card = workoutCards.first(where: { $0.id == cardId }),
+              var metric = exerciseMetrics[cardId] else {
+            return
+        }
+        guard !metric.completed else { return }
+
+        let currentRound = min(max(metric.roundCompleted ?? 1, 1), card.totalSets)
+        if currentRound < card.totalSets {
+            metric.roundCompleted = currentRound + 1
+            if hapticEnabled {
+                let feedback = UISelectionFeedbackGenerator()
+                feedback.prepare()
+                feedback.selectionChanged()
+            }
+        } else {
+            metric.roundCompleted = card.totalSets
+            metric.completed = true
+            if hapticEnabled {
+                let feedback = UINotificationFeedbackGenerator()
+                feedback.prepare()
+                feedback.notificationOccurred(.success)
+            }
+        }
+
         exerciseMetrics[cardId] = metric
+        pauseAndPromptIfAllCardsCompleted()
+    }
+
+    private func pauseAndPromptIfAllCardsCompleted() {
+        guard !showCompletionSheet else { return }
+        guard !showReadyToCompleteDialog else { return }
+        guard completedCount == workoutCards.count, !workoutCards.isEmpty else { return }
+        isPaused = true
+        showReadyToCompleteDialog = true
     }
 
     private func saveWorkout() async {
