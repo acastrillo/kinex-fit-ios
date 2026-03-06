@@ -103,6 +103,7 @@ struct InstagramImportShared: Codable {
     let createdAt: Date
     var processingStatus: String
     var extractedText: String?
+    var sourcePlatform: String
 
     init(
         id: String = UUID().uuidString,
@@ -112,7 +113,8 @@ struct InstagramImportShared: Codable {
         mediaLocalPath: String,
         createdAt: Date = Date(),
         processingStatus: String = "pending",
-        extractedText: String? = nil
+        extractedText: String? = nil,
+        sourcePlatform: String = "instagram"
     ) {
         self.id = id
         self.postURL = postURL
@@ -122,6 +124,7 @@ struct InstagramImportShared: Codable {
         self.createdAt = createdAt
         self.processingStatus = processingStatus
         self.extractedText = extractedText
+        self.sourcePlatform = sourcePlatform
     }
 
     static func saveToAppGroup(_ item: InstagramImportShared) {

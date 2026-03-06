@@ -106,7 +106,7 @@ struct CreateWorkoutView: View {
             Group {
                 switch selectedTab {
                 case .instagram:
-                    InstagramImportTab()
+                    SocialImportTab()
                 case .photo:
                     PhotoImportTab()
                 case .manual:

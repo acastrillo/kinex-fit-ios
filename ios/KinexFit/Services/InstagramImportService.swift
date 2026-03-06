@@ -38,9 +38,10 @@ final class InstagramImportService: ObservableObject {
         let allImports = AppGroup.getPendingImports()
         pendingImports = allImports
             .filter {
-                $0.processingStatus == .pending ||
-                $0.processingStatus == .processing ||
-                $0.processingStatus == .completed
+                $0.sourcePlatform == .instagram &&
+                ($0.processingStatus == .pending ||
+                 $0.processingStatus == .processing ||
+                 $0.processingStatus == .completed)
             }
 
         let filteredOutCount = allImports.count - pendingImports.count

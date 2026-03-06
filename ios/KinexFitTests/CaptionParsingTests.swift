@@ -264,6 +264,59 @@ final class CaptionImportParsingServiceTests: XCTestCase {
         XCTAssertTrue(result.unparsedLines.contains(where: { $0.text == "Some cardio at the end" }))
     }
 
+    // MARK: - TikTok Preprocessor Tests
+
+    func testTikTokPreprocessorStripsHashtags() {
+        let raw = "Squats 5x10 #legday #HYROX #fitness"
+        let result = TikTokCaptionPreprocessor.preprocess(raw)
+        XCTAssertFalse(result.contains("#"), "Hashtags should be stripped")
+        XCTAssertTrue(result.contains("Squats"), "Exercise name should remain")
+    }
+
+    func testTikTokPreprocessorStripsAtMentions() {
+        let raw = "Great workout by @kinexfit - Squats 3x10"
+        let result = TikTokCaptionPreprocessor.preprocess(raw)
+        XCTAssertFalse(result.contains("@"), "@mentions should be stripped")
+        XCTAssertTrue(result.contains("Squats"), "Exercise name should remain")
+    }
+
+    func testTikTokPreprocessorSplitsOnWorkoutEmojis() {
+        let raw = "🔥 Squats 5x10 💪 Deadlifts 3x8"
+        let result = TikTokCaptionPreprocessor.preprocess(raw)
+        let lines = result.components(separatedBy: .newlines).filter { !$0.isEmpty }
+        XCTAssertGreaterThanOrEqual(lines.count, 2, "Emojis should become line breaks")
+    }
+
+    func testTikTokParsesTerseFormat() async {
+        let service = CaptionImportParsingService(apiClient: nil)
+        let result = await service.parseImportText(
+            "5x10 squats 3x8 deadlifts",
+            sourceURL: "https://www.tiktok.com/@user/video/123"
+        )
+        XCTAssertEqual(result.sourceType, .tiktok)
+        XCTAssertGreaterThanOrEqual(result.exercises.count, 1)
+    }
+
+    func testTikTokLowConfidencePatternCapsConfidence() async {
+        let service = CaptionImportParsingService(apiClient: nil)
+        let result = await service.parseImportText(
+            "Workout breakdown in comments! 🔥",
+            sourceURL: "https://www.tiktok.com/@user/video/456"
+        )
+        XCTAssertLessThanOrEqual(result.parsingConfidence, 0.3,
+            "Low-confidence TikTok captions should have confidence capped at 0.3")
+    }
+
+    func testTikTokEmojiDelimitedParsesExercises() async {
+        let service = CaptionImportParsingService(apiClient: nil)
+        let result = await service.parseImportText(
+            "🔥 Squats 5x10 💪 Deadlifts 3x8",
+            sourceURL: "https://www.tiktok.com/@user/video/789"
+        )
+        XCTAssertEqual(result.sourceType, .tiktok)
+        XCTAssertGreaterThanOrEqual(result.exercises.count, 1)
+    }
+
     // MARK: - Helpers
 
     private func makeMockedAPIClient(

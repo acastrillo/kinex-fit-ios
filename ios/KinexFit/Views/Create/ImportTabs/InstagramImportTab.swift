@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// Instagram URL import tab with fetch and parse functionality
-struct InstagramImportTab: View {
+/// Social media URL import tab — supports Instagram and TikTok
+struct SocialImportTab: View {
     @EnvironmentObject private var appState: AppState
     @State private var instagramURL: String = ""
     @State private var fetchState: FetchStateView.FetchState = .idle
     @State private var showPaywall = false
+    @State private var showTikTokComingSoonAlert = false
 
     private var instagramFetchService: InstagramFetchService {
         InstagramFetchService(apiClient: appState.environment.apiClient)
@@ -86,6 +87,11 @@ struct InstagramImportTab: View {
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
+        .alert("TikTok Coming Soon", isPresented: $showTikTokComingSoonAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Coming soon! Try an Instagram link or a screenshot.")
+        }
     }
 
     // MARK: - Computed Properties
@@ -113,6 +119,13 @@ struct InstagramImportTab: View {
     private func fetchWorkout() {
         guard isValidURL else {
             fetchState = .error(.invalidURL)
+            return
+        }
+
+        let normalizedURL = instagramURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if SocialPlatform.detect(from: normalizedURL) == .tiktok {
+            fetchState = .idle
+            showTikTokComingSoonAlert = true
             return
         }
 
@@ -154,7 +167,7 @@ struct InstagramImportTab: View {
 
 #Preview {
     NavigationStack {
-        InstagramImportTab()
+        SocialImportTab()
             .environmentObject(AppState(environment: .preview))
     }
     .preferredColorScheme(.dark)

@@ -631,7 +631,7 @@ final class AuthSmokeTests: XCTestCase {
         XCTAssertNil(tokenStore.refreshToken)
     }
 
-    func testTikTokImportFallsBackToInstagramEndpointWhenTikTokEndpointMissing() async throws {
+    func testTikTokImportFallsBackToOEmbedWhenTikTokEndpointMissing() async throws {
         let tokenStore = InMemoryTokenStore()
         try tokenStore.setAccessToken("access-tiktok")
         try tokenStore.setRefreshToken("refresh-tiktok")
@@ -655,11 +655,12 @@ final class AuthSmokeTests: XCTestCase {
             }
 
             requestPaths.append(url.path)
-            XCTAssertEqual(request.httpMethod, "POST")
-            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-tiktok")
 
             switch url.path {
             case "/api/tiktok-fetch":
+                XCTAssertEqual(url.host, "kinexfit.com")
+                XCTAssertEqual(request.httpMethod, "POST")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-tiktok")
                 let notFound = HTTPURLResponse(
                     url: url,
                     statusCode: 404,
@@ -667,6 +668,90 @@ final class AuthSmokeTests: XCTestCase {
                     headerFields: ["Content-Type": "application/json"]
                 )!
                 return (notFound, Data("{\"error\":\"Not found\"}".utf8))
+
+            case "/oembed":
+                XCTAssertEqual(url.host, "www.tiktok.com")
+                XCTAssertEqual(request.httpMethod, "GET")
+                XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+                let ok = HTTPURLResponse(
+                    url: url,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+                let payload = """
+                {
+                  "version": "1.0",
+                  "type": "video",
+                  "title": "Leg Day - Squat 5x5",
+                  "author_name": "Coach Alex",
+                  "author_url": "https://www.tiktok.com/@coach",
+                  "thumbnail_url": "https://example.com/thumb.jpg"
+                }
+                """
+                return (ok, Data(payload.utf8))
+
+            default:
+                throw TestFailure("Unexpected path: \(url.path)")
+            }
+        }
+
+        let response = try await service.fetchTikTokPost(
+            url: "https://www.tiktok.com/@coach/video/1234567890123456789"
+        )
+
+        XCTAssertEqual(response.title, "Leg Day - Squat 5x5")
+        XCTAssertEqual(response.author?.username, "coach")
+        XCTAssertEqual(response.image, "https://example.com/thumb.jpg")
+        XCTAssertEqual(
+            requestPaths,
+            ["/api/tiktok-fetch", "/oembed"]
+        )
+    }
+
+    func testTikTokImportFallsBackToLegacyInstagramEndpointWhenOEmbedFails() async throws {
+        let tokenStore = InMemoryTokenStore()
+        try tokenStore.setAccessToken("access-tiktok")
+        try tokenStore.setRefreshToken("refresh-tiktok")
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+
+        let apiClient = APIClient(
+            baseURL: URL(string: "https://kinexfit.com")!,
+            tokenStore: tokenStore,
+            session: session
+        )
+        let service = InstagramFetchService(apiClient: apiClient)
+
+        var requestPaths: [String] = []
+
+        MockURLProtocol.requestHandler = { request in
+            guard let url = request.url else {
+                throw TestFailure("Missing request URL")
+            }
+
+            requestPaths.append(url.path)
+
+            switch url.path {
+            case "/api/tiktok-fetch":
+                let badRequest = HTTPURLResponse(
+                    url: url,
+                    statusCode: 400,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+                return (badRequest, Data("{\"error\":\"Invalid TikTok URL\"}".utf8))
+
+            case "/oembed":
+                let unavailable = HTTPURLResponse(
+                    url: url,
+                    statusCode: 500,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+                return (unavailable, Data("{\"message\":\"Unavailable\"}".utf8))
 
             case "/api/instagram-fetch":
                 let ok = HTTPURLResponse(
@@ -678,8 +763,8 @@ final class AuthSmokeTests: XCTestCase {
                 let payload = """
                 {
                   "url": "https://www.tiktok.com/@coach/video/1234567890123456789",
-                  "title": "Leg Day",
-                  "content": "Squat 5x5",
+                  "title": "Sprint Session",
+                  "content": "Run 10x100m",
                   "timestamp": "2026-02-24T12:00:00Z"
                 }
                 """
@@ -694,11 +779,27 @@ final class AuthSmokeTests: XCTestCase {
             url: "https://www.tiktok.com/@coach/video/1234567890123456789"
         )
 
-        XCTAssertEqual(response.title, "Leg Day")
+        XCTAssertEqual(response.title, "Sprint Session")
         XCTAssertEqual(
             requestPaths,
-            ["/api/tiktok-fetch", "/api/instagram-fetch"]
+            ["/api/tiktok-fetch", "/oembed", "/api/instagram-fetch"]
         )
+    }
+
+    func testTikTokURLValidationAcceptsShareFormatsAndWrappedInput() {
+        let apiClient = APIClient(
+            baseURL: URL(string: "https://kinexfit.com")!,
+            tokenStore: InMemoryTokenStore(),
+            session: URLSession(configuration: .ephemeral)
+        )
+        let service = InstagramFetchService(apiClient: apiClient)
+
+        XCTAssertTrue(service.isValidTikTokURL("https://www.tiktok.com/@coach/video/1234567890123456789"))
+        XCTAssertTrue(service.isValidTikTokURL("https://vm.tiktok.com/ZTR45GpSF/"))
+        XCTAssertTrue(service.isValidTikTokURL("https://vt.tiktok.com/ZSe4FqkKd"))
+        XCTAssertTrue(service.isValidTikTokURL("https://www.tiktok.com/t/ZTRC5xgJp"))
+        XCTAssertTrue(service.isValidTikTokURL("<https://www.tiktok.com/@coach/video/1234567890123456789>"))
+        XCTAssertTrue(service.isValidTikTokURL("  https://www.tiktok.com/@coach/video/1234567890123456789  "))
     }
 
     func testAPIClientDoesNotInvalidateSessionOnSourceUnauthorizedSocialImportEndpoint() async throws {

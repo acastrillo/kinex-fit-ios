@@ -32,6 +32,18 @@ struct ShareView: View {
         return "Social Import"
     }
 
+    private var platformIconName: String {
+        guard let url = postURL else { return "link" }
+        let lowered = url.lowercased()
+        if lowered.contains("instagram.com") || lowered.contains("instagr.am") {
+            return "camera.on.rectangle"
+        }
+        if lowered.contains("tiktok.com") {
+            return "play.rectangle.fill"
+        }
+        return "link"
+    }
+
     private var platformIconColor: Color {
         guard let url = postURL else { return .blue }
         let lowered = url.lowercased()
@@ -42,6 +54,48 @@ struct ShareView: View {
             return .cyan
         }
         return .blue
+    }
+
+    /// Detect raw platform string from a URL for storage
+    private func detectPlatformString(_ urlString: String) -> String {
+        let lowered = urlString.lowercased()
+        if lowered.contains("instagram.com") || lowered.contains("instagr.am") { return "instagram" }
+        if lowered.contains("tiktok.com") { return "tiktok" }
+        return "unknown"
+    }
+
+    /// Resolve a TikTok short link (vm.tiktok.com / vt.tiktok.com) to its canonical URL
+    private func resolveShortURL(_ urlString: String) async -> String {
+        guard let url = URL(string: urlString),
+              let host = url.host?.lowercased(),
+              host == "vm.tiktok.com" || host == "vt.tiktok.com" else {
+            return urlString
+        }
+
+        if let finalURL = await resolveShortURL(url: url, method: "HEAD") {
+            return finalURL
+        }
+
+        if let finalURL = await resolveShortURL(url: url, method: "GET") {
+            return finalURL
+        }
+        return urlString
+    }
+
+    private func resolveShortURL(url: URL, method: String) async -> String? {
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.timeoutInterval = 2.0
+        request.setValue(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+            forHTTPHeaderField: "User-Agent"
+        )
+
+        guard let (_, response) = try? await URLSession.shared.data(for: request),
+              let finalURL = (response as? HTTPURLResponse)?.url?.absoluteString else {
+            return nil
+        }
+        return finalURL
     }
 
     var body: some View {
@@ -144,7 +198,7 @@ struct ShareView: View {
             // Info
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Image(systemName: "camera.on.rectangle")
+                    Image(systemName: platformIconName)
                         .foregroundStyle(platformIconColor)
                     Text(detectedPlatformName)
                         .font(.subheadline)
@@ -315,6 +369,12 @@ struct ShareView: View {
         let importId = UUID().uuidString
         var mediaPath = ""
 
+        // Resolve short TikTok URLs before saving
+        var resolvedPostURL = postURL
+        if let url = postURL {
+            resolvedPostURL = await resolveShortURL(url)
+        }
+
         if let mediaDir = AppGroupShared.mediaDirectory {
             if mediaType == "video", let sourceURL = videoSourceURL {
                 let ext = sourceURL.pathExtension.isEmpty ? "mp4" : sourceURL.pathExtension
@@ -343,18 +403,21 @@ struct ShareView: View {
             }
         }
 
+        let detectedPlatform = detectPlatformString(resolvedPostURL ?? postURL ?? "")
+
         // Create import record
         let importItem = InstagramImportShared(
             id: importId,
-            postURL: postURL,
+            postURL: resolvedPostURL,
             captionText: captionText,
             mediaType: mediaType,
-            mediaLocalPath: mediaPath
+            mediaLocalPath: mediaPath,
+            sourcePlatform: detectedPlatform
         )
 
         // Save to App Group
         InstagramImportShared.saveToAppGroup(importItem)
-        logger.info("Saved import to App Group: \(importId)")
+        logger.info("Saved \(detectedPlatform) import to App Group: \(importId)")
 
         isSaving = false
         onComplete()

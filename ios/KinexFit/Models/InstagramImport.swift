@@ -1,7 +1,7 @@
 import Foundation
 import OSLog
 
-/// Represents an Instagram post import pending processing
+/// Represents a social media post import (Instagram or TikTok) pending processing
 struct InstagramImport: Codable, Identifiable {
     let id: String
     let postURL: String?
@@ -11,6 +11,7 @@ struct InstagramImport: Codable, Identifiable {
     let createdAt: Date
     var processingStatus: ProcessingStatus
     var extractedText: String?
+    var sourcePlatform: SocialPlatform
 
     enum MediaType: String, Codable {
         case image
@@ -34,7 +35,8 @@ struct InstagramImport: Codable, Identifiable {
         mediaLocalPath: String,
         createdAt: Date = Date(),
         processingStatus: ProcessingStatus = .pending,
-        extractedText: String? = nil
+        extractedText: String? = nil,
+        sourcePlatform: SocialPlatform = .instagram
     ) {
         self.id = id
         self.postURL = postURL
@@ -44,6 +46,21 @@ struct InstagramImport: Codable, Identifiable {
         self.createdAt = createdAt
         self.processingStatus = processingStatus
         self.extractedText = extractedText
+        self.sourcePlatform = sourcePlatform
+    }
+
+    // Custom decoder to default sourcePlatform to .instagram for existing stored records
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        postURL = try container.decodeIfPresent(String.self, forKey: .postURL)
+        captionText = try container.decodeIfPresent(String.self, forKey: .captionText)
+        mediaType = try container.decode(MediaType.self, forKey: .mediaType)
+        mediaLocalPath = try container.decode(String.self, forKey: .mediaLocalPath)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        processingStatus = try container.decode(ProcessingStatus.self, forKey: .processingStatus)
+        extractedText = try container.decodeIfPresent(String.self, forKey: .extractedText)
+        sourcePlatform = try container.decodeIfPresent(SocialPlatform.self, forKey: .sourcePlatform) ?? .instagram
     }
 }
 
@@ -135,6 +152,15 @@ enum AppGroup {
             defaults.set(data, forKey: pendingImportsKey)
         } catch {
             logger.error("Failed to encode pending imports for save: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// Update an existing import record in the shared container
+    static func updateImport(_ importItem: InstagramImport) {
+        var imports = getPendingImports()
+        if let index = imports.firstIndex(where: { $0.id == importItem.id }) {
+            imports[index] = importItem
+            savePendingImports(imports)
         }
     }
 

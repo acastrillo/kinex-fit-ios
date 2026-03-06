@@ -22,6 +22,9 @@ final class AppState: ObservableObject {
 
     /// Service for managing Instagram imports from Share Extension
     let instagramImportService = InstagramImportService()
+
+    /// Service for managing TikTok imports from Share Extension
+    let tiktokImportService: TikTokImportService
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Instagram Fetch State
@@ -43,6 +46,7 @@ final class AppState: ObservableObject {
 
     init(environment: AppEnvironment) {
         self.environment = environment
+        self.tiktokImportService = TikTokImportService(apiClient: environment.apiClient)
         AppState.shared = self
 
         // Ensure App Group directories exist
@@ -64,6 +68,7 @@ final class AppState: ObservableObject {
     /// Check for pending imports (call on app activation)
     func checkForPendingImports() {
         instagramImportService.refreshPendingImports()
+        tiktokImportService.refreshPendingImports()
     }
 
     // MARK: - Navigation Helpers

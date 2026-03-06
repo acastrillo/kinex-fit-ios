@@ -6,12 +6,14 @@ private let logger = Logger(subsystem: "com.kinex.fit", category: "InstagramFetc
 /// Service for fetching and parsing Instagram workout content
 actor InstagramFetchService {
     private let apiClient: APIClient
+    private let urlExpander = URLExpansionService()
 
     // Instagram URL validation pattern
     private static let instagramURLPattern = #"^https?://(www\.)?(instagram\.com|instagr\.am)/(p|reel)/[\w-]+/?.*$"#
 
-    // TikTok URL validation pattern (tiktok.com/@user/video/ID, vm.tiktok.com/CODE, vt.tiktok.com/CODE)
-    private static let tiktokURLPattern = #"^https?://(www\.|vm\.|vt\.)?(tiktok\.com)(/[@\w.]+/video/\d+|/[\w]+)/?.*$"#
+    // TikTok URL validation pattern (canonical, short-share, and legacy mobile forms)
+    private static let tiktokURLPattern =
+        #"^https?://(?:(?:www|m)\.)?tiktok\.com/(?:@[\w\.-]+/video/\d+|t/[\w-]+|v/\d+\.html|[\w-]+)/?(?:\?.*)?$|^https?://(?:vm|vt)\.tiktok\.com/[\w-]+/?(?:\?.*)?$"#
 
     init(apiClient: APIClient) {
         self.apiClient = apiClient
@@ -24,15 +26,17 @@ actor InstagramFetchService {
     /// - Returns: Instagram fetch response with content and parsed workout
     /// - Throws: InstagramFetchError if fetch fails
     func fetchInstagramPost(url: String) async throws -> InstagramFetchResponse {
+        let normalizedURL = Self.normalizeInputURL(url)
+
         // Validate URL format
-        guard isValidInstagramURL(url) else {
+        guard isValidInstagramURL(normalizedURL) else {
             throw InstagramFetchError.invalidURL
         }
 
         logger.info("Fetching Instagram post")
 
         do {
-            let request = try APIRequest.fetchInstagram(url: url)
+            let request = try APIRequest.fetchInstagram(url: normalizedURL)
             let response: InstagramFetchResponse = try await apiClient.send(request)
 
             logger.info("Successfully fetched Instagram post")
@@ -73,34 +77,61 @@ actor InstagramFetchService {
     /// - Returns: Fetch response with content and parsed workout
     /// - Throws: InstagramFetchError if fetch fails
     func fetchTikTokPost(url: String) async throws -> InstagramFetchResponse {
-        guard isValidTikTokURL(url) else {
+        let normalizedURL = Self.normalizeInputURL(url)
+        let resolvedURL = await urlExpander.expand(normalizedURL)
+
+        guard isValidTikTokURL(resolvedURL) else {
             throw InstagramFetchError.invalidURL
         }
 
         logger.info("Fetching TikTok post")
 
         do {
-            let request = try APIRequest.fetchTikTok(url: url)
+            let request = try APIRequest.fetchTikTok(url: resolvedURL)
             let response: InstagramFetchResponse = try await apiClient.send(request)
 
             logger.info("Successfully fetched TikTok post")
             return response
 
         } catch let error as APIError {
-            // Older backend deployments may not expose /api/tiktok-fetch yet.
-            // Retry through /api/instagram-fetch, which accepts social URLs.
-            if case .httpStatus(404, _) = error {
-                logger.warning("TikTok endpoint unavailable (404), retrying with Instagram endpoint")
+            var oEmbedFailure: InstagramFetchError?
+
+            // Production currently may not expose /api/tiktok-fetch. Fall back to TikTok oEmbed.
+            if Self.shouldFallbackTikTokToOEmbed(error) {
+                logger.warning("TikTok endpoint failed, retrying with TikTok oEmbed")
                 do {
-                    let fallbackRequest = try APIRequest.fetchInstagram(url: url)
+                    let fallbackResponse = try await fetchTikTokPostViaOEmbed(url: resolvedURL)
+                    logger.info("Successfully fetched TikTok post via oEmbed fallback")
+                    return fallbackResponse
+                } catch let fallbackError as InstagramFetchError {
+                    oEmbedFailure = fallbackError
+                    logger.warning("TikTok oEmbed fallback failed: \(fallbackError.localizedDescription)")
+                }
+            }
+
+            // Keep legacy fallback for older backend deployments that accept TikTok on instagram-fetch.
+            if Self.shouldFallbackTikTokToInstagram(error) {
+                logger.warning("TikTok endpoint failed, retrying with legacy Instagram endpoint")
+                do {
+                    let fallbackRequest = try APIRequest.fetchInstagram(url: resolvedURL)
                     let fallbackResponse: InstagramFetchResponse = try await apiClient.send(fallbackRequest)
-                    logger.info("Successfully fetched TikTok post via fallback endpoint")
+                    logger.info("Successfully fetched TikTok post via legacy fallback endpoint")
                     return fallbackResponse
                 } catch let fallbackError as APIError {
+                    if let oEmbedFailure {
+                        throw oEmbedFailure
+                    }
                     throw mapAPIError(fallbackError, context: .socialFetch)
                 } catch {
+                    if let oEmbedFailure {
+                        throw oEmbedFailure
+                    }
                     throw InstagramFetchError.networkError(error)
                 }
+            }
+
+            if let oEmbedFailure {
+                throw oEmbedFailure
             }
             throw mapAPIError(error, context: .socialFetch)
         } catch {
@@ -113,17 +144,19 @@ actor InstagramFetchService {
     /// - Returns: Combined FetchedWorkout model ready for UI
     /// - Throws: InstagramFetchError if either fetch or parse fails
     func fetchAndParse(url: String) async throws -> FetchedWorkout {
+        let normalizedURL = Self.normalizeInputURL(url)
+
         logger.info("Starting fetch and parse")
 
         // Step 1: Fetch content based on detected platform
-        let platform = SocialPlatform.detect(from: url)
+        let platform = SocialPlatform.detect(from: normalizedURL)
         let fetchResponse: InstagramFetchResponse
 
         switch platform {
         case .instagram:
-            fetchResponse = try await fetchInstagramPost(url: url)
+            fetchResponse = try await fetchInstagramPost(url: normalizedURL)
         case .tiktok:
-            fetchResponse = try await fetchTikTokPost(url: url)
+            fetchResponse = try await fetchTikTokPost(url: normalizedURL)
         case .unknown:
             throw InstagramFetchError.invalidURL
         }
@@ -149,7 +182,7 @@ actor InstagramFetchService {
             )
         } else {
             // Parse caption separately
-            ingestResponse = try await parseCaption(fetchResponse.content, url: url)
+            ingestResponse = try await parseCaption(fetchResponse.content, url: normalizedURL)
         }
 
         // Step 3: Combine into FetchedWorkout model
@@ -186,11 +219,88 @@ actor InstagramFetchService {
     }
 
     private nonisolated static func matchesPattern(_ url: String, pattern: String) -> Bool {
+        let normalizedURL = normalizeInputURL(url)
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
             return false
         }
-        let range = NSRange(location: 0, length: url.utf16.count)
-        return regex.firstMatch(in: url, options: [], range: range) != nil
+        let range = NSRange(location: 0, length: normalizedURL.utf16.count)
+        return regex.firstMatch(in: normalizedURL, options: [], range: range) != nil
+    }
+
+    // MARK: - TikTok Fallbacks
+
+    private func fetchTikTokPostViaOEmbed(url: String) async throws -> InstagramFetchResponse {
+        guard var components = URLComponents(string: "https://www.tiktok.com/oembed") else {
+            throw InstagramFetchError.serverError(statusCode: 0)
+        }
+        components.queryItems = [URLQueryItem(name: "url", value: url)]
+        guard let endpoint = components.url else {
+            throw InstagramFetchError.invalidURL
+        }
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 8.0
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+            forHTTPHeaderField: "User-Agent"
+        )
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await apiClient.session.data(for: request)
+        } catch {
+            throw InstagramFetchError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw InstagramFetchError.serverError(statusCode: 0)
+        }
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            switch httpResponse.statusCode {
+            case 400:
+                throw InstagramFetchError.invalidURL
+            case 404:
+                throw InstagramFetchError.postNotFound
+            default:
+                throw InstagramFetchError.serverError(statusCode: httpResponse.statusCode)
+            }
+        }
+
+        let payload: TikTokOEmbedResponse
+        do {
+            payload = try JSONDecoder().decode(TikTokOEmbedResponse.self, from: data)
+        } catch {
+            throw InstagramFetchError.decodingError(error)
+        }
+
+        let caption = payload.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !caption.isEmpty else {
+            throw InstagramFetchError.parsingFailed
+        }
+
+        let username = Self.usernameFromTikTokAuthorURL(payload.authorURL)
+            ?? payload.authorName.replacingOccurrences(of: " ", with: "").lowercased()
+        let normalizedUsername = username.isEmpty ? "unknown" : username
+
+        return InstagramFetchResponse(
+            url: url,
+            title: caption,
+            content: caption,
+            author: AuthorInfo(username: normalizedUsername, fullName: payload.authorName),
+            stats: nil,
+            image: payload.thumbnailURL,
+            timestamp: ISO8601DateFormatter().string(from: Date()),
+            mediaType: payload.type,
+            parsedWorkout: nil,
+            scanQuotaUsed: nil,
+            scanQuotaLimit: nil,
+            quotaUsed: nil,
+            quotaLimit: nil
+        )
     }
 
     // MARK: - Error Mapping
@@ -250,6 +360,10 @@ actor InstagramFetchService {
         // Check for rate limiting
         if statusCode == 429 || normalizedMessage.contains("rate limit") {
             return .rateLimited
+        }
+
+        if statusCode == 400, Self.isInvalidURLMessage(normalizedMessage) {
+            return .invalidURL
         }
 
         if statusCode == 401 {
@@ -373,6 +487,59 @@ actor InstagramFetchService {
 
         return appKeywords.contains { normalizedMessage.contains($0) }
     }
+
+    private nonisolated static func normalizeInputURL(_ url: String) -> String {
+        var normalized = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        if normalized.hasPrefix("<"), normalized.hasSuffix(">"), normalized.count > 2 {
+            normalized = String(normalized.dropFirst().dropLast())
+        }
+        return normalized
+    }
+
+    private nonisolated static func shouldFallbackTikTokToOEmbed(_ apiError: APIError) -> Bool {
+        guard case .httpStatus(let statusCode, _) = apiError else { return false }
+        switch statusCode {
+        case 400, 404, 405, 422, 500, 501, 502, 503, 504:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private nonisolated static func shouldFallbackTikTokToInstagram(_ apiError: APIError) -> Bool {
+        guard case .httpStatus(let statusCode, _) = apiError else { return false }
+        return statusCode == 400 || statusCode == 404 || statusCode == 422
+    }
+
+    private nonisolated static func usernameFromTikTokAuthorURL(_ authorURL: String?) -> String? {
+        guard let authorURL,
+              let components = URLComponents(string: authorURL),
+              let host = components.host?.lowercased(),
+              host.contains("tiktok.com") else {
+            return nil
+        }
+
+        let parts = components.path.split(separator: "/")
+        guard let handle = parts.first(where: { $0.hasPrefix("@") }) else {
+            return nil
+        }
+
+        let username = handle.trimmingCharacters(in: CharacterSet(charactersIn: "@"))
+        return username.isEmpty ? nil : username
+    }
+
+    private nonisolated static func isInvalidURLMessage(_ normalizedMessage: String) -> Bool {
+        let invalidURLKeywords = [
+            "invalid url",
+            "invalid link",
+            "invalid tiktok",
+            "malformed url",
+            "unsupported url",
+            "url is required",
+            "bad request"
+        ]
+        return invalidURLKeywords.contains(where: { normalizedMessage.contains($0) })
+    }
 }
 
 // MARK: - Error Response Model
@@ -426,5 +593,22 @@ private struct ErrorResponse: Decodable {
             ?? detail?.trimmingCharacters(in: .whitespacesAndNewlines)
             ?? details?.trimmingCharacters(in: .whitespacesAndNewlines)
             ?? ""
+    }
+}
+
+/// Response from TikTok public oEmbed endpoint.
+private struct TikTokOEmbedResponse: Decodable {
+    let type: String?
+    let title: String
+    let authorName: String
+    let authorURL: String?
+    let thumbnailURL: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case title
+        case authorName = "author_name"
+        case authorURL = "author_url"
+        case thumbnailURL = "thumbnail_url"
     }
 }

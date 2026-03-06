@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -85,6 +85,10 @@
 		A4EC2B9298DEBB1A9EF15628 /* AppDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDA5C5511907C88F247FD7E /* AppDatabase.swift */; };
 		A615F3385D47DCAC700638CA /* InstagramImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6309D0F9546A93B71022DF8 /* InstagramImportService.swift */; };
 		A626C350078136567059981D /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96ED4DEB6136F9EBDE5150F4 /* AppEnvironment.swift */; };
+		B3C4D5E6F7A8B9C0D1E2F3A4 /* URLExpansionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* URLExpansionService.swift */; };
+		D7E8F9A0B1C2D3E4F5A6B7C8 /* TikTokImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D6E7F8A9B0C1D2E3F4A5B6 /* TikTokImportService.swift */; };
+		F1A2B3C4D5E6F7A8B9C0D1E2 /* TikTokCaptionPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F0A1B2C3D4E5F6A7B8C9D0 /* TikTokCaptionPreprocessor.swift */; };
+		A4F5B6C7D8E9F0A1B2C3D4E5 /* FreeExerciseDBLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6G7H8I9J0K1L2M3N4O5P6Q7 /* FreeExerciseDBLoader.swift */; };
 		A77004360813FE9DEC4B5BB9 /* InstagramWorkoutEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6512F8474C90D275230D4E6E /* InstagramWorkoutEditView.swift */; };
 		A7B5CEC239BA21AE33D56748 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC636647966DA52FCF82ED84 /* ShareViewController.swift */; };
 		A83B0C4032B6538FA8C8A14C /* InstagramFetchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9CF6699899DE56AFE43804 /* InstagramFetchService.swift */; };
@@ -207,7 +211,7 @@
 		4321971ED635AECEC974AD81 /* BodyMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetric.swift; sourceTree = "<group>"; };
 		46E17EE4780932F90F49D90D /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		479A4A2D835B9A041507FD64 /* CompleteStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteStep.swift; sourceTree = "<group>"; };
-		48A19A0396A6C300C35C317A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		48A19A0396A6C300C35C317A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		48B0B9D0A31BB4C2A29A288C /* APIRequest+InstagramImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIRequest+InstagramImport.swift"; sourceTree = "<group>"; };
 		4AACF2EE09167A0E03B08E17 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		51956D4B41EB54B7F05BDEFC /* EditableWorkoutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableWorkoutCard.swift; sourceTree = "<group>"; };
@@ -231,7 +235,7 @@
 		76F3DB38DFE5B706FBD45B71 /* PersonalRecordsStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalRecordsStep.swift; sourceTree = "<group>"; };
 		79B76C6F65A467AA43413079 /* GoalsStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsStep.swift; sourceTree = "<group>"; };
 		7DB2B6FE827306A1927D6844 /* AIFeatureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIFeatureCard.swift; sourceTree = "<group>"; };
-		7FFF4A221C3794EACAD55EE7 /* Kinex FitTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = "Kinex FitTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		7FFF4A221C3794EACAD55EE7 /* Kinex FitTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper; path = "Kinex FitTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8022168EAE27B8511CAA1FB0 /* EquipmentStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentStep.swift; sourceTree = "<group>"; };
 		80750E8D8DEEE625DB511E13 /* PendingImportsBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingImportsBanner.swift; sourceTree = "<group>"; };
 		820382E50B659AB39484DA16 /* KinexFitShareExtension.Debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KinexFitShareExtension.Debug.entitlements; sourceTree = "<group>"; };
@@ -258,12 +262,13 @@
 		9E7B3BB42CA334B028B5839B /* GoogleSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignInManager.swift; sourceTree = "<group>"; };
 		9EC437FE4BC6C866C70C3723 /* WorkoutFilterManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutFilterManager.swift; sourceTree = "<group>"; };
 		9F60E54415F0ED89B8401793 /* WorkoutCardEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCardEditor.swift; sourceTree = "<group>"; };
-		A41D4084856AA0A62DCE9663 /* KinexFitShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = KinexFitShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A41D4084856AA0A62DCE9663 /* KinexFitShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.extensionkit-extension"; path = KinexFitShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A716A6252F364A2AB2262CF9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A76D2854A7D8B38302EAF9F0 /* InstagramFetchError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramFetchError.swift; sourceTree = "<group>"; };
 		A825E2DF7800911492375643 /* NotificationPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPermissionView.swift; sourceTree = "<group>"; };
 		ABD5A1A9EF3AE915BF5FD8B9 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		ACB1E1EF855F1B4253BF0A76 /* InstagramImportReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramImportReviewView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* URLExpansionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLExpansionService.swift; sourceTree = "<group>"; };
 		ADAEDB9542E072D7E9D8AD46 /* TextExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextExtractionService.swift; sourceTree = "<group>"; };
 		B2B4C03A7872F909C47D176B /* ExerciseLibraryMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryMatcher.swift; sourceTree = "<group>"; };
 		B67C2A0E101BCD694B5C661C /* ScheduleStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleStep.swift; sourceTree = "<group>"; };
@@ -276,6 +281,7 @@
 		C20C76609EAE36336422CD69 /* OfflineModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineModeManager.swift; sourceTree = "<group>"; };
 		C3301AB014CB54626DAE3275 /* EmailPasswordAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailPasswordAuthService.swift; sourceTree = "<group>"; };
 		C40DD74F2D78117C5C864279 /* MilestoneManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilestoneManager.swift; sourceTree = "<group>"; };
+		C5D6E7F8A9B0C1D2E3F4A5B6 /* TikTokImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TikTokImportService.swift; sourceTree = "<group>"; };
 		C562C8E59B642958EE17EE7A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		C69E5A94A914A78C005ABBE0 /* ShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareView.swift; sourceTree = "<group>"; };
 		C72AF33C18A94242748695B5 /* CaptionParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionParser.swift; sourceTree = "<group>"; };
@@ -292,6 +298,7 @@
 		D57854BBA51A3A3EEB5F6CAB /* WorkoutTimerSelectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTimerSelectionSheet.swift; sourceTree = "<group>"; };
 		D5DBD379AEF6C7237F57BC21 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		D76AADFD2568EF7B0D190468 /* CaptionImportParsingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionImportParsingService.swift; sourceTree = "<group>"; };
+		F6G7H8I9J0K1L2M3N4O5P6Q7 /* FreeExerciseDBLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeExerciseDBLoader.swift; sourceTree = "<group>"; };
 		D9161EAFD48A6507DA998918 /* TrainingProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingProfile.swift; sourceTree = "<group>"; };
 		D98B3609FC75E9F43F3736D3 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		DD63365294142619EA613B2A /* WorkoutRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRowView.swift; sourceTree = "<group>"; };
@@ -303,6 +310,7 @@
 		E64E69EEABBE3C2F0415076F /* TrendingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendingService.swift; sourceTree = "<group>"; };
 		E6CB60AD751B804BE2A2C48B /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
 		E9B6B62AD78C8C4D70F4A35B /* WatchConnectivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityManager.swift; sourceTree = "<group>"; };
+		E9F0A1B2C3D4E5F6A7B8C9D0 /* TikTokCaptionPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TikTokCaptionPreprocessor.swift; sourceTree = "<group>"; };
 		EB23CEEA961D1DD0ADA29B25 /* Kinex Fit.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "Kinex Fit.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDCF82EF1BF5C7505375EA3F /* InstagramImportTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramImportTab.swift; sourceTree = "<group>"; };
 		EEB6935973DE9D8BECF04594 /* CaptionParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionParsingTests.swift; sourceTree = "<group>"; };
@@ -359,6 +367,8 @@
 				D76AADFD2568EF7B0D190468 /* CaptionImportParsingService.swift */,
 				C72AF33C18A94242748695B5 /* CaptionParser.swift */,
 				B2B4C03A7872F909C47D176B /* ExerciseLibraryMatcher.swift */,
+				E9F0A1B2C3D4E5F6A7B8C9D0 /* TikTokCaptionPreprocessor.swift */,
+				F6G7H8I9J0K1L2M3N4O5P6Q7 /* FreeExerciseDBLoader.swift */,
 			);
 			path = Parsing;
 			sourceTree = "<group>";
@@ -390,7 +400,9 @@
 				9C24EF33BE37B2A6FCB88132 /* StatsRepository.swift */,
 				F6389F7E8E5AE954AD48F2A0 /* StoreKitManager.swift */,
 				ADAEDB9542E072D7E9D8AD46 /* TextExtractionService.swift */,
+				C5D6E7F8A9B0C1D2E3F4A5B6 /* TikTokImportService.swift */,
 				E64E69EEABBE3C2F0415076F /* TrendingService.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* URLExpansionService.swift */,
 				D57580B62864E158CB32E3FC /* UserRepository.swift */,
 				9A5A15ECDE75BDC2DE543F59 /* VideoCacheManager.swift */,
 				E9B6B62AD78C8C4D70F4A35B /* WatchConnectivityManager.swift */,
@@ -850,7 +862,6 @@
 				88FAF597F5352C7B80DFC340 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 				8A7B7B7C72630E6B430DA2D1 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -909,6 +920,7 @@
 				816DD0AEF047E6BB593759C7 /* CaptionImportParsingService.swift in Sources */,
 				1464DEAA0D7E51B4341CF530 /* CaptionParsedWorkout.swift in Sources */,
 				5B58FDA1781E2E15D65F5674 /* CaptionParser.swift in Sources */,
+				A4F5B6C7D8E9F0A1B2C3D4E5 /* FreeExerciseDBLoader.swift in Sources */,
 				507258834C91D31553383E7A /* CompleteStep.swift in Sources */,
 				232827D435953630F2808BE8 /* CreateWorkoutView.swift in Sources */,
 				E4AFE44BC09F07D3353549E4 /* DatabaseMigrator.swift in Sources */,
@@ -982,11 +994,14 @@
 				FB469F435BC04C5C0488F7CF /* SyncPayloadV1.swift in Sources */,
 				B8AF0DF4A0C0DCBB2781D846 /* SyncStatusIndicator.swift in Sources */,
 				EA6484DD566023A8F81B71E1 /* TextExtractionService.swift in Sources */,
+				F1A2B3C4D5E6F7A8B9C0D1E2 /* TikTokCaptionPreprocessor.swift in Sources */,
+				D7E8F9A0B1C2D3E4F5A6B7C8 /* TikTokImportService.swift in Sources */,
 				CA95F1404EF7261F2B97D024 /* Theme.swift in Sources */,
 				EC6EAB0C234A8B2183AD2369 /* TokenStore.swift in Sources */,
 				B88AB658B60E74C7C7EB1CD1 /* TrainingProfile.swift in Sources */,
 				AD9E93AD600056BD492BF326 /* TrainingProfileSettingsView.swift in Sources */,
 				E21D3D83FB1B4349B80DF7C0 /* TrendingService.swift in Sources */,
+				B3C4D5E6F7A8B9C0D1E2F3A4 /* URLExpansionService.swift in Sources */,
 				F230668C89DDDFC6CBCB23C4 /* User.swift in Sources */,
 				025966618AE39C994C785DAE /* UserRepository.swift in Sources */,
 				3F63586E3D4560F36D4D3147 /* VideoCacheManager.swift in Sources */,
