@@ -31,3 +31,8 @@ Pods/
 # Temporary files
 *.log
 tmp-*
+
+# Planning & documentation
+*-PLAN.md
+*-PLAN.docx
+*-parsing-info.md
