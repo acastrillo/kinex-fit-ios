@@ -181,8 +181,14 @@ actor InstagramFetchService {
                 workoutV1: nil
             )
         } else {
-            // Parse caption separately
-            ingestResponse = try await parseCaption(fetchResponse.content, url: normalizedURL)
+            // Parse caption separately - fall back to title if content is empty
+            let captionText = fetchResponse.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? fetchResponse.title.trimmingCharacters(in: .whitespacesAndNewlines)
+                : fetchResponse.content
+            guard !captionText.isEmpty else {
+                throw InstagramFetchError.parsingFailed
+            }
+            ingestResponse = try await parseCaption(captionText, url: normalizedURL)
         }
 
         // Step 3: Combine into FetchedWorkout model
