@@ -190,6 +190,15 @@ final class WorkoutRepository {
     /// Create a new workout
     @discardableResult
     func create(_ workout: Workout) async throws -> Workout {
+        // Guest mode: enforce 3-save limit before writing to DB.
+        if let guestManager = await MainActor.run(body: { AppState.shared?.guestModeManager }),
+           await MainActor.run(body: { AppState.shared?.isGuestMode }) == true {
+            let canSave = await MainActor.run { guestManager.canSaveWorkout() }
+            guard canSave else {
+                throw GuestLimitError.workoutSaveLimitReached
+            }
+        }
+
         var workoutToSave = workout
         workoutToSave.createdAt = Date()
         workoutToSave.updatedAt = Date()
@@ -203,6 +212,11 @@ final class WorkoutRepository {
 
         // Queue for sync
         try queueSync(workout: finalWorkout, operation: .create)
+
+        // Guest mode: record successful save toward the limit.
+        if await MainActor.run(body: { AppState.shared?.isGuestMode }) == true {
+            await MainActor.run { AppState.shared?.guestModeManager.recordWorkoutSave() }
+        }
 
         logger.info("Created workout: \(finalWorkout.id)")
         return finalWorkout

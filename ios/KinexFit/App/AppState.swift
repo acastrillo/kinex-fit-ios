@@ -20,6 +20,12 @@ final class AppState: ObservableObject {
 
     let environment: AppEnvironment
 
+    /// Manages guest mode usage limits (3 saves, 1 AI generation).
+    let guestModeManager = GuestModeManager()
+
+    /// True when a user has completed import-first onboarding without signing in.
+    @Published var isGuestMode: Bool = false
+
     /// Service for managing Instagram imports from Share Extension
     let instagramImportService = InstagramImportService()
 
@@ -94,5 +100,18 @@ final class AppState: ObservableObject {
     func completeWorkoutCardNavigation(requestID: UUID) {
         guard pendingWorkoutCardNavigation?.requestID == requestID else { return }
         pendingWorkoutCardNavigation = nil
+    }
+
+    // MARK: - Guest Mode
+
+    /// Enter guest mode after completing import-first onboarding without signing in.
+    func enterGuestMode() {
+        isGuestMode = true
+    }
+
+    /// Exit guest mode (e.g., user signed in). Resets guest counters.
+    func exitGuestMode() {
+        isGuestMode = false
+        guestModeManager.reset()
     }
 }

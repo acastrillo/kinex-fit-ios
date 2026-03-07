@@ -83,6 +83,22 @@ final class AIService {
     func generateWorkout(prompt: String, trainingProfile: TrainingProfile?) async throws -> GenerateWorkoutResponse {
         logger.info("Generating workout from prompt (length: \(prompt.count))")
 
+        // Guest mode: enforce 1-AI-generation limit.
+        if let guestManager = await MainActor.run(body: { AppState.shared?.guestModeManager }),
+           await MainActor.run(body: { AppState.shared?.isGuestMode }) == true {
+            let attemptCount = await MainActor.run { guestManager.aiGenerationsUsed + 1 }
+            await MainActor.run {
+                OnboardingAnalytics.shared.track(.guestAIAttempt(count: attemptCount))
+            }
+            let canUse = await MainActor.run { guestManager.canUseAI() }
+            guard canUse else {
+                await MainActor.run {
+                    OnboardingAnalytics.shared.track(.guestAILimitReached(action: "blocked"))
+                }
+                throw GuestLimitError.aiGenerationLimitReached
+            }
+        }
+
         struct GenerateRequest: Encodable {
             let prompt: String
             let trainingProfile: TrainingProfile?
@@ -97,6 +113,10 @@ final class AIService {
         do {
             let response: GenerateWorkoutResponse = try await apiClient.send(request)
             logger.info("Generation successful")
+            // Guest mode: record successful generation.
+            if await MainActor.run(body: { AppState.shared?.isGuestMode }) == true {
+                await MainActor.run { AppState.shared?.guestModeManager.recordAIGeneration() }
+            }
             return response
         } catch let error as APIError {
             throw mapAPIError(error)

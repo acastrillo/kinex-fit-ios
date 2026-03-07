@@ -5,6 +5,10 @@ struct RootView: View {
     @StateObject private var authViewModel: AuthViewModel
     @State private var showOnboarding = false
 
+    private var hasSeenImportOnboarding: Bool {
+        UserDefaults.standard.bool(forKey: "hasSeenImportOnboarding")
+    }
+
     init(environment: AppEnvironment) {
         _authViewModel = StateObject(wrappedValue: AuthViewModel(
             authService: environment.authService,
@@ -23,7 +27,25 @@ struct RootView: View {
                 SplashView()
 
             case .signedOut:
-                SignInView(viewModel: authViewModel)
+                if appState.isGuestMode {
+                    // Guest mode: user completed import-first onboarding without signing in.
+                    MainTabView(authViewModel: authViewModel)
+                        .environmentObject(appState.guestModeManager)
+                } else if !hasSeenImportOnboarding {
+                    // New user: show import-first onboarding before requiring sign-in.
+                    ImportFirstOnboardingView(
+                        onCompleted: {
+                            appState.enterGuestMode()
+                        },
+                        onSignInTapped: {
+                            // Drop back to SignInView by clearing guest mode flag
+                            // (hasSeenImportOnboarding is already set by ImportFirstOnboardingView)
+                        }
+                    )
+                    .environmentObject(appState.guestModeManager)
+                } else {
+                    SignInView(viewModel: authViewModel)
+                }
 
             case .signedIn:
                 if showOnboarding {
@@ -40,9 +62,15 @@ struct RootView: View {
             await authViewModel.checkExistingSession()
         }
         .onChange(of: authViewModel.authState) { _, newState in
-            // Check if onboarding is needed when user signs in
             if case .signedIn(let user) = newState {
-                showOnboarding = !user.onboardingCompleted
+                // User signed in — exit guest mode, reset guest counters.
+                appState.exitGuestMode()
+
+                // Skip old 8-step onboarding if:
+                //   (a) user already completed it, OR
+                //   (b) user went through import-first onboarding as a guest
+                let didImportFirstOnboarding = UserDefaults.standard.bool(forKey: "hasSeenImportOnboarding")
+                showOnboarding = !user.onboardingCompleted && !didImportFirstOnboarding
             }
         }
     }
