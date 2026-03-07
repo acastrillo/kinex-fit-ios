@@ -8,6 +8,8 @@ struct ImportPromptStep: View {
 
     @State private var showPhotosPicker = false
     @State private var showDocumentPicker = false
+    @State private var showPasteSheet = false
+    @State private var pasteText = ""
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var parsedWorkout: CaptionParsedWorkout?
     @State private var extractionProgress: Double = 0
@@ -86,17 +88,25 @@ struct ImportPromptStep: View {
                 }
                 .accessibilityLabel("Import workout from files")
 
-                // Browse Gallery (future)
-                Button(action: {}) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "photo.stack")
-                        Text("Browse Gallery")
+                // Paste text or link
+                Button(action: {
+                    OnboardingAnalytics.shared.track(.importAttemptStarted(source: "paste_text"))
+                    pasteText = ""
+                    showPasteSheet = true
+                }) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "doc.text")
+                            .font(.system(size: 18))
+                        Text("Paste Workout Text")
+                            .font(.headline)
                     }
-                    .foregroundStyle(AppTheme.secondaryText.opacity(0.5))
-                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.accent)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(AppTheme.accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
-                .disabled(true)
-                .accessibilityHidden(true)
+                .accessibilityLabel("Paste workout text or link")
 
                 // Skip
                 Button(action: {
@@ -127,6 +137,15 @@ struct ImportPromptStep: View {
             DocumentPickerView(allowedTypes: [.image, .jpeg, .png, .heic]) { url in
                 Task { await processFile(url) }
             }
+        }
+        // Paste text sheet
+        .sheet(isPresented: $showPasteSheet) {
+            PasteTextSheet(text: $pasteText) {
+                showPasteSheet = false
+                guard !pasteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                Task { await processPastedText(pasteText) }
+            }
+            .presentationDetents([.medium, .large])
         }
         // Progress sheet
         .sheet(isPresented: $showProgressSheet) {
@@ -176,6 +195,10 @@ struct ImportPromptStep: View {
             let workout = await parser.parseImportText(text, sourceURL: nil)
             extractionProgress = 1.0
             parsedWorkout = workout
+        } catch TextExtractionService.ExtractionError.noTextFound {
+            // Show empty state inside ImportProgressView rather than an error alert
+            extractionProgress = 1.0
+            parsedWorkout = nil
         } catch {
             showProgressSheet = false
             errorMessage = error.localizedDescription
@@ -200,12 +223,74 @@ struct ImportPromptStep: View {
             let workout = await parser.parseImportText(text, sourceURL: nil)
             extractionProgress = 1.0
             parsedWorkout = workout
+        } catch TextExtractionService.ExtractionError.noTextFound {
+            extractionProgress = 1.0
+            parsedWorkout = nil
         } catch {
             showProgressSheet = false
             errorMessage = error.localizedDescription
             showError = true
         }
         isProcessing = false
+    }
+
+    private func processPastedText(_ text: String) async {
+        processingStartTime = Date()
+        isProcessing = true
+        showProgressSheet = true
+        extractionProgress = 0.3
+
+        let workout = await parser.parseImportText(text, sourceURL: nil)
+        extractionProgress = 1.0
+        parsedWorkout = workout
+        isProcessing = false
+    }
+}
+
+// MARK: - Paste text sheet
+
+private struct PasteTextSheet: View {
+    @Binding var text: String
+    let onAnalyze: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Paste your workout below — a screenshot caption, a program description, or any exercise list.")
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.secondaryText)
+
+                TextEditor(text: $text)
+                    .font(.body)
+                    .foregroundStyle(AppTheme.primaryText)
+                    .scrollContentBackground(.hidden)
+                    .background(AppTheme.accent.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(minHeight: 160)
+
+                Button(action: onAnalyze) {
+                    Text("Analyze Workout")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AppTheme.secondaryText : AppTheme.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                Spacer()
+            }
+            .padding(20)
+            .navigationTitle("Paste Workout Text")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
     }
 }
 

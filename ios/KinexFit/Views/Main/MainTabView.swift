@@ -10,40 +10,57 @@ struct MainTabView: View {
     var body: some View {
         VStack(spacing: 0) {
             KinexTopBar(
-                onAccountTap: { showingSettings = true },
+                onAccountTap: appState.isGuestMode ? nil : { showingSettings = true },
+                onSignInTap: appState.isGuestMode ? { appState.exitGuestMode() } : nil,
                 onMenuTap: { showingQuickMenu = true }
             )
 
-            TabView(selection: $appState.selectedMainTab) {
-                HomeTab()
-                    .tabItem {
-                        Label(AppState.MainTab.home.title, systemImage: AppState.MainTab.home.icon)
-                    }
-                    .tag(AppState.MainTab.home)
+            if appState.isGuestMode {
+                TabView(selection: $appState.selectedMainTab) {
+                    WorkoutsTab()
+                        .tabItem {
+                            Label(AppState.MainTab.library.title, systemImage: AppState.MainTab.library.icon)
+                        }
+                        .tag(AppState.MainTab.library)
 
-                WorkoutsTab()
-                    .tabItem {
-                        Label(AppState.MainTab.library.title, systemImage: AppState.MainTab.library.icon)
-                    }
-                    .tag(AppState.MainTab.library)
+                    CreateWorkoutView()
+                        .tabItem {
+                            Label(AppState.MainTab.add.title, systemImage: AppState.MainTab.add.icon)
+                        }
+                        .tag(AppState.MainTab.add)
+                }
+            } else {
+                TabView(selection: $appState.selectedMainTab) {
+                    HomeTab()
+                        .tabItem {
+                            Label(AppState.MainTab.home.title, systemImage: AppState.MainTab.home.icon)
+                        }
+                        .tag(AppState.MainTab.home)
 
-                CreateWorkoutView()
-                    .tabItem {
-                        Label(AppState.MainTab.add.title, systemImage: AppState.MainTab.add.icon)
-                    }
-                    .tag(AppState.MainTab.add)
+                    WorkoutsTab()
+                        .tabItem {
+                            Label(AppState.MainTab.library.title, systemImage: AppState.MainTab.library.icon)
+                        }
+                        .tag(AppState.MainTab.library)
 
-                CalendarTab()
-                    .tabItem {
-                        Label(AppState.MainTab.calendar.title, systemImage: AppState.MainTab.calendar.icon)
-                    }
-                    .tag(AppState.MainTab.calendar)
+                    CreateWorkoutView()
+                        .tabItem {
+                            Label(AppState.MainTab.add.title, systemImage: AppState.MainTab.add.icon)
+                        }
+                        .tag(AppState.MainTab.add)
 
-                MetricsTab()
-                    .tabItem {
-                        Label(AppState.MainTab.stats.title, systemImage: AppState.MainTab.stats.icon)
-                    }
-                    .tag(AppState.MainTab.stats)
+                    CalendarTab()
+                        .tabItem {
+                            Label(AppState.MainTab.calendar.title, systemImage: AppState.MainTab.calendar.icon)
+                        }
+                        .tag(AppState.MainTab.calendar)
+
+                    MetricsTab()
+                        .tabItem {
+                            Label(AppState.MainTab.stats.title, systemImage: AppState.MainTab.stats.icon)
+                        }
+                        .tag(AppState.MainTab.stats)
+                }
             }
         }
         .background(AppTheme.background.ignoresSafeArea())
@@ -125,7 +142,10 @@ enum KinexQuickMenuAction {
 
 struct KinexTopBar: View {
     @EnvironmentObject private var appState: AppState
-    let onAccountTap: () -> Void
+    /// Tap handler for the account icon. Pass `nil` in guest mode.
+    let onAccountTap: (() -> Void)?
+    /// Tap handler shown as "Sign In" button in guest mode. Pass `nil` for authenticated users.
+    let onSignInTap: (() -> Void)?
     let onMenuTap: () -> Void
 
     @State private var scanLabel = "120 scans"
@@ -146,22 +166,33 @@ struct KinexTopBar: View {
             Spacer(minLength: 8)
 
             HStack(spacing: 16) {
-                HStack(spacing: 6) {
-                    Image(systemName: "bolt")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(AppTheme.accent)
+                if let onSignInTap {
+                    Button(action: onSignInTap) {
+                        Text("Sign In")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(AppTheme.accent)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    HStack(spacing: 6) {
+                        Image(systemName: "bolt")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(AppTheme.accent)
 
-                    Text("(\(scanLabel))")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(AppTheme.secondaryText)
-                }
+                        Text("(\(scanLabel))")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(AppTheme.secondaryText)
+                    }
 
-                Button(action: onAccountTap) {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(AppTheme.primaryText)
+                    if let onAccountTap {
+                        Button(action: onAccountTap) {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(AppTheme.primaryText)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .buttonStyle(.plain)
 
                 Button(action: onMenuTap) {
                     Image(systemName: "line.3.horizontal")
@@ -185,7 +216,7 @@ struct KinexTopBar: View {
     }
 
     private func loadScanLabelIfNeeded() async {
-        guard !hasLoadedQuota else { return }
+        guard !hasLoadedQuota, !appState.isGuestMode else { return }
         hasLoadedQuota = true
 
         guard let user = try? await appState.environment.userRepository.getCurrentUser() else {
