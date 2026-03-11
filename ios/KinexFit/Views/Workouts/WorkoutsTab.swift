@@ -357,6 +357,14 @@ struct WorkoutsTab: View {
     // MARK: - Sync Operations
 
     private func updateSyncStatus() {
+        guard !appState.isGuestMode else {
+            pendingCount = 0
+            failedCount = 0
+            syncStatus = .idle
+            showSyncBanner = false
+            return
+        }
+
         do {
             pendingCount = try syncEngine.getPendingCount()
             failedCount = try syncEngine.getFailedCount()
@@ -384,6 +392,15 @@ struct WorkoutsTab: View {
 
     private func triggerSync() async {
         guard !isSyncing else { return }
+        guard !appState.isGuestMode else {
+            isSyncing = false
+            pendingCount = 0
+            failedCount = 0
+            syncStatus = .idle
+            showSyncBanner = false
+            await loadWorkouts()
+            return
+        }
 
         isSyncing = true
         syncStatus = .syncing

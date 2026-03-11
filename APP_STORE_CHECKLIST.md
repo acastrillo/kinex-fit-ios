@@ -1,189 +1,51 @@
 # App Store Submission Checklist - Kinex Fit iOS
 
-**Target Submission Date:** TBD  
-**Status:** In Progress
+**Status:** In progress  
+**Last Updated:** 2026-03-07
 
----
+## Repo Changes
 
-## 🟢 Functional Readiness
+- [x] Remove any iOS-exposed Stripe web checkout / external digital purchase path
+- [x] Keep web subscription management limited to existing Stripe subscribers
+- [x] Add `com.apple.developer.healthkit` to release entitlements
+- [x] Add `com.apple.developer.healthkit` to debug entitlements
+- [x] Add share extension `PrivacyInfo.xcprivacy`
+- [x] Declare extension UserDefaults access reason `CA92.1`
+- [x] Remove `"API access (coming soon)"` from the paywall
+- [x] Apply iOS file protection to local SQLite database files
+- [x] Regenerate Xcode project from `ios/project.yml`
 
-### Core Features
-- [x] Workout creation and library
-- [x] Workout timer (multiple modes)
-- [x] Personal records tracking
-- [x] Body metrics logging
-- [x] Calendar scheduling
-- [x] Training profile customization
-- [x] Push notifications for scheduled workouts
-- [ ] Streak tracking UI (TODO)
-- [ ] Muscle group analytics (TODO)
-- [ ] Premium tier paywall (StoreKit 2 - TODO)
-- [ ] Weekly workout plans (premium - TODO)
+## Build And Test
 
-### Testing Checklist
-- [ ] iOS 15+ device testing
-- [ ] iPad compatibility check
-- [ ] Offline functionality test
-- [ ] Network sync test (WiFi → Cellular)
-- [ ] Payment flow test (sandbox)
-- [ ] Notification delivery verification
-- [ ] Camera/Photo library permissions
-- [ ] Health app integration (if used)
-- [ ] Crash/hang detection
+- [x] `xcodegen generate`
+- [x] Focused simulator tests for changed areas
+- [x] Release iOS build with `CODE_SIGNING_ALLOWED=NO`
+- [x] Full simulator suite green
+- [x] Unsigned release archive with `CODE_SIGNING_ALLOWED=NO`
+- [ ] Signed archive from Xcode with production signing
 
----
+## Manual Device Verification
 
-## 🔐 Privacy & Compliance
+- [ ] Confirm HealthKit capability is enabled on the Apple Developer App ID
+- [ ] Test HealthKit permission prompt on physical iPhone
+- [ ] Save a workout to HealthKit on device
+- [ ] Save a body metric to HealthKit on device
+- [ ] Verify paywall shows retry/error state only when StoreKit products fail to load
+- [ ] Verify no web purchase CTA appears anywhere in iOS
+- [ ] Verify Stripe-sourced subscriber only sees "Manage Web Subscription"
+- [ ] Verify share extension import works for supported share sources on device
+- [ ] Confirm local database files are created and protected on device
 
-### Privacy Documentation
-- [ ] Privacy Policy (include AI usage)
-- [ ] Terms of Service
-- [ ] Data handling statement
-- [ ] GDPR compliance verified
-- [ ] CCPA compliance verified
-- [ ] Health data handling documented (if applicable)
+## Commerce And Review Readiness
 
-### Declarations
-- [ ] App Tracking Transparency (ATT) declaration
-- [ ] Encryption export compliance (if applicable)
-- [ ] Age rating questionnaire completed
-- [ ] Content rating submitted
+- [ ] Sandbox/TestFlight purchase validation passes end to end
+- [ ] Restore purchases flow verified
+- [ ] Export compliance answers completed in App Store Connect
+- [ ] Review notes updated to mention web subscription management is for existing web subscribers only
+- [ ] Privacy Policy URL confirmed
+- [ ] Terms of Service URL confirmed
 
-### Security
-- [ ] API keys not in code
-- [ ] Secrets in environment variables
-- [ ] SSL pinning (if applicable)
-- [ ] Data encryption in transit
-- [ ] Secure local storage
+## Deferred Follow-Up
 
----
-
-## 📦 App Store Assets
-
-### Required
-- [ ] App Name (finalized)
-- [ ] App Description (160 characters)
-- [ ] Subtitle (30 characters)
-- [ ] Keywords (100 characters)
-- [ ] Support URL
-- [ ] Privacy Policy URL
-- [ ] Screenshot 1 (Home/Dashboard)
-- [ ] Screenshot 2 (Workout Creation)
-- [ ] Screenshot 3 (Workout Timer)
-- [ ] Screenshot 4 (Personal Records)
-- [ ] Screenshot 5 (Calendar)
-
-### Optional
-- [ ] Preview video (30 seconds)
-- [ ] App icon (1024x1024)
-- [ ] Support email
-- [ ] Marketing URL
-- [ ] Demo account credentials
-
----
-
-## 🔨 Build & Technical
-
-### Xcode Configuration
-- [ ] Deployment target: iOS 15.0+
-- [ ] Team ID correct
-- [ ] Bundle ID correct
-- [ ] Signing certificate valid
-- [ ] Provisioning profile current
-- [ ] Build number incremented
-- [ ] Version number: X.Y.Z format
-
-### Code Cleanup
-- [ ] Remove debug logging
-- [ ] Remove test data
-- [ ] Remove commented code
-- [ ] No compiler warnings
-- [ ] No TODOs in main code
-- [ ] Memory leak check
-- [ ] Performance profiling
-
-### Dependencies
-- [ ] CocoaPods/SPM dependencies current
-- [ ] No security vulnerabilities
-- [ ] License compliance checked
-- [ ] Binary frameworks stripped
-
----
-
-## 🧪 Testing on TestFlight
-
-- [ ] Build uploaded to TestFlight
-- [ ] Testers invited (internal + beta)
-- [ ] 48 hours minimum test period
-- [ ] Critical bugs fixed
-- [ ] User feedback addressed
-- [ ] Crash logs reviewed
-- [ ] Performance acceptable
-
----
-
-## 🎬 Pre-Submission
-
-### Final Verification
-- [ ] Read App Store guidelines (full)
-- [ ] Verify all features compliant
-- [ ] Check against app rejection reasons
-- [ ] Ensure no private APIs used
-- [ ] Verify notification handling
-- [ ] Test on oldest/newest iOS versions
-- [ ] Test on smallest/largest devices
-
-### Metadata
-- [ ] Accurate description of features
-- [ ] No misleading claims
-- [ ] Accurate age rating
-- [ ] Correct category
-- [ ] Accurate keywords
-- [ ] Contact info valid
-
----
-
-## 📋 App Review Submission
-
-- [ ] App information complete
-- [ ] Pricing set (free or paid)
-- [ ] Availability region selected
-- [ ] Review notes completed
-- [ ] Contact info provided
-- [ ] Demo account provided (if applicable)
-- [ ] Submission notes (any special setup)
-
----
-
-## ✅ After Submission
-
-- [ ] Monitor review status daily
-- [ ] Prepare response to review team questions
-- [ ] Have hotfix branch ready
-- [ ] Monitor crash reports
-- [ ] Prepare analytics dashboard
-- [ ] Set up support email handling
-- [ ] Prepare marketing announcement
-
----
-
-## Status by Ticket
-
-| # | Task | Status | Priority |
-|---|------|--------|----------|
-| 47 | App Store Assets | ⏳ TODO | HIGH |
-| 63 | App Store Submission | ⏳ TODO | HIGH |
-| 1-31 | Core Features | ✅ DONE | - |
-| 66 | Push Notifications | ✅ DONE | - |
-
----
-
-**Notes:**
-- Streak tracking (#TODO) needed before launch
-- Muscle group analytics nice-to-have
-- StoreKit 2 (#45) needed for premium tier
-- Plan for 1-2 week TestFlight period
-- App Store review typically 24-48 hours
-
-**Last Updated:** 2026-03-02  
-**Next Review:** After premium tier implementation
+- [ ] StoreKit server validation migration to `Transaction.jwsRepresentation`
+- [ ] SQLCipher / encrypted-at-rest database migration

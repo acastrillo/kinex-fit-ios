@@ -148,12 +148,15 @@ final class UserRepository {
         logger.debug("Onboarding marked complete")
     }
 
-    /// Clear all user data (for sign out)
+    /// Clear all user-scoped local data.
     func clear() async throws {
         _ = try await database.dbQueue.write { db in
-            try User.deleteAll(db)
+            try Workout.deleteAll(db)
+            try db.execute(sql: "DELETE FROM body_metrics")
+            try db.execute(sql: "DELETE FROM sync_queue")
+            return try User.deleteAll(db)
         }
-        logger.debug("User data cleared")
+        logger.debug("User-scoped local data cleared")
     }
 
     /// Delete user account permanently

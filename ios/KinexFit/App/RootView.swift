@@ -4,10 +4,7 @@ struct RootView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var authViewModel: AuthViewModel
     @State private var showOnboarding = false
-
-    private var hasSeenImportOnboarding: Bool {
-        UserDefaults.standard.bool(forKey: "hasSeenImportOnboarding")
-    }
+    @AppStorage("hasSeenImportOnboarding") private var hasSeenImportOnboarding: Bool = false
 
     init(environment: AppEnvironment) {
         _authViewModel = StateObject(wrappedValue: AuthViewModel(
@@ -35,11 +32,13 @@ struct RootView: View {
                     // New user: show import-first onboarding before requiring sign-in.
                     ImportFirstOnboardingView(
                         onCompleted: {
-                            appState.enterGuestMode()
+                            Task {
+                                await appState.enterGuestMode()
+                            }
                         },
                         onSignInTapped: {
-                            // Drop back to SignInView by clearing guest mode flag
-                            // (hasSeenImportOnboarding is already set by ImportFirstOnboardingView)
+                            // Mark onboarding as seen so RootView routes to SignInView
+                            hasSeenImportOnboarding = true
                         }
                     )
                     .environmentObject(appState.guestModeManager)

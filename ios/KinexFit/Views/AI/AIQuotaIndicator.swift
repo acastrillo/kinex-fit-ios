@@ -158,7 +158,7 @@ struct AIUpgradePrompt: View {
 
 #Preview("Upgrade Prompt") {
     AIUpgradePrompt(currentTier: "free") {
-        print("Upgrade tapped")
+        // Upgrade action handled by parent
     }
     .padding()
 }

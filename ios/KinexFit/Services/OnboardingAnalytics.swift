@@ -90,6 +90,7 @@ final class OnboardingAnalytics {
     func track(_ event: OnboardingEvent) {
         // Log to console during development.
         // Replace with your analytics backend (Amplitude, Mixpanel, PostHog, etc.).
+        #if DEBUG
         var message = "[Analytics] \(event.name)"
         if !event.properties.isEmpty {
             let props = event.properties
@@ -99,6 +100,7 @@ final class OnboardingAnalytics {
             message += " | \(props)"
         }
         print(message)
+        #endif
 
         // TODO: Forward to analytics backend when integrated.
         // AnalyticsBackend.shared.logEvent(name: event.name, properties: event.properties)

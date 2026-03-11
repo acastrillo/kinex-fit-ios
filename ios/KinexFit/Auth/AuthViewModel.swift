@@ -82,7 +82,11 @@ final class AuthViewModel: ObservableObject {
                 logger.error("Failed to load user: \(error.localizedDescription)")
             }
 
-            // Have tokens but no user - try to refresh
+            // Have tokens but no user in database - orphaned session (e.g., from uninstall/reinstall)
+            logger.info("Found token but no user in database - clearing orphaned session")
+            await authService.clearSessionLocally()
+
+            // Try to refresh anyway in case tokens are still valid
             do {
                 try await authService.refreshTokens()
                 if let user = try await userRepository.getCurrentUser() {
@@ -93,7 +97,7 @@ final class AuthViewModel: ObservableObject {
                     return
                 }
             } catch {
-                logger.warning("Token refresh failed: \(error.localizedDescription)")
+                logger.warning("Token refresh failed after orphaned session detected: \(error.localizedDescription)")
             }
         }
 

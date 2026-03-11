@@ -269,7 +269,7 @@ struct FetchStateView: View {
 
     FetchStateView(
         state: .fetched(mockWorkout),
-        onProcessAndEdit: { _ in print("Process & Edit") },
+        onProcessAndEdit: { _ in },
         onRetry: { },
         onShowPaywall: nil,
         onReauthenticate: nil
@@ -282,7 +282,7 @@ struct FetchStateView: View {
     FetchStateView(
         state: .error(.invalidURL),
         onProcessAndEdit: { _ in },
-        onRetry: { print("Retry") },
+        onRetry: { },
         onShowPaywall: nil,
         onReauthenticate: nil
     )

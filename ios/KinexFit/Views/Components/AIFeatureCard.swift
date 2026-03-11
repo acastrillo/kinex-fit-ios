@@ -389,7 +389,7 @@ struct WorkoutOfTheWeekSection: View {
 #Preview {
     VStack {
         AIFeatureCard {
-            print("Generate tapped")
+            // Action handled by parent view
         }
     }
     .padding()

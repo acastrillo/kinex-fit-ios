@@ -77,7 +77,7 @@ struct InstagramQuotaIndicator: View {
 
 #Preview("Quota Exceeded") {
     InstagramQuotaIndicator(used: 10, limit: 10) {
-        print("Upgrade tapped")
+        // Upgrade action handled by parent
     }
     .padding()
     .preferredColorScheme(.dark)

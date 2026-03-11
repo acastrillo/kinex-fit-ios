@@ -38,6 +38,7 @@ struct SignInResponse: Decodable {
         let firstName: String?
         let lastName: String?
         let subscriptionTier: String
+        let subscriptionSource: String?
         let onboardingCompleted: Bool
 
         func toUser() -> User {
@@ -49,12 +50,17 @@ struct SignInResponse: Decodable {
                 lastName: lastName,
                 subscriptionTier: tier,
                 subscriptionStatus: .active,
+                subscriptionExpiresAt: nil,
                 scanQuotaUsed: 0,
                 scanQuotaLimit: tier.defaultScanLimit,
                 aiQuotaUsed: 0,
                 aiQuotaLimit: tier.defaultAILimit,
                 onboardingCompleted: onboardingCompleted,
-                updatedAt: Date()
+                role: nil,
+                updatedAt: Date(),
+                skipOnboardingAt: nil,
+                onboardingCompletedStep: nil,
+                subscriptionSource: subscriptionSource.flatMap { SubscriptionSource(rawValue: $0) }
             )
         }
     }

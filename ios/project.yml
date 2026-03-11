@@ -32,6 +32,7 @@ targets:
         excludes:
           - Info.plist
           - KinexFitShareExtension.entitlements
+          - KinexFitShareExtension.Debug.entitlements
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kinex.fit.shareextension

@@ -18,6 +18,9 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<!-- AUTO-FIX: Added NSPhotoLibraryUsageDescription — extension activates on images but had no usage string. -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Kinex Fit needs photo library access to import workout screenshots and analyze them.</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>

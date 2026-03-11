@@ -20,9 +20,54 @@ struct User: Codable, Equatable, Identifiable {
     var updatedAt: Date
     var skipOnboardingAt: Date?
     var onboardingCompletedStep: Int?
+    var subscriptionSource: SubscriptionSource?
     var preferredTheme: AppThemeMode = .system
     var enableNotificationSound: Bool = true
     var enableNotificationHaptics: Bool = true
+
+    init(
+        id: String,
+        email: String,
+        firstName: String? = nil,
+        lastName: String? = nil,
+        subscriptionTier: SubscriptionTier,
+        subscriptionStatus: SubscriptionStatus? = nil,
+        subscriptionExpiresAt: Date? = nil,
+        scanQuotaUsed: Int,
+        scanQuotaLimit: Int,
+        aiQuotaUsed: Int,
+        aiQuotaLimit: Int,
+        onboardingCompleted: Bool,
+        role: UserRole? = nil,
+        updatedAt: Date,
+        skipOnboardingAt: Date? = nil,
+        onboardingCompletedStep: Int? = nil,
+        subscriptionSource: SubscriptionSource? = nil,
+        preferredTheme: AppThemeMode = .system,
+        enableNotificationSound: Bool = true,
+        enableNotificationHaptics: Bool = true
+    ) {
+        self.id = id
+        self.email = email
+        self.firstName = firstName
+        self.lastName = lastName
+        self.subscriptionTier = subscriptionTier
+        self.subscriptionStatus = subscriptionStatus
+        self.subscriptionExpiresAt = subscriptionExpiresAt
+        self.scanQuotaUsed = scanQuotaUsed
+        self.scanQuotaLimit = scanQuotaLimit
+        self.aiQuotaUsed = aiQuotaUsed
+        self.aiQuotaLimit = aiQuotaLimit
+        self.onboardingCompleted = onboardingCompleted
+        self.role = role
+        self.updatedAt = updatedAt
+        self.skipOnboardingAt = skipOnboardingAt
+        self.onboardingCompletedStep = onboardingCompletedStep
+        self.subscriptionSource = subscriptionSource
+        self.preferredTheme = preferredTheme
+        self.enableNotificationSound = enableNotificationSound
+        self.enableNotificationHaptics = enableNotificationHaptics
+    }
 
     var displayName: String {
         if let firstName, !firstName.isEmpty {
@@ -80,6 +125,11 @@ enum SubscriptionStatus: String, Codable {
     case trialing
 }
 
+enum SubscriptionSource: String, Codable {
+    case apple
+    case stripe
+}
+
 enum UserRole: String, Codable {
     case user
     case admin
@@ -120,6 +170,7 @@ extension User: FetchableRecord, PersistableRecord {
         case updatedAt
         case skipOnboardingAt
         case onboardingCompletedStep
+        case subscriptionSource
         case preferredTheme
         case enableNotificationSound
         case enableNotificationHaptics
@@ -142,6 +193,7 @@ extension User: FetchableRecord, PersistableRecord {
         updatedAt = row[Columns.updatedAt]
         skipOnboardingAt = row[Columns.skipOnboardingAt]
         onboardingCompletedStep = row[Columns.onboardingCompletedStep]
+        subscriptionSource = (row[Columns.subscriptionSource] as String?).flatMap { SubscriptionSource(rawValue: $0) }
         let themeStr = row[Columns.preferredTheme] as String? ?? "system"
         preferredTheme = AppThemeMode(rawValue: themeStr) ?? .system
         enableNotificationSound = row[Columns.enableNotificationSound] ?? true
@@ -164,6 +216,7 @@ extension User: FetchableRecord, PersistableRecord {
         container[Columns.updatedAt] = updatedAt
         container[Columns.skipOnboardingAt] = skipOnboardingAt
         container[Columns.onboardingCompletedStep] = onboardingCompletedStep
+        container[Columns.subscriptionSource] = subscriptionSource?.rawValue
         container[Columns.preferredTheme] = preferredTheme.rawValue
         container[Columns.enableNotificationSound] = enableNotificationSound
         container[Columns.enableNotificationHaptics] = enableNotificationHaptics

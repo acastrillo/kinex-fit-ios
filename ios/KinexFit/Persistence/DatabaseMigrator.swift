@@ -203,6 +203,14 @@ struct DatabaseMigratorFactory {
             }
         }
 
+        migrator.registerMigration("add-user-subscription-source") { db in
+            let existingColumns = Set(try db.columns(in: "users").map(\.name))
+            guard !existingColumns.contains("subscriptionSource") else { return }
+            try db.alter(table: "users") { table in
+                table.add(column: "subscriptionSource", .text)
+            }
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

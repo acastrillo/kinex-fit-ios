@@ -105,13 +105,21 @@ final class AppState: ObservableObject {
     // MARK: - Guest Mode
 
     /// Enter guest mode after completing import-first onboarding without signing in.
-    func enterGuestMode() {
+    func enterGuestMode() async {
+        // Guest mode should always start in the local library tab and should not
+        // inherit a stale authenticated workspace from a prior session.
+        selectedMainTab = .library
+        pendingWorkoutCardNavigation = nil
+        pendingInstagramWorkout = nil
+        showInstagramEditSheet = false
+        await environment.authService.clearSessionLocally()
         isGuestMode = true
     }
 
     /// Exit guest mode (e.g., user signed in). Resets guest counters.
     func exitGuestMode() {
         isGuestMode = false
+        selectedMainTab = .home
         guestModeManager.reset()
     }
 }

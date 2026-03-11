@@ -11,9 +11,8 @@ struct PaywallView: View {
     @State private var loadingTier: SubscriptionTier?
     @State private var isManagingSubscriptions = false
     @State private var isRestoringPurchases = false
-    @State private var isOpeningWebCheckout = false
     @State private var isSyncingWebSubscription = false
-    @State private var pendingWebCheckoutTier: SubscriptionTier?
+    @State private var storeKitLoadFailed = false
     @State private var errorMessage: String?
     @State private var showError = false
 
@@ -29,9 +28,8 @@ struct PaywallView: View {
         currentTier != .free
     }
 
-    private var shouldOfferWebCheckoutFallback: Bool {
-        guard let storeManager else { return true }
-        return !storeManager.isLoading && storeManager.products.isEmpty
+    private var userHasWebSubscription: Bool {
+        user?.subscriptionSource == .stripe
     }
 
     var body: some View {
@@ -149,12 +147,25 @@ struct PaywallView: View {
                 .foregroundStyle(AppTheme.secondaryText)
                 .multilineTextAlignment(.center)
 
-            if shouldOfferWebCheckoutFallback {
-                Text("App Store checkout is currently unavailable on this device. You can continue securely in web checkout.")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(AppTheme.warning)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 4)
+            if storeKitLoadFailed {
+                VStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.circle")
+                            .foregroundStyle(AppTheme.warning)
+                        Text("Subscription options couldn't be loaded.")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(AppTheme.warning)
+                    }
+                    Button {
+                        Task { await loadStoreProducts() }
+                    } label: {
+                        Text("Retry")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(AppTheme.accent)
+                    }
+                    .disabled(storeManager?.isLoading == true)
+                }
+                .padding(.top, 4)
             }
         }
         .padding(.top, 4)
@@ -274,29 +285,7 @@ struct PaywallView: View {
                     }
                     .disabled(isManagingSubscriptions)
                 } else if isUpgrade {
-                    if shouldOfferWebCheckoutFallback {
-                        Button {
-                            Task { await startWebCheckout(for: tier.tier) }
-                        } label: {
-                            HStack(spacing: 6) {
-                                if isLoading || isOpeningWebCheckout || isSyncingWebSubscription {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                        .tint(.white)
-                                }
-                                Text("Continue in Web Checkout")
-                            }
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(tier.isPopular ? AppTheme.accent : AppTheme.accent.opacity(0.85))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .shadow(color: tier.isPopular ? AppTheme.accent.opacity(0.3) : .clear,
-                                    radius: tier.isPopular ? 12 : 0, y: 4)
-                        }
-                        .disabled(isLoading || isOpeningWebCheckout || isSyncingWebSubscription)
-                    } else {
+                    if !storeKitLoadFailed {
                         Button {
                             Task { await startPurchase(for: tier.tier) }
                         } label: {
@@ -371,7 +360,7 @@ struct PaywallView: View {
             }
             .disabled(isRestoringPurchases)
 
-            if shouldOfferWebCheckoutFallback && hasPaidPlan {
+            if userHasWebSubscription {
                 Button {
                     Task { await openManageSubscriptions() }
                 } label: {
@@ -381,7 +370,7 @@ struct PaywallView: View {
                                 .controlSize(.small)
                                 .tint(AppTheme.accent)
                         }
-                        Text("Manage Billing on Web")
+                        Text("Manage Web Subscription")
                     }
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(AppTheme.accent)
@@ -412,6 +401,7 @@ struct PaywallView: View {
     private func loadStoreProducts() async {
         guard let storeManager else { return }
         await storeManager.loadProducts()
+        storeKitLoadFailed = storeManager.products.isEmpty
     }
 
     // MARK: - StoreKit Actions
@@ -456,7 +446,7 @@ struct PaywallView: View {
         isManagingSubscriptions = true
         defer { isManagingSubscriptions = false }
 
-        if shouldOfferWebCheckoutFallback {
+        if userHasWebSubscription {
             await openWebBillingPortal()
             return
         }
@@ -487,47 +477,6 @@ struct PaywallView: View {
 
         await storeManager.restorePurchases()
         await loadUser()
-    }
-
-    private func startWebCheckout(for tier: SubscriptionTier) async {
-        guard tier != .free else { return }
-        guard let environment = AppState.shared?.environment else {
-            errorMessage = "Subscription service is unavailable. Please try again."
-            showError = true
-            return
-        }
-
-        isOpeningWebCheckout = true
-        pendingWebCheckoutTier = tier
-        defer { isOpeningWebCheckout = false }
-
-        do {
-            let request = try APIRequest.json(
-                path: "/api/stripe/checkout",
-                method: .post,
-                body: WebCheckoutRequest(
-                    tier: tier.rawValue,
-                    billingPeriod: "monthly",
-                    returnContext: "mobile"
-                )
-            )
-            let response: StripeSessionResponse = try await environment.apiClient.send(request)
-            guard let url = URL(string: response.url) else {
-                errorMessage = "Unable to open checkout. Please try again."
-                showError = true
-                return
-            }
-
-            let opened = await openExternalURL(url)
-            if !opened {
-                errorMessage = "Unable to open checkout in Safari."
-                showError = true
-            }
-        } catch {
-            logger.error("Web checkout failed: \(error.localizedDescription, privacy: .public)")
-            errorMessage = error.localizedDescription
-            showError = true
-        }
     }
 
     private func openWebBillingPortal() async {
@@ -569,44 +518,26 @@ struct PaywallView: View {
         }
 
         let action = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")).lowercased()
-        switch action {
-        case "success":
-            await syncSubscriptionFromServer(expectedTier: pendingWebCheckoutTier)
-        case "cancel":
-            pendingWebCheckoutTier = nil
-            errorMessage = "Web checkout was canceled."
-            showError = true
-        case "manage-return":
-            await syncSubscriptionFromServer(expectedTier: nil)
-        default:
-            break
+        if action == "manage-return" {
+            await syncSubscriptionFromServer()
         }
     }
 
-    private func syncSubscriptionFromServer(expectedTier: SubscriptionTier?) async {
+    private func syncSubscriptionFromServer() async {
         guard let environment = AppState.shared?.environment else { return }
 
         isSyncingWebSubscription = true
-        defer {
-            isSyncingWebSubscription = false
-            pendingWebCheckoutTier = nil
-        }
+        defer { isSyncingWebSubscription = false }
 
         // Poll briefly because Stripe webhooks may arrive after redirect.
         for attempt in 0..<6 {
             do {
                 if let updatedUser = try await environment.userRepository.refreshSubscriptionFromServer() {
                     user = updatedUser
-                    if let expectedTier {
-                        if updatedUser.subscriptionTier.sortOrder >= expectedTier.sortOrder {
-                            return
-                        }
-                    } else {
-                        return
-                    }
+                    return
                 }
             } catch {
-                logger.error("Subscription refresh failed after web checkout: \(error.localizedDescription, privacy: .public)")
+                logger.error("Subscription refresh failed after portal return: \(error.localizedDescription, privacy: .public)")
             }
 
             if attempt < 5 {
@@ -639,12 +570,6 @@ struct PaywallView: View {
         }
         return product.displayPrice
     }
-}
-
-private struct WebCheckoutRequest: Encodable {
-    let tier: String
-    let billingPeriod: String
-    let returnContext: String
 }
 
 private struct WebReturnContextRequest: Encodable {
@@ -727,7 +652,6 @@ private struct TierDefinition: Identifiable {
                 "Priority support (24-hour response)",
                 "Early access to new features",
                 "Custom workout templates",
-                "API access (coming soon)",
                 "Workout sharing"
             ]
         )

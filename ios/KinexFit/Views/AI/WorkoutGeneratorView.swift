@@ -304,7 +304,7 @@ struct WorkoutGeneratorView: View {
 
 #Preview {
     WorkoutGeneratorView { title, content in
-        print("Generated: \(title)")
+        // Generated workout handled by parent view
     }
     .environmentObject(AppState(environment: .preview))
 }

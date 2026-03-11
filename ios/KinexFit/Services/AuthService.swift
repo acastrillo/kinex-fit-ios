@@ -145,6 +145,18 @@ final class AuthService {
         }
     }
 
+    /// Clears local auth/session state without hitting the network.
+    /// Used when the app needs a clean guest workspace immediately.
+    func clearSessionLocally() async {
+        do {
+            try tokenStore.clearAll()
+            try await clearLocalUser()
+            logger.info("Local auth session cleared")
+        } catch {
+            logger.error("Failed to clear local auth session: \(error.localizedDescription)")
+        }
+    }
+
     // MARK: - Session Check
 
     /// Check if the user has a valid session

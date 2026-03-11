@@ -611,7 +611,7 @@ final class ExerciseLibraryMatcher {
                            "single arm farmer carry"],
         "Sandbag Lunge": ["sandbag lunge", "sandbag lunges", "sandbag carry lunge"],
         "Bear Crawl": ["bear crawl", "bear crawls"],
-        "Inchworm": ["inchworm", "inchworms"],
+        "Inchworm": ["inchworm", "inchworms", "inchworm walkout", "walk out"],
         "Turkish Get-Up": ["turkish get up", "tgu", "kettlebell get up", "turkish getup"],
 
         // ──────────────────────────────────────────────────────────────────────────────
@@ -630,7 +630,6 @@ final class ExerciseLibraryMatcher {
         // ──────────────────────────────────────────────────────────────────────────────
         // MOBILITY & ACCESSORY
         // ──────────────────────────────────────────────────────────────────────────────
-        "Inchworm": ["inchworm", "inchworm walkout", "walk out"],
         "Hip Circle": ["hip circle", "hip circles", "hip rotation"],
         "Deep Squat Hold": ["deep squat hold", "squat hold", "deep squat", "asian squat hold"],
         "Knee Hug": ["knee hug", "knee hugs", "single knee hug"],

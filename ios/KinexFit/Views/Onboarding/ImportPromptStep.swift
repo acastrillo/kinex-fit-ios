@@ -3,13 +3,18 @@ import PhotosUI
 import UniformTypeIdentifiers
 
 struct ImportPromptStep: View {
+    @EnvironmentObject private var appState: AppState
+
     let onImportCompleted: (CaptionParsedWorkout) -> Void
     let onSkip: () -> Void
 
+    @State private var showInstagramSheet = false
+    @State private var showImageSourceOptions = false
     @State private var showPhotosPicker = false
     @State private var showDocumentPicker = false
-    @State private var showPasteSheet = false
-    @State private var pasteText = ""
+    @State private var showManualInputSheet = false
+    @State private var instagramURL = ""
+    @State private var manualInputText = ""
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var parsedWorkout: CaptionParsedWorkout?
     @State private var extractionProgress: Double = 0
@@ -20,7 +25,14 @@ struct ImportPromptStep: View {
     @State private var processingStartTime: Date?
 
     private let textExtractor = TextExtractionService()
-    private let parser = CaptionImportParsingService()
+
+    private var parser: CaptionImportParsingService {
+        CaptionImportParsingService(apiClient: appState.environment.apiClient)
+    }
+
+    private var instagramFetchService: InstagramFetchService {
+        InstagramFetchService(apiClient: appState.environment.apiClient)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -38,7 +50,7 @@ struct ImportPromptStep: View {
                     .foregroundStyle(AppTheme.primaryText)
                     .multilineTextAlignment(.center)
 
-                Text("Import a screenshot or photo of any workout plan and we'll do the rest.")
+                Text("Import from Instagram, upload an image, or type it in and we'll do the rest.")
                     .font(.body)
                     .foregroundStyle(AppTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -50,63 +62,34 @@ struct ImportPromptStep: View {
 
             // Actions
             VStack(spacing: 14) {
-                // Primary: Import
-                Button(action: {
-                    OnboardingAnalytics.shared.track(.importAttemptStarted(source: "photo_picker"))
-                    showPhotosPicker = true
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "photo.on.rectangle.angled")
-                            .font(.system(size: 18))
-                        Text("Import from Photos")
-                            .font(.headline)
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(AppTheme.accent)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                importActionButton(
+                    title: "Instagram",
+                    systemImage: "camera.on.rectangle",
+                    isPrimary: true,
+                    accessibilityLabel: "Import workout from Instagram"
+                ) {
+                    OnboardingAnalytics.shared.track(.importAttemptStarted(source: "instagram_url"))
+                    instagramURL = ""
+                    showInstagramSheet = true
                 }
-                .accessibilityLabel("Import workout from photos")
 
-                // Secondary: Files
-                Button(action: {
-                    OnboardingAnalytics.shared.track(.importAttemptStarted(source: "file_picker"))
-                    showDocumentPicker = true
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "doc.fill")
-                            .font(.system(size: 18))
-                        Text("Import from Files")
-                            .font(.headline)
-                    }
-                    .foregroundStyle(AppTheme.accent)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(AppTheme.accent.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                importActionButton(
+                    title: "Upload Image",
+                    systemImage: "photo.on.rectangle.angled",
+                    accessibilityLabel: "Upload a workout image"
+                ) {
+                    showImageSourceOptions = true
                 }
-                .accessibilityLabel("Import workout from files")
 
-                // Paste text or link
-                Button(action: {
-                    OnboardingAnalytics.shared.track(.importAttemptStarted(source: "paste_text"))
-                    pasteText = ""
-                    showPasteSheet = true
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "doc.text")
-                            .font(.system(size: 18))
-                        Text("Paste Workout Text")
-                            .font(.headline)
-                    }
-                    .foregroundStyle(AppTheme.accent)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(AppTheme.accent.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                importActionButton(
+                    title: "Manual Input",
+                    systemImage: "keyboard",
+                    accessibilityLabel: "Type or paste workout text manually"
+                ) {
+                    OnboardingAnalytics.shared.track(.importAttemptStarted(source: "manual_input"))
+                    manualInputText = ""
+                    showManualInputSheet = true
                 }
-                .accessibilityLabel("Paste workout text or link")
 
                 // Skip
                 Button(action: {
@@ -132,18 +115,42 @@ struct ImportPromptStep: View {
             guard let newItem else { return }
             Task { await processPhoto(newItem) }
         }
+        .confirmationDialog("Upload Image", isPresented: $showImageSourceOptions, titleVisibility: .visible) {
+            Button("Photo Library") {
+                OnboardingAnalytics.shared.track(.importAttemptStarted(source: "photo_picker"))
+                showPhotosPicker = true
+            }
+
+            Button("Files") {
+                OnboardingAnalytics.shared.track(.importAttemptStarted(source: "file_picker"))
+                showDocumentPicker = true
+            }
+
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Choose where your workout image lives.")
+        }
         // Document picker (images)
         .sheet(isPresented: $showDocumentPicker) {
             DocumentPickerView(allowedTypes: [.image, .jpeg, .png, .heic]) { url in
                 Task { await processFile(url) }
             }
         }
-        // Paste text sheet
-        .sheet(isPresented: $showPasteSheet) {
-            PasteTextSheet(text: $pasteText) {
-                showPasteSheet = false
-                guard !pasteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-                Task { await processPastedText(pasteText) }
+        // Instagram URL sheet
+        .sheet(isPresented: $showInstagramSheet) {
+            InstagramURLSheet(urlText: $instagramURL) { url in
+                showInstagramSheet = false
+                guard !url.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                Task { await processInstagramURL(url) }
+            }
+            .presentationDetents([.medium])
+        }
+        // Manual input sheet
+        .sheet(isPresented: $showManualInputSheet) {
+            ManualInputSheet(text: $manualInputText) {
+                showManualInputSheet = false
+                guard !manualInputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                Task { await processManualInput(manualInputText) }
             }
             .presentationDetents([.medium, .large])
         }
@@ -179,10 +186,47 @@ struct ImportPromptStep: View {
 
     // MARK: - Processing
 
+    private func processInstagramURL(_ url: String) async {
+        processingStartTime = Date()
+        isProcessing = true
+        showProgressSheet = true
+        parsedWorkout = nil
+        extractionProgress = 0.15
+
+        do {
+            let fetchedWorkout = try await instagramFetchService.fetchAndParse(url: url)
+            extractionProgress = 0.7
+
+            var workout = fetchedWorkout.onboardingPreview
+            let normalizedContent = fetchedWorkout.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalizedSourceURL = fetchedWorkout.sourceURL.trimmingCharacters(in: .whitespacesAndNewlines)
+            if workout.exercises.isEmpty,
+               !normalizedContent.isEmpty {
+                workout = await parser.parseImportText(
+                    normalizedContent,
+                    sourceURL: normalizedSourceURL.isEmpty ? nil : normalizedSourceURL
+                )
+            }
+
+            extractionProgress = 1.0
+            parsedWorkout = workout
+        } catch let error as InstagramFetchError {
+            showProgressSheet = false
+            errorMessage = error.localizedDescription
+            showError = true
+        } catch {
+            showProgressSheet = false
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isProcessing = false
+    }
+
     private func processPhoto(_ item: PhotosPickerItem) async {
         processingStartTime = Date()
         isProcessing = true
         showProgressSheet = true
+        parsedWorkout = nil
         extractionProgress = 0.1
 
         do {
@@ -211,6 +255,7 @@ struct ImportPromptStep: View {
         processingStartTime = Date()
         isProcessing = true
         showProgressSheet = true
+        parsedWorkout = nil
         extractionProgress = 0.1
 
         let accessed = url.startAccessingSecurityScopedResource()
@@ -234,10 +279,11 @@ struct ImportPromptStep: View {
         isProcessing = false
     }
 
-    private func processPastedText(_ text: String) async {
+    private func processManualInput(_ text: String) async {
         processingStartTime = Date()
         isProcessing = true
         showProgressSheet = true
+        parsedWorkout = nil
         extractionProgress = 0.3
 
         let workout = await parser.parseImportText(text, sourceURL: nil)
@@ -245,11 +291,90 @@ struct ImportPromptStep: View {
         parsedWorkout = workout
         isProcessing = false
     }
+
+    private func importActionButton(
+        title: String,
+        systemImage: String,
+        isPrimary: Bool = false,
+        accessibilityLabel: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18))
+                Text(title)
+                    .font(.headline)
+            }
+            .foregroundStyle(isPrimary ? .white : AppTheme.accent)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(isPrimary ? AppTheme.accent : AppTheme.accent.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .accessibilityLabel(accessibilityLabel)
+    }
 }
 
-// MARK: - Paste text sheet
+// MARK: - Instagram URL sheet
 
-private struct PasteTextSheet: View {
+private struct InstagramURLSheet: View {
+    @Binding var urlText: String
+    let onAnalyze: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Paste a public Instagram post or reel URL and Kinex Fit will turn it into a workout draft.")
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.secondaryText)
+
+                TextField("instagram.com/p/... or instagram.com/reel/...", text: $urlText)
+                    .textContentType(.URL)
+                    .keyboardType(.URL)
+                    .autocapitalization(.none)
+                    .autocorrectionDisabled()
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 14)
+                    .background(AppTheme.accent.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .foregroundStyle(AppTheme.primaryText)
+
+                Button {
+                    onAnalyze(urlText.trimmingCharacters(in: .whitespacesAndNewlines))
+                } label: {
+                    Text("Analyze Instagram")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                ? AppTheme.secondaryText
+                                : AppTheme.accent
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .disabled(urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                Spacer()
+            }
+            .padding(20)
+            .navigationTitle("Instagram")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Manual input sheet
+
+private struct ManualInputSheet: View {
     @Binding var text: String
     let onAnalyze: () -> Void
     @Environment(\.dismiss) private var dismiss
@@ -257,7 +382,7 @@ private struct PasteTextSheet: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Paste your workout below — a screenshot caption, a program description, or any exercise list.")
+                Text("Type or paste your workout below — a screenshot caption, a program description, or any exercise list.")
                     .font(.subheadline)
                     .foregroundStyle(AppTheme.secondaryText)
 
@@ -283,7 +408,7 @@ private struct PasteTextSheet: View {
                 Spacer()
             }
             .padding(20)
-            .navigationTitle("Paste Workout Text")
+            .navigationTitle("Manual Input")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

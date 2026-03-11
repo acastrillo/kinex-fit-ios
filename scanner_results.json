@@ -1,0 +1,408 @@
+{
+  "project": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios",
+  "total_findings": 44,
+  "by_severity": {
+    "CRITICAL": 38,
+    "HIGH": 2,
+    "MEDIUM": 0,
+    "LOW": 4
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/KinexFitShareExtension/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/KinexFitShareExtension/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKLoginKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKLoginKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/KinexFitShareExtension.appex/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/KinexFitShareExtension.appex/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBAEMKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBAEMKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKCoreKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKCoreKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKCoreKit_Basics.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKCoreKit_Basics.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBAEMKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBAEMKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKLoginKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKLoginKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKCoreKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKCoreKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKCoreKit_Basics.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKCoreKit_Basics.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKLoginKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKLoginKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/KinexFitShareExtension.appex/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/KinexFitShareExtension.appex/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBAEMKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBAEMKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKCoreKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKCoreKit.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKCoreKit_Basics.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKCoreKit_Basics.framework/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBAEMKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBAEMKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKLoginKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKLoginKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKCoreKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKCoreKit.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSPhotoLibraryUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKCoreKit_Basics.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses PHPhotoLibrary but NSPhotoLibraryUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSPhotoLibraryUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "appstore",
+      "title": "Missing usage description: NSHealthShareUsageDescription",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKCoreKit_Basics.framework.dSYM/Contents/Info.plist",
+      "line": null,
+      "detail": "Code uses HKHealthStore but NSHealthShareUsageDescription is not in Info.plist.",
+      "recommendation": "Add NSHealthShareUsageDescription to Info.plist with a clear user-facing explanation. Missing usage descriptions cause crashes when the permission is requested."
+    },
+    {
+      "severity": "HIGH",
+      "category": "privacy",
+      "title": "UserDefaults used but not declared in PrivacyInfo.xcprivacy",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphoneos/FBSDKLoginKit.framework/PrivacyInfo.xcprivacy",
+      "line": null,
+      "detail": "UserDefaults is a required reason API. Its use must be declared in the privacy manifest.",
+      "recommendation": "Add an entry to NSPrivacyAccessedAPITypes: NSPrivacyAccessedAPIType = 'NSPrivacyAccessedAPICategoryUserDefaults' with the appropriate reason code (CA92.1 for the most common case)."
+    },
+    {
+      "severity": "HIGH",
+      "category": "privacy",
+      "title": "UserDefaults used but not declared in PrivacyInfo.xcprivacy",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/build/Debug-iphonesimulator/FBSDKLoginKit.framework/PrivacyInfo.xcprivacy",
+      "line": null,
+      "detail": "UserDefaults is a required reason API. Its use must be declared in the privacy manifest.",
+      "recommendation": "Add an entry to NSPrivacyAccessedAPITypes: NSPrivacyAccessedAPIType = 'NSPrivacyAccessedAPICategoryUserDefaults' with the appropriate reason code (CA92.1 for the most common case)."
+    },
+    {
+      "severity": "LOW",
+      "category": "security",
+      "title": "Keychain used but keychain-access-groups not in entitlements",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/Kinex Fit.Debug.entitlements",
+      "line": null,
+      "detail": "Keychain APIs are used in the codebase but keychain-access-groups entitlement was not found.",
+      "recommendation": "This may be fine if using the default access group, but explicit group configuration is recommended for clarity and future app extensions."
+    },
+    {
+      "severity": "LOW",
+      "category": "security",
+      "title": "Keychain used but keychain-access-groups not in entitlements",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/Kinex Fit.entitlements",
+      "line": null,
+      "detail": "Keychain APIs are used in the codebase but keychain-access-groups entitlement was not found.",
+      "recommendation": "This may be fine if using the default access group, but explicit group configuration is recommended for clarity and future app extensions."
+    },
+    {
+      "severity": "LOW",
+      "category": "security",
+      "title": "Keychain used but keychain-access-groups not in entitlements",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/KinexFitShareExtension/KinexFitShareExtension.Debug.entitlements",
+      "line": null,
+      "detail": "Keychain APIs are used in the codebase but keychain-access-groups entitlement was not found.",
+      "recommendation": "This may be fine if using the default access group, but explicit group configuration is recommended for clarity and future app extensions."
+    },
+    {
+      "severity": "LOW",
+      "category": "security",
+      "title": "Keychain used but keychain-access-groups not in entitlements",
+      "file": "/Users/alejo/dev/Kinex Fit Project/kinex-fit-ios/ios/KinexFitShareExtension/KinexFitShareExtension.entitlements",
+      "line": null,
+      "detail": "Keychain APIs are used in the codebase but keychain-access-groups entitlement was not found.",
+      "recommendation": "This may be fine if using the default access group, but explicit group configuration is recommended for clarity and future app extensions."
+    }
+  ]
+}

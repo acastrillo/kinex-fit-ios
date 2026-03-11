@@ -81,7 +81,7 @@ private struct FeatureChip: View {
 
 #Preview {
     AIGeneratorCard {
-        print("Generate tapped")
+        // Action handled by parent view
     }
     .padding()
     .preferredColorScheme(.dark)

@@ -192,7 +192,7 @@ final class WorkoutRepository {
     func create(_ workout: Workout) async throws -> Workout {
         // Guest mode: enforce 3-save limit before writing to DB.
         if let guestManager = await MainActor.run(body: { AppState.shared?.guestModeManager }),
-           await MainActor.run(body: { AppState.shared?.isGuestMode }) == true {
+           await isGuestModeEnabled() {
             let canSave = await MainActor.run { guestManager.canSaveWorkout() }
             guard canSave else {
                 throw GuestLimitError.workoutSaveLimitReached
@@ -210,11 +210,12 @@ final class WorkoutRepository {
             try finalWorkout.insert(db)
         }
 
-        // Queue for sync
-        try queueSync(workout: finalWorkout, operation: .create)
+        if await shouldSyncWithBackend() {
+            try queueSync(workout: finalWorkout, operation: .create)
+        }
 
         // Guest mode: record successful save toward the limit.
-        if await MainActor.run(body: { AppState.shared?.isGuestMode }) == true {
+        if await isGuestModeEnabled() {
             await MainActor.run { AppState.shared?.guestModeManager.recordWorkoutSave() }
         }
 
@@ -235,8 +236,9 @@ final class WorkoutRepository {
             try finalWorkout.update(db)
         }
 
-        // Queue for sync
-        try queueSync(workout: finalWorkout, operation: .update)
+        if await shouldSyncWithBackend() {
+            try queueSync(workout: finalWorkout, operation: .update)
+        }
 
         logger.info("Updated workout: \(finalWorkout.id)")
         return finalWorkout
@@ -248,10 +250,12 @@ final class WorkoutRepository {
             try Workout.deleteOne(db, key: id)
         }
 
-        if deleted {
+        if deleted, await shouldSyncWithBackend() {
             // Queue for sync
             try queueSync(workoutId: id, operation: .delete)
             logger.info("Deleted workout: \(id)")
+        } else if deleted {
+            logger.info("Deleted workout locally in guest mode: \(id)")
         }
     }
 
@@ -267,11 +271,15 @@ final class WorkoutRepository {
             }
         }
 
-        if deletedCount > 0 {
+        if deletedCount > 0, await shouldSyncWithBackend() {
             // Queue sync operations for deleted IDs
             for id in ids {
                 try queueSync(workoutId: id, operation: .delete)
                 logger.info("Deleted workout: \(id)")
+            }
+        } else if deletedCount > 0 {
+            for id in ids {
+                logger.info("Deleted workout locally in guest mode: \(id)")
             }
         }
     }
@@ -536,6 +544,14 @@ final class WorkoutRepository {
         case create
         case update
         case delete
+    }
+
+    private func isGuestModeEnabled() async -> Bool {
+        await MainActor.run { AppState.shared?.isGuestMode == true }
+    }
+
+    private func shouldSyncWithBackend() async -> Bool {
+        !(await isGuestModeEnabled())
     }
 
     private func queueSync(workout: Workout, operation: SyncOperation) throws {

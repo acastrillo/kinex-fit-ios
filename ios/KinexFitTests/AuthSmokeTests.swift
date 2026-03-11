@@ -1157,6 +1157,152 @@ final class AuthSmokeTests: XCTestCase {
         XCTAssertEqual(requestCount, 2)
     }
 
+    func testInstagramFetchResponseDecodesFlexiblePayloadShapes() throws {
+        let payload = """
+        {
+          "url": "https://www.instagram.com/reel/abc123",
+          "title": "Leg Day",
+          "content": "Heavy lower-body session",
+          "author_name": "Coach Alex",
+          "image_url": "https://example.com/cover.jpg",
+          "timestamp": 1741020000,
+          "media_type": "carousel",
+          "quota_used": "3",
+          "quota_limit": 10,
+          "parsed_workout": {
+            "title": "Leg Day",
+            "workout_type": "strength",
+            "rows": [
+              { "exercise": "Back Squat", "sets": "5", "reps": 5, "notes": "heavy" },
+              { "exerciseName": "Walking Lunge", "sets": 3, "reps": "12" }
+            ],
+            "structure": {
+              "type": "rounds",
+              "rounds": "2"
+            },
+            "used_llm": "true"
+          }
+        }
+        """
+
+        let response = try JSONCoding.apiDecoder().decode(
+            InstagramFetchResponse.self,
+            from: Data(payload.utf8)
+        )
+
+        XCTAssertEqual(response.author?.fullName, "Coach Alex")
+        XCTAssertEqual(response.author?.username, "coachalex")
+        XCTAssertEqual(response.image, "https://example.com/cover.jpg")
+        XCTAssertEqual(response.quotaUsed, 3)
+        XCTAssertEqual(response.quotaLimit, 10)
+        XCTAssertEqual(response.parsedWorkout?.exercises?.count, 2)
+        XCTAssertEqual(response.parsedWorkout?.exercises?.first?.sets, 5)
+        XCTAssertEqual(response.parsedWorkout?.exercises?.first?.reps, "5")
+        XCTAssertEqual(response.parsedWorkout?.structure?.rounds, 2)
+        XCTAssertEqual(response.parsedWorkout?.usedLLM, true)
+    }
+
+    func testFetchedWorkoutOnboardingPreviewUsesStructuredInstagramExercises() {
+        let fetchResponse = InstagramFetchResponse(
+            url: "https://www.instagram.com/reel/abc123",
+            title: "Leg Day Blast",
+            content: "Heavy lower-body session",
+            author: nil,
+            stats: nil,
+            image: nil,
+            timestamp: "2026-03-09T12:00:00Z",
+            mediaType: "image",
+            parsedWorkout: nil,
+            scanQuotaUsed: nil,
+            scanQuotaLimit: nil,
+            quotaUsed: nil,
+            quotaLimit: nil
+        )
+        let ingestResponse = WorkoutIngestResponse(
+            title: "Leg Day Blast",
+            workoutType: "strength",
+            exercises: [],
+            rows: [
+                WorkoutRow(exercise: "Back Squat", sets: 5, reps: "5", weight: nil, notes: nil),
+                WorkoutRow(exercise: "Plank", sets: 3, reps: "60s", weight: nil, notes: nil)
+            ],
+            summary: nil,
+            breakdown: nil,
+            structure: WorkoutStructure(
+                type: "rounds",
+                timeLimit: nil,
+                rounds: 2,
+                interval: nil,
+                work: nil,
+                rest: "90s"
+            ),
+            amrapBlocks: nil,
+            emomBlocks: nil,
+            usedLLM: true,
+            workoutV1: nil
+        )
+
+        let preview = FetchedWorkout(from: fetchResponse, ingestResponse: ingestResponse).onboardingPreview
+
+        XCTAssertEqual(preview.sourceType, .instagram)
+        XCTAssertEqual(preview.exercises.count, 2)
+        XCTAssertEqual(preview.exercises[0].sets, 5)
+        XCTAssertEqual(preview.exercises[0].reps, 5)
+        XCTAssertEqual(preview.exercises[1].duration, 60)
+        XCTAssertEqual(preview.rounds, 2)
+        XCTAssertEqual(preview.restBetweenSets, "90s")
+    }
+
+    @MainActor
+    func testEnterGuestModeClearsSessionAndSelectsLibraryTab() async throws {
+        let environment = AppEnvironment.preview
+        let appState = AppState(environment: environment)
+        appState.guestModeManager.reset()
+
+        try environment.tokenStore.setAccessToken("guest-access-token")
+        try environment.tokenStore.setRefreshToken("guest-refresh-token")
+
+        try await environment.userRepository.save(.preview)
+        _ = try await environment.workoutRepository.create(
+            Workout(title: "Previously Synced Workout", source: .manual)
+        )
+
+        appState.selectedMainTab = .home
+
+        await appState.enterGuestMode()
+
+        let guestWorkouts = try await environment.workoutRepository.fetchAll()
+        let currentUser = try await environment.userRepository.getCurrentUser()
+
+        XCTAssertTrue(appState.isGuestMode)
+        XCTAssertEqual(appState.selectedMainTab, .library)
+        XCTAssertNil(environment.tokenStore.accessToken)
+        XCTAssertNil(environment.tokenStore.refreshToken)
+        XCTAssertNil(currentUser)
+        XCTAssertTrue(guestWorkouts.isEmpty)
+        XCTAssertEqual(try environment.syncEngine.getPendingCount(), 0)
+    }
+
+    @MainActor
+    func testGuestWorkoutCreateSavesLocallyWithoutQueueingSync() async throws {
+        let environment = AppEnvironment.preview
+        let appState = AppState(environment: environment)
+        appState.guestModeManager.reset()
+
+        await appState.enterGuestMode()
+
+        let savedWorkout = try await environment.workoutRepository.create(
+            Workout(title: "Guest Local Workout", content: "3 rounds\\n10 squats", source: .manual)
+        )
+
+        let workouts = try await environment.workoutRepository.fetchAll()
+
+        XCTAssertEqual(workouts.count, 1)
+        XCTAssertEqual(workouts.first?.id, savedWorkout.id)
+        XCTAssertEqual(try environment.syncEngine.getPendingCount(), 0)
+        XCTAssertEqual(appState.guestModeManager.workoutsSaved, 1)
+    }
+
     func testInstagramFetchMapsSourceAuthenticationConstraintFromErrorBody() async throws {
         let tokenStore = InMemoryTokenStore()
         try tokenStore.setAccessToken("source-auth-access-token")
@@ -1609,7 +1755,7 @@ private final class MockURLProtocol: URLProtocol {
         }
 
         do {
-            let (response, data) = try requestHandler(request)
+            let (response, data) = try requestHandler(Self.materializedRequestBody(from: request))
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: data)
             client?.urlProtocolDidFinishLoading(self)
@@ -1622,6 +1768,34 @@ private final class MockURLProtocol: URLProtocol {
 
     static func reset() {
         requestHandler = nil
+    }
+
+    private static func materializedRequestBody(from request: URLRequest) -> URLRequest {
+        guard request.httpBody == nil, let stream = request.httpBodyStream else {
+            return request
+        }
+
+        var request = request
+        request.httpBody = readAllBytes(from: stream)
+        return request
+    }
+
+    private static func readAllBytes(from stream: InputStream) -> Data {
+        stream.open()
+        defer { stream.close() }
+
+        var data = Data()
+        let bufferSize = 1024
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+        defer { buffer.deallocate() }
+
+        while stream.hasBytesAvailable {
+            let count = stream.read(buffer, maxLength: bufferSize)
+            guard count > 0 else { break }
+            data.append(buffer, count: count)
+        }
+
+        return data
     }
 }
 
