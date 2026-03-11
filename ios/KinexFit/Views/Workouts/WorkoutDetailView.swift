@@ -953,7 +953,15 @@ struct WorkoutContentPresentation {
             output = output.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
         }
 
-        return output
+        guard !output.isEmpty else { return output }
+
+        // Normalize through ExerciseLibraryMatcher for canonical display names
+        let matcher = ExerciseLibraryMatcher(additionalCatalog: FreeExerciseDBLoader.loadCatalog())
+        return matcher.resolveExercise(
+            name: output,
+            authoritativeHints: [],
+            captionContext: .unspecified
+        ).displayName
     }
 
     private static func inferDurationMinutes(

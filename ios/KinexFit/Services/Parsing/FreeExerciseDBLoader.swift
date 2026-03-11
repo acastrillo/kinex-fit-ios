@@ -41,15 +41,15 @@ enum FreeExerciseDBLoader {
     /// Returns an alias catalog suitable for `ExerciseLibraryMatcher(additionalCatalog:)`.
     /// Returns an empty dictionary if the JSON file is not found in the bundle.
     static func loadCatalog() -> [String: [String]] {
-        guard let url = Bundle.main.url(forResource: "free-exercise-db", withExtension: "json") else {
-            freeExerciseDBLogger.info("free-exercise-db.json not found in bundle — using built-in catalog only.")
+        guard let url = Bundle.main.url(forResource: "exercises", withExtension: "json") else {
+            freeExerciseDBLogger.info("exercises.json not found in bundle — using built-in catalog only.")
             return [:]
         }
 
         do {
             let data = try Data(contentsOf: url)
             let entries = try JSONDecoder().decode([Entry].self, from: data)
-            freeExerciseDBLogger.info("Loaded \(entries.count) exercises from free-exercise-db.json")
+            freeExerciseDBLogger.info("Loaded \(entries.count) exercises from exercises.json")
             return buildCatalog(from: entries)
         } catch {
             freeExerciseDBLogger.error("Failed to load free-exercise-db.json: \(error.localizedDescription, privacy: .public)")

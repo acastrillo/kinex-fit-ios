@@ -28,8 +28,8 @@ struct OCRResultView: View {
         self.onSave = onSave
         self.onDiscard = onDiscard
 
-        // Parse the OCR text
-        let parsed = WorkoutTextParser.parse(ocrResponse.text)
+        // Parse the OCR text with structured exercise extraction
+        let parsed = WorkoutTextParser.parseStructured(ocrResponse.text)
         _title = State(initialValue: parsed.title)
         _content = State(initialValue: parsed.content)
     }

@@ -171,6 +171,47 @@ struct WorkoutTextParser {
             confidence: nil
         )
     }
+
+    /// Structured parse that routes OCR text through CaptionParser + ExerciseLibraryMatcher
+    /// for proper exercise extraction and name normalization.
+    static func parseStructured(_ text: String) -> ParsedWorkout {
+        let draft = CaptionParser().parseCaptionText(text)
+        let matcher = ExerciseLibraryMatcher(additionalCatalog: FreeExerciseDBLoader.loadCatalog())
+
+        let title = draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "Scanned Workout"
+            : draft.title
+
+        let contentLines: [String] = draft.exercises.map { exercise in
+            let resolved = matcher.resolveExercise(
+                name: exercise.name,
+                authoritativeHints: [],
+                captionContext: .unspecified
+            )
+            let name = resolved.displayName
+
+            if let sets = exercise.sets, let reps = exercise.reps {
+                return "\(sets)x\(reps) \(name)"
+            } else if let reps = exercise.reps {
+                return "\(reps) \(name)"
+            } else if let sets = exercise.sets {
+                return "\(sets)x \(name)"
+            } else if let duration = exercise.duration {
+                return "\(duration)s \(name)"
+            } else {
+                return name
+            }
+        }
+
+        let content = contentLines.joined(separator: "\n")
+
+        return ParsedWorkout(
+            title: title,
+            content: content.isEmpty ? text : content,
+            rawText: text,
+            confidence: draft.confidence
+        )
+    }
 }
 
 struct ParsedWorkout {
