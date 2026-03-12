@@ -20,11 +20,6 @@ final class AuthViewModel: ObservableObject {
     private let emailPasswordAuthService: EmailPasswordAuthService
     private var cancellables = Set<AnyCancellable>()
 
-    #if DEBUG
-    /// Enable dev mode to bypass authentication (DEBUG builds only)
-    @Published var devModeEnabled: Bool = false
-    #endif
-
     init(authService: AuthService, userRepository: UserRepository, workoutRepository: WorkoutRepository, googleSignInManager: GoogleSignInManager, facebookSignInManager: FacebookSignInManager, emailPasswordAuthService: EmailPasswordAuthService) {
         self.authService = authService
         self.userRepository = userRepository
@@ -57,15 +52,6 @@ final class AuthViewModel: ObservableObject {
     /// Check for existing session on app launch
     func checkExistingSession() async {
         logger.info("Checking existing session")
-
-        #if DEBUG
-        // Dev mode bypass - automatically sign in with mock user
-        if devModeEnabled {
-            logger.info("Dev mode enabled - bypassing authentication")
-            authState = .signedIn(User.devModeUser)
-            return
-        }
-        #endif
 
         if authService.hasValidSession {
             // Try to load user from local database
@@ -103,17 +89,6 @@ final class AuthViewModel: ObservableObject {
 
         authState = .signedOut
     }
-
-    // MARK: - Development Bypass
-
-    #if DEBUG
-    /// Bypass authentication for development (DEBUG builds only)
-    func bypassAuthForDevelopment() {
-        logger.info("Bypassing authentication for development")
-        devModeEnabled = true
-        authState = .signedIn(User.devModeUser)
-    }
-    #endif
 
     // MARK: - Sign In with Apple
 
@@ -411,23 +386,4 @@ extension User {
         )
     }
 
-    #if DEBUG
-    /// Mock user for development mode bypass
-    static var devModeUser: User {
-        User(
-            id: "dev-mode-user-id",
-            email: "dev@kinexfit.local",
-            firstName: "Dev",
-            lastName: "User",
-            subscriptionTier: .free,
-            subscriptionStatus: .active,
-            scanQuotaUsed: 0,
-            scanQuotaLimit: SubscriptionTier.free.defaultScanLimit,
-            aiQuotaUsed: 0,
-            aiQuotaLimit: SubscriptionTier.free.defaultAILimit,
-            onboardingCompleted: false,
-            updatedAt: Date()
-        )
-    }
-    #endif
 }

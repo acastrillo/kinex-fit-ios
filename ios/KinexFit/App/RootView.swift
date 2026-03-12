@@ -29,8 +29,8 @@ struct RootView: View {
                     // Legacy guest mode path — kept for backwards compatibility.
                     MainTabView(authViewModel: authViewModel)
                         .environmentObject(appState.guestModeManager)
-                } else if !hasSeenFeatureShowcase && !hasSeenImportOnboarding {
-                    // New user: show feature showcase before sign-in.
+                } else if !hasSeenFeatureShowcase {
+                    // First launch or just logged out — always show feature showcase.
                     FeatureShowcaseView {
                         hasSeenFeatureShowcase = true
                     }
@@ -52,7 +52,7 @@ struct RootView: View {
         .task {
             await authViewModel.checkExistingSession()
         }
-        .onChange(of: authViewModel.authState) { _, newState in
+        .onChange(of: authViewModel.authState) { oldState, newState in
             if case .signedIn(let user) = newState {
                 // User signed in — exit guest mode, reset guest counters.
                 appState.exitGuestMode()
@@ -62,6 +62,10 @@ struct RootView: View {
                 //   (b) user went through import-first onboarding as a guest
                 let didImportFirstOnboarding = UserDefaults.standard.bool(forKey: "hasSeenImportOnboarding")
                 showOnboarding = !user.onboardingCompleted && !didImportFirstOnboarding
+            } else if case .signedOut = newState, case .signedIn = oldState {
+                // User just logged out — reset feature showcase so it always
+                // appears as the first screen on the next sign-in attempt.
+                hasSeenFeatureShowcase = false
             }
         }
     }

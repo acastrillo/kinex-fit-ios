@@ -150,24 +150,6 @@ struct SignInView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                #if DEBUG
-                // Development bypass button (DEBUG builds only)
-                Button {
-                    viewModel.bypassAuthForDevelopment()
-                } label: {
-                    HStack {
-                        Image(systemName: "hammer.fill")
-                        Text("Continue as Dev User")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.orange)
-                    .foregroundStyle(.white)
-                    .cornerRadius(8)
-                }
-                .buttonStyle(.plain)
-                #endif
-
                 Text("By continuing, you agree to our Terms of Service and Privacy Policy")
                     .font(.caption)
                     .foregroundStyle(.secondary)
