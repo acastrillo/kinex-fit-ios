@@ -1,5 +1,63 @@
 import SwiftUI
 
+// MARK: - Importing Steps View
+
+private struct ImportingStepsView: View {
+    let progress: Double
+
+    private var stepLabel: String {
+        if progress >= 0.6 { return "Parsing exercises..." }
+        if progress >= 0.3 { return "Extracting workout..." }
+        return "Reading content..."
+    }
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "figure.strengthtraining.traditional")
+                .font(.system(size: 52))
+                .foregroundStyle(AppTheme.accent)
+                .symbolEffect(.pulse, options: .repeating)
+
+            Text(stepLabel)
+                .font(.headline)
+                .foregroundStyle(AppTheme.primaryText)
+                .animation(.easeInOut, value: stepLabel)
+
+            VStack(spacing: 14) {
+                parseStepRow("Reading content", isDone: progress >= 0.3, isActive: progress < 0.3)
+                parseStepRow("Extracting workout", isDone: progress >= 0.6, isActive: progress >= 0.3 && progress < 0.6)
+                parseStepRow("Parsing exercises", isDone: progress >= 1.0, isActive: progress >= 0.6 && progress < 1.0)
+            }
+            .padding(.horizontal, 32)
+        }
+    }
+
+    private func parseStepRow(_ label: String, isDone: Bool, isActive: Bool) -> some View {
+        HStack(spacing: 10) {
+            Group {
+                if isDone {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                } else if isActive {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                        .tint(AppTheme.accent)
+                } else {
+                    Image(systemName: "circle")
+                        .foregroundStyle(AppTheme.tertiaryText)
+                }
+            }
+            .frame(width: 20)
+
+            Text(label)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(isDone || isActive ? AppTheme.primaryText : AppTheme.tertiaryText)
+
+            Spacer()
+        }
+    }
+}
+
 struct ImportProgressView: View {
     let parsedWorkout: CaptionParsedWorkout?
     let progress: Double // 0.0 – 1.0
@@ -40,12 +98,7 @@ struct ImportProgressView: View {
 
                 if exercises.isEmpty && progress < 1 {
                     Spacer()
-                    VStack(spacing: 12) {
-                        ProgressView()
-                        Text("Reading your workout...")
-                            .font(.subheadline)
-                            .foregroundStyle(AppTheme.secondaryText)
-                    }
+                    ImportingStepsView(progress: progress)
                     Spacer()
                 } else if exercises.isEmpty && progress >= 1 {
                     Spacer()

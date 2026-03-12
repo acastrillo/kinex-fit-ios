@@ -216,23 +216,70 @@ struct ScanTab: View {
 // MARK: - Processing Overlay
 
 private struct ProcessingOverlay: View {
+    @State private var currentStep = 0
+
+    private let steps: [(String, String)] = [
+        ("photo", "Loading image"),
+        ("text.viewfinder", "Extracting text"),
+        ("list.bullet.clipboard", "Parsing workout"),
+    ]
+
     var body: some View {
         ZStack {
             Color(.systemBackground)
-                .opacity(0.9)
+                .opacity(0.92)
                 .ignoresSafeArea()
 
-            VStack(spacing: 20) {
-                ProgressView()
-                    .scaleEffect(1.5)
+            VStack(spacing: 24) {
+                Image(systemName: steps[currentStep].0)
+                    .font(.system(size: 48))
+                    .foregroundStyle(.blue)
+                    .symbolEffect(.pulse, options: .repeating)
+                    .animation(.easeInOut(duration: 0.3), value: currentStep)
 
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     Text("Processing Image")
                         .font(.headline)
 
                     Text("Extracting text from your workout...")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                }
+
+                VStack(spacing: 12) {
+                    ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+                        HStack(spacing: 10) {
+                            Group {
+                                if index < currentStep {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                } else if index == currentStep {
+                                    ProgressView()
+                                        .scaleEffect(0.7)
+                                        .tint(.blue)
+                                } else {
+                                    Image(systemName: "circle")
+                                        .foregroundStyle(.tertiary)
+                                }
+                            }
+                            .frame(width: 20)
+
+                            Text(step.1)
+                                .font(.system(size: 15))
+                                .foregroundStyle(index <= currentStep ? Color(.label) : .secondary)
+
+                            Spacer()
+                        }
+                    }
+                }
+                .padding(.horizontal, 48)
+            }
+        }
+        .task {
+            for i in 1..<steps.count {
+                try? await Task.sleep(nanoseconds: 1_200_000_000)
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    currentStep = i
                 }
             }
         }

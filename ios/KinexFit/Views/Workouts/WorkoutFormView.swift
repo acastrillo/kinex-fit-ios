@@ -209,6 +209,8 @@ struct WorkoutFormView: View {
             .overlay {
                 if isSaving {
                     savingOverlay
+                } else if isEnhancing {
+                    enhancingOverlay
                 }
             }
             .alert("Error", isPresented: $showingError) {
@@ -385,6 +387,30 @@ struct WorkoutFormView: View {
         }
         .padding(14)
         .kinexCard(cornerRadius: 16)
+    }
+
+    private var enhancingOverlay: some View {
+        ZStack {
+            AppTheme.background.opacity(0.82)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.purple)
+                    .symbolEffect(.pulse, options: .repeating)
+
+                VStack(spacing: 6) {
+                    Text("Enhancing with AI")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(AppTheme.primaryText)
+
+                    Text("Analyzing and improving your workout...")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+            }
+        }
     }
 
     private var savingOverlay: some View {

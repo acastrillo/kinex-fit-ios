@@ -55,23 +55,7 @@ struct FetchStateView: View {
     }
 
     private var fetchingView: some View {
-        VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.2)
-                .tint(AppTheme.accent)
-
-            Text("Fetching workout...")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(AppTheme.primaryText)
-
-            Text("This may take a few seconds")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(AppTheme.secondaryText)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 22)
-        .padding(.horizontal, 12)
-        .kinexCard(cornerRadius: 14, fill: AppTheme.background)
+        FetchingProgressCard()
     }
 
     private func successView(workout: FetchedWorkout) -> some View {
@@ -205,6 +189,78 @@ struct FetchStateView: View {
         .padding(.horizontal, 20)
         .kinexCard(cornerRadius: 14, fill: AppTheme.background)
     }
+}
+
+// MARK: - Fetching Progress Card
+
+private struct FetchingProgressCard: View {
+    @State private var currentStep = 0
+
+    private let steps: [(String, String)] = [
+        ("network", "Connecting to source"),
+        ("doc.text.magnifyingglass", "Fetching workout"),
+        ("list.bullet.clipboard", "Parsing exercises"),
+    ]
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: steps[currentStep].0)
+                .font(.system(size: 36))
+                .foregroundStyle(AppTheme.accent)
+                .symbolEffect(.pulse, options: .repeating)
+                .animation(.easeInOut(duration: 0.3), value: currentStep)
+
+            Text("Fetching workout...")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            VStack(spacing: 12) {
+                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+                    HStack(spacing: 10) {
+                        Group {
+                            if index < currentStep {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                            } else if index == currentStep {
+                                ProgressView()
+                                    .scaleEffect(0.7)
+                                    .tint(AppTheme.accent)
+                            } else {
+                                Image(systemName: "circle")
+                                    .foregroundStyle(AppTheme.tertiaryText)
+                            }
+                        }
+                        .frame(width: 20)
+
+                        Text(step.1)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(index <= currentStep ? AppTheme.primaryText : AppTheme.tertiaryText)
+
+                        Spacer()
+                    }
+                }
+            }
+            .padding(.horizontal, 8)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .padding(.horizontal, 16)
+        .kinexCard(cornerRadius: 14, fill: AppTheme.background)
+        .task {
+            for i in 1..<steps.count {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    currentStep = i
+                }
+            }
+        }
+    }
+}
+
+#Preview("Fetching Progress") {
+    FetchingProgressCard()
+        .padding()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Idle") {
