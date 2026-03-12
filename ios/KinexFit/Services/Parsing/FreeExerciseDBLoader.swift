@@ -38,6 +38,11 @@ enum FreeExerciseDBLoader {
 
     // MARK: - Public API
 
+    /// Shared matcher built from the bundled exercises.json — loaded once per app session.
+    /// Use this instead of calling `loadCatalog()` directly to avoid repeated disk I/O.
+    nonisolated(unsafe) static let sharedMatcher: ExerciseLibraryMatcher =
+        ExerciseLibraryMatcher(additionalCatalog: loadCatalog())
+
     /// Returns an alias catalog suitable for `ExerciseLibraryMatcher(additionalCatalog:)`.
     /// Returns an empty dictionary if the JSON file is not found in the bundle.
     static func loadCatalog() -> [String: [String]] {

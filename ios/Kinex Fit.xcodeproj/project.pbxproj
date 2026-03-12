@@ -140,6 +140,7 @@
 		E5D51B20867CC09DD6F32695 /* OnboardingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF893620505BAE35C7256D90 /* OnboardingCoordinator.swift */; };
 		E6A87C9974A854EA56A2F9B5 /* PersonalRecordsStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76F3DB38DFE5B706FBD45B71 /* PersonalRecordsStep.swift */; };
 		EA6484DD566023A8F81B71E1 /* TextExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADAEDB9542E072D7E9D8AD46 /* TextExtractionService.swift */; };
+		EC59B73E591970F8F10F59DC /* FeatureShowcaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46CD6C475EBA1AD65DE3F541 /* FeatureShowcaseView.swift */; };
 		EC6EAB0C234A8B2183AD2369 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153F7BD667E56BD45AF726B3 /* TokenStore.swift */; };
 		EDC43890ED7D0ABD8919F6CB /* EmailSignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A31F92DC98E3C9C46AA29B5 /* EmailSignInSheet.swift */; };
 		EE56C7325CA24C545F424F39 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98B3609FC75E9F43F3736D3 /* AuthService.swift */; };
@@ -224,6 +225,7 @@
 		4164C468BDAFD9E24B726F89 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		4208F10BD92B4361F00491C0 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4321971ED635AECEC974AD81 /* BodyMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetric.swift; sourceTree = "<group>"; };
+		46CD6C475EBA1AD65DE3F541 /* FeatureShowcaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureShowcaseView.swift; sourceTree = "<group>"; };
 		46E17EE4780932F90F49D90D /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		479A4A2D835B9A041507FD64 /* CompleteStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteStep.swift; sourceTree = "<group>"; };
 		48A19A0396A6C300C35C317A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -251,7 +253,7 @@
 		76F3DB38DFE5B706FBD45B71 /* PersonalRecordsStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalRecordsStep.swift; sourceTree = "<group>"; };
 		79B76C6F65A467AA43413079 /* GoalsStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsStep.swift; sourceTree = "<group>"; };
 		7DB2B6FE827306A1927D6844 /* AIFeatureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIFeatureCard.swift; sourceTree = "<group>"; };
-		7FFF4A221C3794EACAD55EE7 /* Kinex FitTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper; path = "Kinex FitTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		7FFF4A221C3794EACAD55EE7 /* Kinex FitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Kinex FitTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8022168EAE27B8511CAA1FB0 /* EquipmentStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentStep.swift; sourceTree = "<group>"; };
 		80750E8D8DEEE625DB511E13 /* PendingImportsBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingImportsBanner.swift; sourceTree = "<group>"; };
 		825D72F37813838DB5DDAEAA /* BackgroundSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSyncManager.swift; sourceTree = "<group>"; };
@@ -279,7 +281,7 @@
 		9E7B3BB42CA334B028B5839B /* GoogleSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignInManager.swift; sourceTree = "<group>"; };
 		9EC437FE4BC6C866C70C3723 /* WorkoutFilterManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutFilterManager.swift; sourceTree = "<group>"; };
 		9F60E54415F0ED89B8401793 /* WorkoutCardEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCardEditor.swift; sourceTree = "<group>"; };
-		A41D4084856AA0A62DCE9663 /* KinexFitShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.extensionkit-extension"; path = KinexFitShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A41D4084856AA0A62DCE9663 /* KinexFitShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KinexFitShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A716A6252F364A2AB2262CF9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A76D2854A7D8B38302EAF9F0 /* InstagramFetchError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramFetchError.swift; sourceTree = "<group>"; };
 		A825E2DF7800911492375643 /* NotificationPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPermissionView.swift; sourceTree = "<group>"; };
@@ -332,7 +334,7 @@
 		E64E69EEABBE3C2F0415076F /* TrendingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendingService.swift; sourceTree = "<group>"; };
 		E6CB60AD751B804BE2A2C48B /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
 		E9B6B62AD78C8C4D70F4A35B /* WatchConnectivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityManager.swift; sourceTree = "<group>"; };
-		EB23CEEA961D1DD0ADA29B25 /* Kinex Fit.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "Kinex Fit.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EB23CEEA961D1DD0ADA29B25 /* Kinex Fit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Kinex Fit.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDCF82EF1BF5C7505375EA3F /* InstagramImportTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramImportTab.swift; sourceTree = "<group>"; };
 		EEB6935973DE9D8BECF04594 /* CaptionParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionParsingTests.swift; sourceTree = "<group>"; };
 		F00F875A4D885F9BCEB75857 /* FacebookSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacebookSignInManager.swift; sourceTree = "<group>"; };
@@ -727,6 +729,7 @@
 				479A4A2D835B9A041507FD64 /* CompleteStep.swift */,
 				8022168EAE27B8511CAA1FB0 /* EquipmentStep.swift */,
 				0E35F674294F24184C7E00F0 /* ExperienceStep.swift */,
+				46CD6C475EBA1AD65DE3F541 /* FeatureShowcaseView.swift */,
 				79B76C6F65A467AA43413079 /* GoalsStep.swift */,
 				BA9BB51F40FFC0491BBFD663 /* ImportFirstOnboardingView.swift */,
 				C6ACEC604FB4B38A47367C37 /* ImportProgressView.swift */,
@@ -869,7 +872,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					3B3D53A186D9A415B6DF12C1 = {
 						DevelopmentTeam = J6G8H8EZWS;
@@ -980,6 +983,7 @@
 				AB57887EC159C9D24886D036 /* ExportService.swift in Sources */,
 				F848CF90121E12CFB7099FC0 /* FacebookSignInManager.swift in Sources */,
 				38F8976C6AD953C18BE4758B /* FeatureFlagService.swift in Sources */,
+				EC59B73E591970F8F10F59DC /* FeatureShowcaseView.swift in Sources */,
 				9AC617055E83790A07587064 /* FetchStateView.swift in Sources */,
 				7248258A5505B2CFBC403B01 /* FreeExerciseDBLoader.swift in Sources */,
 				3307AE96623C917EFAA1A64E /* GoalsStep.swift in Sources */,
@@ -1135,6 +1139,8 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J6G8H8EZWS;
+				GOOGLE_CLIENT_ID = "1066753979653-f8fhpmm03v0f14l8atl7eug7nomonea4.apps.googleusercontent.com";
+				GOOGLE_SERVER_CLIENT_ID = "1066753979653-srdnvnn7lvrdl3vnufsc5lsrsquf6dkv.apps.googleusercontent.com";
 				INFOPLIST_FILE = KinexFit/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1154,6 +1160,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -1188,6 +1195,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -1202,6 +1210,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -1213,6 +1222,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -1247,6 +1257,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1268,6 +1279,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -1302,6 +1314,8 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J6G8H8EZWS;
+				GOOGLE_CLIENT_ID = "1066753979653-f8fhpmm03v0f14l8atl7eug7nomonea4.apps.googleusercontent.com";
+				GOOGLE_SERVER_CLIENT_ID = "1066753979653-srdnvnn7lvrdl3vnufsc5lsrsquf6dkv.apps.googleusercontent.com";
 				INFOPLIST_FILE = KinexFit/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (

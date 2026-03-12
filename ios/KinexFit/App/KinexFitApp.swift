@@ -12,6 +12,13 @@ struct KinexFitApp: App {
                 .environmentObject(appState)
                 .environmentObject(appState.environment.notificationManager)
                 .appDarkTheme()
+                .task {
+                    // Warm up the exercise library matcher on a background thread so its
+                    // first access (parsing OCR results, workout detail view) is instant.
+                    Task.detached(priority: .utility) {
+                        _ = FreeExerciseDBLoader.sharedMatcher
+                    }
+                }
                 .onOpenURL { url in
                     if appDelegate.handleOAuthCallback(url: url) {
                         return

@@ -956,7 +956,7 @@ struct WorkoutContentPresentation {
         guard !output.isEmpty else { return output }
 
         // Normalize through ExerciseLibraryMatcher for canonical display names
-        let matcher = ExerciseLibraryMatcher(additionalCatalog: FreeExerciseDBLoader.loadCatalog())
+        let matcher = FreeExerciseDBLoader.sharedMatcher
         return matcher.resolveExercise(
             name: output,
             authoritativeHints: [],

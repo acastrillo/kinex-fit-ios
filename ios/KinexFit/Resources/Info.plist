@@ -48,15 +48,15 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>FacebookAppID</key>
-	<string>$(FACEBOOK_APP_ID)</string>
+	<string>3758257434481536</string>
 	<key>FacebookClientToken</key>
-	<string>$(FACEBOOK_CLIENT_TOKEN)</string>
+	<string>cc775e3dbf423313ebdbf86f3cb584c3</string>
 	<key>FacebookDisplayName</key>
 	<string>Kinex Fit</string>
 	<key>GIDClientID</key>
-	<string>$(GOOGLE_CLIENT_ID)</string>
+	<string>1066753979653-f8fhpmm03v0f14l8atl7eug7nomonea4.apps.googleusercontent.com</string>
 	<key>GIDServerClientID</key>
-	<string>$(GOOGLE_SERVER_CLIENT_ID)</string>
+	<string>1066753979653-srdnvnn7lvrdl3vnufsc5lsrsquf6dkv.apps.googleusercontent.com</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>

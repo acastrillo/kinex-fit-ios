@@ -41,6 +41,12 @@ final class FeatureFlagService: ObservableObject {
             defaultValue: true
         )
 
+        let emailPasswordAuthEnabled = boolValue(
+            in: merged,
+            keys: ["emailPasswordAuthEnabled", "email_password_auth_enabled", "emailAuthEnabled", "email_auth_enabled"],
+            defaultValue: false
+        )
+
         let shareImportEnabled = boolValue(
             in: merged,
             keys: ["shareExtensionImportEnabled", "share_extension_import_enabled", "shareImportEnabled", "shareImport"],
@@ -55,6 +61,7 @@ final class FeatureFlagService: ObservableObject {
 
         return AppFeatureFlags(
             facebookAuthEnabled: facebookEnabled,
+            emailPasswordAuthEnabled: emailPasswordAuthEnabled,
             shareExtensionImportEnabled: shareImportEnabled,
             pushActionRoutingEnabled: pushRoutingEnabled
         )

@@ -21,6 +21,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             logger.error("Unexpected Google Sign In launch configuration error: \(error.localizedDescription)")
         }
 
+        do {
+            try FacebookSignInManager.configureSharedInstanceForLaunch()
+        } catch let configError as FacebookSignInError {
+            logger.error("Facebook Sign In launch configuration error: \(configError.localizedDescription, privacy: .public)")
+        } catch {
+            logger.error("Unexpected Facebook Sign In launch configuration error: \(error.localizedDescription)")
+        }
+
         // Initialize Facebook SDK
         ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
 

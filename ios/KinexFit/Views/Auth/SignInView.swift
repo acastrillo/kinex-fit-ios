@@ -122,27 +122,33 @@ struct SignInView: View {
                     .buttonStyle(.plain)
                 }
 
-                // Email/Password Sign In
-                Button {
-                    showEmailSignIn = true
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "envelope.fill")
-                            .font(.system(size: 20))
-                        Text("Continue with Email")
-                            .font(.system(size: 16, weight: .semibold))
+                if appState.featureFlags.emailPasswordAuthEnabled {
+                    Button {
+                        showEmailSignIn = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "envelope.fill")
+                                .font(.system(size: 20))
+                            Text("Continue with Email")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color.white)
+                        .foregroundStyle(Color.black)
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.white)
-                    .foregroundStyle(Color.black)
-                    .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
+                    .buttonStyle(.plain)
+                } else {
+                    Text("Email/password sign in is temporarily unavailable on mobile.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
-                .buttonStyle(.plain)
 
                 #if DEBUG
                 // Development bypass button (DEBUG builds only)

@@ -20,6 +20,20 @@ enum PasswordValidationError: String, CaseIterable {
 
 /// Service for handling email/password authentication
 final class EmailPasswordAuthService {
+    private enum RequestContext {
+        case signIn
+        case signUp
+
+        var unavailableMessage: String {
+            switch self {
+            case .signIn:
+                return "Email/password sign in is temporarily unavailable on mobile. Please use Apple, Google, or Facebook."
+            case .signUp:
+                return "Email/password sign up is temporarily unavailable on mobile. Please use Apple, Google, or Facebook."
+            }
+        }
+    }
+
     private let apiClient: APIClient
     private let tokenStore: TokenStore
     private let database: AppDatabase
@@ -89,7 +103,7 @@ final class EmailPasswordAuthService {
             // Automatically sign in after successful signup
             return try await signIn(email: email, password: password)
         } catch let error as APIError {
-            throw mapAPIError(error)
+            throw mapAPIError(error, context: .signUp)
         } catch let error as AuthError {
             // Preserve domain-specific auth errors from automatic sign-in
             throw error
@@ -176,7 +190,7 @@ final class EmailPasswordAuthService {
             logger.info("Sign in successful")
             return user
         } catch let error as APIError {
-            throw mapAPIError(error)
+            throw mapAPIError(error, context: .signIn)
         } catch {
             logger.error("Sign in failed: \(error.localizedDescription)")
             throw AuthError.networkError(error)
@@ -261,7 +275,26 @@ final class EmailPasswordAuthService {
         }
     }
 
-    private func mapAPIError(_ error: APIError) -> AuthError {
+    private func mapAPIError(_ error: APIError, context: RequestContext) -> AuthError {
+        if case .httpStatus(let code, let data) = error {
+            if let backendError = parseBackendError(from: data) {
+                switch backendError.code?.uppercased() {
+                case "EMAIL_EXISTS":
+                    return .emailAlreadyExists
+                case "WEAK_PASSWORD":
+                    return .weakPassword
+                default:
+                    break
+                }
+
+                if let message = backendError.message?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !message.isEmpty,
+                   code != 404 {
+                    return .serverError(message)
+                }
+            }
+        }
+
         switch error {
         case .httpStatus(400, _):
             return .serverError("Invalid request. Please check your information and try again.")
@@ -270,7 +303,7 @@ final class EmailPasswordAuthService {
         case .httpStatus(403, _):
             return .emailNotVerified
         case .httpStatus(404, _):
-            return .serverError("Authentication endpoint not found. Please update the app and try again.")
+            return .serverError(context.unavailableMessage)
         case .httpStatus(429, _):
             return .rateLimited(retryAfter: 60)
         case .httpStatus(409, _):
@@ -282,5 +315,10 @@ final class EmailPasswordAuthService {
         default:
             return .unknown
         }
+    }
+
+    private func parseBackendError(from data: Data?) -> APIErrorResponse? {
+        guard let data, !data.isEmpty else { return nil }
+        return try? JSONCoding.apiDecoder().decode(APIErrorResponse.self, from: data)
     }
 }

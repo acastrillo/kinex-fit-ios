@@ -1664,6 +1664,99 @@ final class AuthSmokeTests: XCTestCase {
         XCTAssertNotNil(encodedWorkout["createdAt"] as? String)
         XCTAssertNotNil(encodedWorkout["updatedAt"] as? String)
     }
+
+    func testLiveAPIBaseURLUsesWWWHost() {
+        XCTAssertEqual(AppConfig.apiBaseURL.absoluteString, "https://www.kinexfit.com")
+    }
+
+    func testEmailPasswordSignIn404ReturnsMobileUnavailableMessage() async throws {
+        let database = try AppDatabase.inMemory()
+        let tokenStore = InMemoryTokenStore()
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+
+        let service = EmailPasswordAuthService(
+            apiClient: APIClient(baseURL: AppConfig.apiBaseURL, tokenStore: tokenStore, session: session),
+            tokenStore: tokenStore,
+            database: database
+        )
+
+        MockURLProtocol.requestHandler = { request in
+            guard let url = request.url else {
+                throw TestFailure("Missing request URL")
+            }
+
+            XCTAssertEqual(url.path, "/api/mobile/auth/signin-credentials")
+
+            let response = HTTPURLResponse(
+                url: url,
+                statusCode: 404,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+
+            return (response, Data("{\"error\":\"Not Found\"}".utf8))
+        }
+
+        do {
+            _ = try await service.signIn(email: "user@example.com", password: "Password1!")
+            XCTFail("Expected sign in to fail")
+        } catch let error as AuthError {
+            XCTAssertEqual(
+                error.localizedDescription,
+                "Email/password sign in is temporarily unavailable on mobile. Please use Apple, Google, or Facebook."
+            )
+        }
+    }
+
+    func testEmailPasswordSignUp404ReturnsMobileUnavailableMessage() async throws {
+        let database = try AppDatabase.inMemory()
+        let tokenStore = InMemoryTokenStore()
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+
+        let service = EmailPasswordAuthService(
+            apiClient: APIClient(baseURL: AppConfig.apiBaseURL, tokenStore: tokenStore, session: session),
+            tokenStore: tokenStore,
+            database: database
+        )
+
+        MockURLProtocol.requestHandler = { request in
+            guard let url = request.url else {
+                throw TestFailure("Missing request URL")
+            }
+
+            XCTAssertEqual(url.path, "/api/mobile/auth/signup")
+
+            let response = HTTPURLResponse(
+                url: url,
+                statusCode: 404,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+
+            return (response, Data("{\"error\":\"Not Found\"}".utf8))
+        }
+
+        do {
+            _ = try await service.signUp(
+                email: "user@example.com",
+                password: "Password1!",
+                firstName: "Test",
+                lastName: "User"
+            )
+            XCTFail("Expected sign up to fail")
+        } catch let error as AuthError {
+            XCTAssertEqual(
+                error.localizedDescription,
+                "Email/password sign up is temporarily unavailable on mobile. Please use Apple, Google, or Facebook."
+            )
+        }
+    }
 }
 
 final class WorkoutRoundsParsingTests: XCTestCase {

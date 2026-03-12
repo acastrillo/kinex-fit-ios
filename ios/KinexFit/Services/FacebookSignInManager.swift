@@ -1,8 +1,15 @@
 import Foundation
+import FacebookCore
 import FacebookLogin
 import OSLog
+import UIKit
 
 private let logger = Logger(subsystem: "com.kinex.fit", category: "FacebookSignInManager")
+
+private struct FacebookSDKConfiguration {
+    let appID: String
+    let clientToken: String
+}
 
 /// Result from successful Facebook Sign In
 struct FacebookSignInResult {
@@ -14,6 +21,9 @@ struct FacebookSignInResult {
 
 /// Errors that can occur during Facebook Sign In
 enum FacebookSignInError: Error, LocalizedError {
+    case missingAppID
+    case missingClientToken
+    case missingURLScheme(expectedScheme: String)
     case noRootViewController
     case noAccessToken
     case noEmailPermission
@@ -22,6 +32,12 @@ enum FacebookSignInError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
+        case .missingAppID:
+            return "Facebook Sign In is not configured correctly"
+        case .missingClientToken:
+            return "Facebook Sign In is missing its client token"
+        case .missingURLScheme(let expectedScheme):
+            return "Facebook Sign In callback URL scheme is missing (\(expectedScheme))"
         case .noRootViewController:
             return "Unable to present Facebook Sign In"
         case .noAccessToken:
@@ -41,11 +57,24 @@ enum FacebookSignInError: Error, LocalizedError {
 final class FacebookSignInManager {
     private let loginManager = LoginManager()
 
+    nonisolated static func configureSharedInstanceForLaunch() throws {
+        let configuration = try resolveConfiguration()
+        Settings.shared.appID = configuration.appID
+        Settings.shared.clientToken = configuration.clientToken
+    }
+
     /// Sign in with Facebook
     /// - Returns: FacebookSignInResult containing access token and user info
     /// - Throws: FacebookSignInError if sign in fails
     func signIn() async throws -> FacebookSignInResult {
         logger.info("Starting Facebook Sign In")
+
+        do {
+            try Self.configureSharedInstanceForLaunch()
+        } catch let configError as FacebookSignInError {
+            logger.error("Facebook Sign In configuration error: \(configError.localizedDescription, privacy: .public)")
+            throw configError
+        }
 
         // Get the root view controller (must be on main thread)
         guard let rootViewController = getRootViewController() else {
@@ -115,6 +144,57 @@ final class FacebookSignInManager {
         }
 
         return windowScene.windows.first?.rootViewController
+    }
+
+    nonisolated private static func resolveConfiguration() throws -> FacebookSDKConfiguration {
+        guard let appID = resolvedInfoPlistValue(forKey: "FacebookAppID") else {
+            throw FacebookSignInError.missingAppID
+        }
+
+        let expectedScheme = "fb\(appID)"
+        guard hasURLScheme(expectedScheme) else {
+            throw FacebookSignInError.missingURLScheme(expectedScheme: expectedScheme)
+        }
+
+        guard let clientToken = resolvedInfoPlistValue(forKey: "FacebookClientToken") else {
+            throw FacebookSignInError.missingClientToken
+        }
+
+        return FacebookSDKConfiguration(
+            appID: appID,
+            clientToken: clientToken
+        )
+    }
+
+    nonisolated private static func resolvedInfoPlistValue(forKey key: String) -> String? {
+        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
+            return nil
+        }
+
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty, !value.contains("$(") else {
+            return nil
+        }
+
+        return value
+    }
+
+    nonisolated private static func hasURLScheme(_ expectedScheme: String) -> Bool {
+        guard let urlTypes = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] else {
+            return false
+        }
+
+        for urlType in urlTypes {
+            guard let schemes = urlType["CFBundleURLSchemes"] as? [String] else {
+                continue
+            }
+
+            if schemes.contains(where: { $0.caseInsensitiveCompare(expectedScheme) == .orderedSame }) {
+                return true
+            }
+        }
+
+        return false
     }
 
     nonisolated private func fetchUserProfile(accessToken: String) async throws -> FacebookSignInResult {

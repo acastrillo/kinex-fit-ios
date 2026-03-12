@@ -10,12 +10,14 @@ final class CaptionImportParsingService {
     private let instagramFetchService: InstagramFetchService?
     private let backendTimeoutNanoseconds: UInt64
 
+    /// When true, backend enrichment calls (pass 2 & 3) are skipped entirely.
+    /// Automatically set when the `APIClient` has no auth token (e.g. guest/onboarding mode).
+    private let skipBackendCalls: Bool
+
     init(
         apiClient: APIClient? = nil,
         parser: CaptionParser = CaptionParser(),
-        matcher: ExerciseLibraryMatcher = ExerciseLibraryMatcher(
-            additionalCatalog: FreeExerciseDBLoader.loadCatalog()
-        ),
+        matcher: ExerciseLibraryMatcher = FreeExerciseDBLoader.sharedMatcher,
         backendTimeoutNanoseconds: UInt64 = 450_000_000
     ) {
         self.apiClient = apiClient
@@ -23,6 +25,7 @@ final class CaptionImportParsingService {
         self.matcher = matcher
         self.instagramFetchService = apiClient.map { InstagramFetchService(apiClient: $0) }
         self.backendTimeoutNanoseconds = backendTimeoutNanoseconds
+        self.skipBackendCalls = apiClient?.tokenStore.accessToken == nil
     }
 
     func parseImportText(_ text: String, sourceURL: String?) async -> CaptionParsedWorkout {
@@ -69,7 +72,7 @@ final class CaptionImportParsingService {
             localParsed.parsingConfidence = min(localParsed.parsingConfidence, 0.3)
         }
 
-        guard let instagramFetchService else {
+        guard let instagramFetchService, !skipBackendCalls else {
             return localParsed
         }
 

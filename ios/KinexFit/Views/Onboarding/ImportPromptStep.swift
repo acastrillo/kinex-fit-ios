@@ -34,6 +34,10 @@ struct ImportPromptStep: View {
         InstagramFetchService(apiClient: appState.environment.apiClient)
     }
 
+    private var hasAuthToken: Bool {
+        appState.environment.apiClient.tokenStore.accessToken != nil
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
@@ -68,6 +72,11 @@ struct ImportPromptStep: View {
                     isPrimary: true,
                     accessibilityLabel: "Import workout from Instagram"
                 ) {
+                    guard hasAuthToken else {
+                        errorMessage = "Sign in to import from Instagram. You can use Upload Image or Manual Input without an account."
+                        showError = true
+                        return
+                    }
                     OnboardingAnalytics.shared.track(.importAttemptStarted(source: "instagram_url"))
                     instagramURL = ""
                     showInstagramSheet = true

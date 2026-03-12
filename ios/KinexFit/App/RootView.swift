@@ -4,6 +4,7 @@ struct RootView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var authViewModel: AuthViewModel
     @State private var showOnboarding = false
+    @AppStorage("hasSeenFeatureShowcase") private var hasSeenFeatureShowcase: Bool = false
     @AppStorage("hasSeenImportOnboarding") private var hasSeenImportOnboarding: Bool = false
 
     init(environment: AppEnvironment) {
@@ -25,23 +26,14 @@ struct RootView: View {
 
             case .signedOut:
                 if appState.isGuestMode {
-                    // Guest mode: user completed import-first onboarding without signing in.
+                    // Legacy guest mode path — kept for backwards compatibility.
                     MainTabView(authViewModel: authViewModel)
                         .environmentObject(appState.guestModeManager)
-                } else if !hasSeenImportOnboarding {
-                    // New user: show import-first onboarding before requiring sign-in.
-                    ImportFirstOnboardingView(
-                        onCompleted: {
-                            Task {
-                                await appState.enterGuestMode()
-                            }
-                        },
-                        onSignInTapped: {
-                            // Mark onboarding as seen so RootView routes to SignInView
-                            hasSeenImportOnboarding = true
-                        }
-                    )
-                    .environmentObject(appState.guestModeManager)
+                } else if !hasSeenFeatureShowcase && !hasSeenImportOnboarding {
+                    // New user: show feature showcase before sign-in.
+                    FeatureShowcaseView {
+                        hasSeenFeatureShowcase = true
+                    }
                 } else {
                     SignInView(viewModel: authViewModel)
                 }
