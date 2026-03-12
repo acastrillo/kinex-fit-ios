@@ -84,7 +84,7 @@ struct MainTabView: View {
             .presentationBackground(AppTheme.background)
         }
         .sheet(isPresented: $showingQuickMenu) {
-            KinexQuickMenuSheet { action in
+            KinexQuickMenuSheet(showLogout: !appState.isGuestMode) { action in
                 showingQuickMenu = false
                 switch action {
                 case .timer:
@@ -93,9 +93,11 @@ struct MainTabView: View {
                     appState.navigateToTab(.stats)
                 case .settings:
                     showingSettings = true
+                case .logout:
+                    Task { await authViewModel.signOut() }
                 }
             }
-            .presentationDetents([PresentationDetent.height(320)])
+            .presentationDetents([PresentationDetent.height(appState.isGuestMode ? 320 : 370)])
             .presentationBackground(AppTheme.background)
         }
         .sheet(isPresented: $showingTimer) {
@@ -138,6 +140,7 @@ enum KinexQuickMenuAction {
     case timer
     case bodyMetrics
     case settings
+    case logout
 }
 
 struct KinexTopBar: View {
@@ -234,6 +237,7 @@ struct KinexTopBar: View {
 }
 
 struct KinexQuickMenuSheet: View {
+    var showLogout: Bool = false
     let onSelect: (KinexQuickMenuAction) -> Void
 
     var body: some View {
@@ -268,6 +272,15 @@ struct KinexQuickMenuSheet: View {
                 title: "Settings",
                 action: { onSelect(.settings) }
             )
+
+            if showLogout {
+                KinexQuickMenuRow(
+                    icon: "rectangle.portrait.and.arrow.right",
+                    title: "Log Out",
+                    tint: .red,
+                    action: { onSelect(.logout) }
+                )
+            }
         }
         .padding(.horizontal, 8)
         .padding(.bottom, 16)
@@ -279,6 +292,7 @@ struct KinexQuickMenuSheet: View {
 private struct KinexQuickMenuRow: View {
     let icon: String
     let title: String
+    var tint: Color = AppTheme.primaryText
     let action: () -> Void
 
     var body: some View {
@@ -286,12 +300,12 @@ private struct KinexQuickMenuRow: View {
             HStack(spacing: 14) {
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(AppTheme.primaryText)
+                    .foregroundStyle(tint)
                     .frame(width: 24)
 
                 Text(title)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(AppTheme.primaryText)
+                    .foregroundStyle(tint)
 
                 Spacer()
 
