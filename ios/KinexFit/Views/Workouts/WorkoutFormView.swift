@@ -59,6 +59,10 @@ struct WorkoutFormView: View {
         mode: Mode,
         initialTitle: String? = nil,
         initialRawContent: String? = nil,
+        /// Pre-parsed exercise cards from CaptionImportParsingService (exercise DB matched).
+        /// When provided, skips the local regex parser so names are already normalized.
+        initialCards: [EditableWorkoutCard]? = nil,
+        initialRounds: Int? = nil,
         initialSource: WorkoutSource = .manual,
         initialDurationMinutes: Int? = nil,
         initialExerciseCount: Int? = nil,
@@ -77,6 +81,22 @@ struct WorkoutFormView: View {
 
         switch mode {
         case .create:
+            // When pre-parsed cards are supplied (e.g., OCR routed through exercise DB matcher),
+            // bypass the local regex parser and use the already-resolved exercise names.
+            if let initialCards, !initialCards.isEmpty {
+                let fallbackTitle = normalizedInitialContent
+                    .flatMap { $0.isEmpty ? nil : WorkoutTextParser.parse($0).title }
+                    ?? "Scanned Workout"
+                let resolvedTitle = (normalizedInitialTitle?.isEmpty == false
+                    ? normalizedInitialTitle : nil) ?? fallbackTitle
+                _title = State(initialValue: resolvedTitle)
+                _content = State(initialValue: "")
+                _originalContent = State(initialValue: normalizedInitialContent ?? "")
+                _workoutCards = State(initialValue: initialCards)
+                _rounds = State(initialValue: initialRounds)
+                return
+            }
+
             guard let rawContent = normalizedInitialContent, !rawContent.isEmpty else {
                 _title = State(initialValue: normalizedInitialTitle ?? "")
                 _content = State(initialValue: "")

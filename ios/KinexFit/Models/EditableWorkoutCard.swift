@@ -173,6 +173,43 @@ extension EditableWorkoutCard {
         }
     }
 
+    /// Create cards from a `CaptionParsedWorkout` produced by `CaptionImportParsingService`.
+    /// Exercise names are already resolved against the exercise DB; ambiguous matches use
+    /// the first/best option and unknown exercises keep their raw name.
+    static func from(captionParsedWorkout parsed: CaptionParsedWorkout) -> [EditableWorkoutCard] {
+        let defaultRest: String = {
+            guard let restStr = parsed.restBetweenSets?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+                  !restStr.isEmpty else { return "" }
+            let lowered = restStr.lowercased()
+            let digits = lowered
+                .components(separatedBy: CharacterSet.decimalDigits.inverted)
+                .joined()
+            guard let value = Int(digits), value > 0 else { return "" }
+            return lowered.contains("min") ? String(value * 60) : String(value)
+        }()
+
+        return parsed.exercises
+            .sorted { $0.position < $1.position }
+            .map { exercise in
+                let reps: String
+                if let r = exercise.reps {
+                    reps = String(r)
+                } else if let d = exercise.duration {
+                    reps = (d % 60 == 0 && d >= 60) ? "\(d / 60) min" : "\(d)s"
+                } else {
+                    reps = ""
+                }
+                return EditableWorkoutCard(
+                    name: exercise.exerciseName,
+                    sets: exercise.sets.map(String.init) ?? "",
+                    reps: reps,
+                    weight: "",
+                    restSeconds: defaultRest
+                )
+            }
+    }
+
     /// Create cards from local `WorkoutContentPresentation` exercises.
     static func from(presentation: WorkoutContentPresentation) -> [EditableWorkoutCard] {
         let roundsFallback = presentation.rounds.flatMap { $0 > 0 ? $0 : nil }

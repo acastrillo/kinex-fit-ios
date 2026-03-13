@@ -108,7 +108,10 @@ struct AddWorkoutTab: View {
             enhancementSourceText: content,
             source: .manual
         )
-        _ = try? await workoutRepository.create(workout)
+        guard let savedWorkout = try? await workoutRepository.create(workout) else { return }
+        await MainActor.run {
+            appState.navigateToWorkoutCard(workoutID: savedWorkout.id)
+        }
     }
 }
 

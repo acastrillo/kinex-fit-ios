@@ -10,8 +10,14 @@ struct ScanTab: View {
     @State private var showingOCRResult = false
     @State private var isProcessing = false
     @State private var ocrResult: OCRResponse?
+    /// Cards parsed via CaptionImportParsingService (exercise DB matched). Non-empty when
+    /// the exercise matcher found structured content; empty means fall back to regex parse.
+    @State private var ocrParsedCards: [EditableWorkoutCard] = []
+    @State private var ocrParsedTitle: String = ""
+    @State private var ocrParsedRounds: Int? = nil
     @State private var error: OCRError?
     @State private var showingError = false
+    @State private var didSaveWorkout = false
 
     private var ocrService: OCRService {
         OCRService(apiClient: appState.environment.apiClient)
@@ -100,12 +106,14 @@ struct ScanTab: View {
             .fullScreenCover(isPresented: $showingCamera) {
                 CameraView(image: $selectedImage)
             }
-            .sheet(isPresented: $showingOCRResult, onDismiss: discardResult) {
+            .sheet(isPresented: $showingOCRResult, onDismiss: handleOCRResultDismiss) {
                 if let result = ocrResult {
                     WorkoutFormView(
                         mode: .create,
-                        initialTitle: WorkoutTextParser.parse(result.text).title,
+                        initialTitle: ocrParsedTitle.isEmpty ? nil : ocrParsedTitle,
                         initialRawContent: result.text,
+                        initialCards: ocrParsedCards.isEmpty ? nil : ocrParsedCards,
+                        initialRounds: ocrParsedRounds,
                         initialSource: .ocr
                     ) { title, content, enhancementSourceText in
                         try await saveWorkout(
@@ -160,8 +168,20 @@ struct ScanTab: View {
 
         do {
             let result = try await ocrService.processImage(image)
+
+            // Run OCR text through the exercise DB matcher so cards come out with
+            // canonical names (same pipeline as Instagram import).
+            let parsingService = CaptionImportParsingService(
+                apiClient: appState.environment.apiClient
+            )
+            let parsedWorkout = await parsingService.parseImportText(result.text, sourceURL: nil)
+            let parsedCards = EditableWorkoutCard.from(captionParsedWorkout: parsedWorkout)
+
             await MainActor.run {
                 ocrResult = result
+                ocrParsedCards = parsedCards
+                ocrParsedTitle = parsedWorkout.title
+                ocrParsedRounds = parsedWorkout.rounds
                 showingOCRResult = true
                 isProcessing = false
             }
@@ -201,13 +221,26 @@ struct ScanTab: View {
         await MainActor.run {
             ocrResult = nil
             selectedImage = nil
+            didSaveWorkout = true
             showingOCRResult = false
             appState.navigateToWorkoutCard(workoutID: savedWorkout.id)
         }
     }
 
+    private func handleOCRResultDismiss() {
+        if didSaveWorkout {
+            didSaveWorkout = false
+            dismiss()
+        } else {
+            discardResult()
+        }
+    }
+
     private func discardResult() {
         ocrResult = nil
+        ocrParsedCards = []
+        ocrParsedTitle = ""
+        ocrParsedRounds = nil
         selectedImage = nil
         showingOCRResult = false
     }
